@@ -1,0 +1,80 @@
+---
+import CorazonesFlotantes from "./CorazonesFlotantes.astro";
+
+// src/components/Restriccion.astro
+// Dos tarjetas crema sobre el terracota: el título de la celebración solo
+// para adultos y la nota a los papás.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const titulo = ["Celebración solo", "para Adultos"];
+
+const nota = [
+    "“Amamos a sus pequeños,",
+    "pero queremos que este día",
+    "solo tengan que preocuparse",
+    "por pasarla increíble y lo",
+    "dejen todo en la pista”",
+];
+// ──────────────────────────────────────────────────────────────
+---
+
+<section id="restriccion" class="relative w-full px-6 py-14">
+    <CorazonesFlotantes />
+
+    <div
+        id="bloque-restriccion"
+        class="relative flex flex-col items-center text-center"
+    >
+        <div class="tarjeta-restriccion">
+            <h2 class="font-dancing titulo-restriccion">
+                {titulo.map((linea) => <span class="block">{linea}</span>)}
+            </h2>
+        </div>
+
+        <div class="tarjeta-restriccion tarjeta-nota">
+            <p class="font-dancing nota-restriccion">
+                {nota.map((linea) => <span class="block">{linea}</span>)}
+            </p>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Terracota liso de fondo, como en la ceremonia */
+    #restriccion {
+        background: #b45733;
+    }
+
+    .tarjeta-restriccion {
+        width: 100%;
+        max-width: 330px;
+        padding: 1.5rem 1.4rem;
+        background: #f4e7db;
+        box-shadow: 0 8px 20px rgba(70, 28, 16, 0.2);
+    }
+
+    .tarjeta-nota {
+        margin-top: 1.6rem;
+        padding: 2rem 1.4rem;
+    }
+
+    .titulo-restriccion {
+        color: #8e3a1e;
+        font-size: clamp(1.55rem, 7vw, 1.95rem);
+        line-height: 1.45;
+    }
+
+    .nota-restriccion {
+        color: #8e3a1e;
+        font-size: clamp(1.25rem, 5.7vw, 1.55rem);
+        line-height: 1.85;
+    }
+</style>
+
+<script>
+    import { animarEntrada } from "../scripts/animaciones";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const bloque = document.getElementById("bloque-restriccion");
+        if (bloque) animarEntrada(bloque.children, bloque);
+    });
+</script>

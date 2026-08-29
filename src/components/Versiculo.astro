@@ -1,0 +1,170 @@
+---
+import CorazonesFlotantes from "./CorazonesFlotantes.astro";
+
+// src/components/Versiculo.astro
+// Versículo sobre dos rectángulos terracota: uno atrás, derecho y a sangre
+// por los dos costados, y encima la tarjeta ladeada con el texto. Los filos
+// del de atrás asoman arriba y abajo, que es lo que da el aire suelto.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const versiculo =
+    "Así que no son ya más dos, sino una sola carne; por tanto, lo que Dios ha unido, no lo separe el hombre.";
+const cita = "Mateo 19:6";
+// ──────────────────────────────────────────────────────────────
+---
+
+<!-- Sin overflow-hidden: los dos rectángulos se salen por los costados a
+     propósito y el recorte lo hace el main. -->
+<!--
+   La sección se monta sobre la foto: el borde de abajo de la foto queda
+   escondido detrás de la tarjeta, más o menos a media altura, como en el
+   modelo. Así no queda un corte seco entre la foto y el papel.
+-->
+<section id="versiculo" class="franja relative w-full py-5 -mt-28">
+    <!-- Tarjeta ladeada con el texto -->
+    <div class="tarjeta-versiculo relative">
+        <!--
+           Los dos rectángulos son el mismo: mismo tamaño y misma inclinación,
+           solo que el de atrás va un poco más girado y asoma por los filos.
+           Van juntos en .franja-fondo para que animarFranja los abra como uno.
+        -->
+        <div class="franja-fondo absolute inset-0" aria-hidden="true">
+            <div class="rect-atras absolute inset-0"></div>
+            <div class="rect-frente absolute inset-0"></div>
+        </div>
+
+        <CorazonesFlotantes />
+
+        <div class="relative pl-4 pr-[2.7rem] py-9 text-center">
+            <p class="franja-texto font-verandah texto-versiculo">
+                {versiculo}
+            </p>
+
+            <!-- El corazón sube despacio por detrás de la cita -->
+            <div class="bloque-cita relative mt-5">
+                <svg class="corazon-cita" viewBox="0 0 32 29" aria-hidden="true">
+                    <path
+                        d="M16 28.5 3.6 16.4C.4 13.3.4 8.2 3.6 5.1a8 8 0 0 1 11.2 0l1.2 1.2 1.2-1.2a8 8 0 0 1 11.2 0c3.2 3.1 3.2 8.2 0 11.3L16 28.5z"
+                        fill="#f9ece0"></path>
+                </svg>
+                <p class="franja-texto font-charm cita-versiculo">{cita}</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /*
+       El sangrado lateral se recorta acá con clip (no con hidden): así no
+       ensancha el documento ni aparece scroll horizontal, y la sección
+       puede seguir montándose sobre la foto por arriba.
+    */
+    #versiculo {
+        overflow-x: clip;
+        overflow-y: visible;
+        /*
+           La tarjeta queda entre las dos fotos: se monta sobre la de arriba
+           con el -mt y deja que la de abajo suba con el -mb. El -mb es más
+           grande que lo que mide la sección por debajo de la foto de arriba,
+           así las dos fotos se tocan y no queda papel a la vista entre los
+           filos ladeados. Fecha.astro compensa con el mismo valor de padding
+           arriba, para que su texto arranque debajo de la tarjeta.
+           El z-index la mantiene por encima de la foto que viene después.
+        */
+        position: relative;
+        z-index: 2;
+        margin-bottom: -14rem;
+    }
+
+    /*
+       Rectángulo de atrás: el mismo de adelante pero ladeado al revés y un
+       poco más. Como la tarjeta ya viene girada +2.2deg, acá se compensa:
+       -3.8deg locales lo dejan en -1.6deg contra la pantalla.
+    */
+    .rect-atras {
+        background: rgba(158, 70, 42, 0.92);
+        transform: rotate(-3.8deg);
+    }
+
+    /*
+       Tarjeta de adelante: ladeada hacia la derecha (ese lado baja, como en
+       el modelo) y corrida para que el filo izquierdo se vea y el derecho se
+       escape de pantalla.
+    */
+    .tarjeta-versiculo {
+        width: 104%;
+        margin-left: 1%;
+        transform: rotate(2.2deg);
+    }
+
+    .rect-frente {
+        background: rgba(198, 100, 64, 0.94);
+        box-shadow: 0 12px 26px rgba(70, 28, 16, 0.25);
+    }
+
+    .texto-versiculo {
+        color: #fbf0e6;
+        font-size: clamp(1.4rem, 6.6vw, 1.75rem);
+        line-height: 1.75;
+        text-shadow: 0 3px 10px rgba(70, 28, 16, 0.4);
+    }
+
+    .bloque-cita {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .cita-versiculo {
+        position: relative;
+        color: #fdf6ee;
+        font-size: clamp(0.98rem, 4.4vw, 1.15rem);
+        letter-spacing: 0.03em;
+        text-shadow: 0 3px 8px rgba(70, 28, 16, 0.35);
+    }
+
+    /* Marca de agua que sube y se apaga, detrás de la cita */
+    .corazon-cita {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 44px;
+        height: 40px;
+        margin: -12px 0 0 -22px;
+        opacity: 0;
+        pointer-events: none;
+        animation: subir-corazon 6s ease-in-out infinite;
+    }
+
+    @keyframes subir-corazon {
+        0% {
+            opacity: 0;
+            transform: translateY(14px) scale(0.85);
+        }
+        25% {
+            opacity: 0.42;
+        }
+        70% {
+            opacity: 0.28;
+        }
+        100% {
+            opacity: 0;
+            transform: translateY(-26px) scale(1.05);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .corazon-cita {
+            animation: none;
+            opacity: 0.3;
+        }
+    }
+</style>
+
+<script>
+    import { animarFranja } from "../scripts/animaciones";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const seccion = document.getElementById("versiculo");
+        if (seccion) animarFranja(seccion);
+    });
+</script>

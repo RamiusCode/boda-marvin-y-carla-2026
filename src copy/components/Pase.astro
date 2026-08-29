@@ -1,0 +1,170 @@
+---
+// src/components/Pase.astro
+// Tarjeta con los pases reservados para el invitado y, debajo, el pedido de
+// confirmación con el botón a WhatsApp.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const reservado = "Hemos reservado";
+const honor = "en tu honor";
+
+const tituloConfirmar = "Confirmación de Asistencia";
+const aviso = [
+    "Tu presencia es muy importante, no",
+    "olvides confirmar tu asistencia.",
+];
+const textoBoton = "Confirmar Asistencia";
+
+// WhatsApp de los novios (código de país + número, sin + ni espacios).
+const whatsapp = "59163001482";
+const mensaje =
+    "Confirmo la asistencia a la boda de Marvin y Carla. Nos vemos el sábado 9 de enero. ¡Será un placer acompañarlos!";
+const enlace = `https://wa.me/${whatsapp}?text=${encodeURIComponent(mensaje)}`;
+// ──────────────────────────────────────────────────────────────
+
+// El nombre y la cantidad de pases llegan por prop desde las invitaciones
+// personalizadas; acá quedan los valores de muestra.
+export interface Props {
+    invitado?: string;
+    pases?: number;
+}
+const { invitado = "Adriana Candia", pases = 2 } = Astro.props;
+
+const palabraPases = pases === 1 ? "pase" : "pases";
+---
+
+<section id="pase" class="relative w-full overflow-hidden px-7 py-14">
+    <!-- Fondo de acuarela -->
+    <img
+        src="/imagenes/foto3.png"
+        alt=""
+        width="935"
+        height="1629"
+        aria-hidden="true"
+        class="absolute inset-0 h-full w-full object-cover"
+    />
+
+    <div id="bloque-pase" class="relative flex flex-col items-center text-center">
+        <!-- Tarjeta terracota con los pases -->
+        <div class="tarjeta-pase">
+            <p class="font-verandah nombre-invitado">{invitado}</p>
+            <p class="font-cormorant reservado-pase">{reservado}</p>
+            <p class="cantidad-pases">
+                {/*
+                   El número va en Adelia: Verandah Reverie trae los dígitos
+                   bloqueados y dibuja una marca de agua en su lugar.
+                */}
+                <span class="font-adelia numero-pases">{pases}</span>
+                <span class="font-verandah palabra-pases">{palabraPases}</span>
+            </p>
+            <p class="font-cormorant honor-pase">{honor}</p>
+        </div>
+
+        <h2 class="font-dancing titulo-confirmar">{tituloConfirmar}</h2>
+
+        <p class="font-cormorant aviso-confirmar">
+            {aviso.map((linea) => <span class="block">{linea}</span>)}
+        </p>
+
+        <a
+            href={enlace}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="font-cormorant boton-confirmar"
+        >
+            {textoBoton}
+        </a>
+    </div>
+</section>
+
+<style>
+    .tarjeta-pase {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        max-width: 330px;
+        padding: 2.2rem 1.5rem 2.6rem;
+        /* Como el modelo: esquinas apenas redondeadas arriba y el borde de
+           abajo curvado, no recto. */
+        border-radius: 12px 12px 50% 50% / 12px 12px 26px 26px;
+        background: #b45733;
+        box-shadow: 0 12px 26px rgba(90, 40, 22, 0.22);
+    }
+
+    .nombre-invitado {
+        color: #fdf6ee;
+        font-size: clamp(1.6rem, 7.2vw, 2rem);
+        line-height: 1.3;
+    }
+
+    /* Mismo cuerpo que los textos de las otras secciones, para no descuadrar */
+    .reservado-pase,
+    .honor-pase {
+        color: #f6e2d3;
+        font-size: clamp(1.15rem, 5.3vw, 1.4rem);
+        line-height: 1.4;
+    }
+
+    .reservado-pase {
+        margin-top: 1.1rem;
+    }
+
+    .honor-pase {
+        margin-top: 0.9rem;
+    }
+
+    .cantidad-pases {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: 0.35rem;
+        margin-top: 0.5rem;
+        color: #fdf6ee;
+        font-size: clamp(2rem, 9.2vw, 2.6rem);
+        line-height: 1.2;
+    }
+
+    /* Adelia es de ojo más chico que Verandah: se compensa acá */
+    .numero-pases {
+        font-size: 0.94em;
+    }
+
+    .titulo-confirmar {
+        color: #a4482a;
+        font-size: clamp(1.7rem, 7.6vw, 2.1rem);
+        line-height: 1.3;
+        margin-top: 2.6rem;
+    }
+
+    .aviso-confirmar {
+        color: #7a3418;
+        font-size: clamp(1.15rem, 5.3vw, 1.4rem);
+        line-height: 1.5;
+        margin-top: 0.9rem;
+    }
+
+    .boton-confirmar {
+        display: inline-block;
+        margin-top: 1.6rem;
+        padding: 0.75rem 1.9rem;
+        border-radius: 10px;
+        background: #b45733;
+        color: #fdf1e6;
+        font-size: clamp(1.05rem, 4.8vw, 1.25rem);
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        box-shadow: 0 6px 16px rgba(90, 40, 22, 0.22);
+        transition: transform 0.3s ease;
+    }
+
+    .boton-confirmar:hover {
+        transform: scale(1.04);
+    }
+</style>
+
+<script>
+    import { animarEntrada } from "../scripts/animaciones";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const bloque = document.getElementById("bloque-pase");
+        if (bloque) animarEntrada(bloque.children, bloque);
+    });
+</script>

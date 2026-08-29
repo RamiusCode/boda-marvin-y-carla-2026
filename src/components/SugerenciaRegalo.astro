@@ -1,0 +1,162 @@
+---
+// src/components/SugerenciaRegalo.astro
+// Sugerencia de regalo: el QR para transferencia y, debajo, la nota de que
+// la invitación es solo para adultos.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const titulo = "Sugerencia de Regalo";
+
+const texto = [
+    "Tu presencia es el mejor regalo para compartir",
+    "este momento único. Ya tenemos nuestra casita",
+    "completa, nuestro ferrari y el yate, ¡solo nos",
+    "falta pagarlo! Como sugerencia de regalo te",
+    "dejamos el siguiente QR.",
+];
+
+const rotuloQr = "TRANSFERENCIA QR";
+// Imagen del QR: dejala en public/imagenes/. Si se deja vacío, la caja
+// aparece igual pero con el recuadro punteado en lugar del código.
+const qr = "/imagenes/qr.jpeg";
+// ──────────────────────────────────────────────────────────────
+---
+
+<section id="regalo" class="relative w-full overflow-hidden px-7 py-16">
+    <!-- Fondo de acuarela -->
+    <img
+        src="/imagenes/foto3.png"
+        alt=""
+        width="935"
+        height="1629"
+        aria-hidden="true"
+        class="absolute inset-0 h-full w-full object-cover"
+    />
+
+    <div
+        id="bloque-regalo"
+        class="relative flex flex-col items-center text-center"
+    >
+        <!-- Cajita de regalo, dibujada a línea como en el modelo -->
+        <svg class="icono-regalo" viewBox="0 0 48 46" aria-hidden="true">
+            <g
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <path d="M4 16h40v8H4z"></path>
+                <path d="M7 24h34v20H7z"></path>
+                <path d="M24 16v28"></path>
+                <path
+                    d="M24 16c-4 0-11 .4-13.6-2.2a4.6 4.6 0 0 1 0-6.6C13 4.6 17.7 6.7 20 9.2c1.9 2 3 4.6 4 6.8z"
+                ></path>
+                <path
+                    d="M24 16c4 0 11 .4 13.6-2.2a4.6 4.6 0 0 0 0-6.6C35 4.6 30.3 6.7 28 9.2c-1.9 2-3 4.6-4 6.8z"
+                ></path>
+            </g>
+        </svg>
+
+        <h2 class="font-dancing titulo-regalo">{titulo}</h2>
+
+        <p class="font-cormorant texto-regalo">
+            {texto.map((linea) => <span class="block">{linea}</span>)}
+        </p>
+
+        <!-- Caja del QR -->
+        <div class="caja-qr">
+            <p class="font-cormorant rotulo-qr">{rotuloQr}</p>
+            <span class="linea-qr" aria-hidden="true"></span>
+
+            {
+                qr ? (
+                    <img
+                        src={qr}
+                        alt="Código QR para transferencia"
+                        class="imagen-qr"
+                    />
+                ) : (
+                    <span class="hueco-qr" aria-hidden="true" />
+                )
+            }
+        </div>
+
+    </div>
+</section>
+
+<style>
+    .icono-regalo {
+        width: 58px;
+        height: 56px;
+        color: #a4482a;
+    }
+
+    .titulo-regalo {
+        color: #a4482a;
+        font-size: clamp(1.7rem, 7.6vw, 2.1rem);
+        line-height: 1.3;
+        margin-top: 0.8rem;
+    }
+
+    .texto-regalo {
+        color: #7a3418;
+        font-size: clamp(1.05rem, 4.7vw, 1.22rem);
+        line-height: 1.6;
+        margin-top: 1rem;
+    }
+
+    .caja-qr {
+        width: 100%;
+        max-width: 330px;
+        margin-top: 1.8rem;
+        padding: 1.2rem 1.1rem 1.4rem;
+        /* Recuadro cuadrado, igual que la nota del código de vestimenta */
+        border: 1px solid #c2764f;
+    }
+
+    .rotulo-qr {
+        color: #a05a3c;
+        font-size: clamp(1rem, 4.5vw, 1.18rem);
+        letter-spacing: 0.14em;
+        /* text-indent compensa el hueco que el tracking deja después de la
+           última letra; sin esto el renglón se ve corrido a la izquierda */
+        text-indent: 0.14em;
+        line-height: 1.3;
+    }
+
+    .linea-qr {
+        display: block;
+        height: 1px;
+        margin: 0.8rem 0.4rem 1.1rem;
+        background: #d9a883;
+    }
+
+    .imagen-qr {
+        display: block;
+        width: 72%;
+        max-width: 210px;
+        margin: 0 auto;
+        border-radius: 10px;
+        background: #ffffff;
+    }
+
+    /* Marca el lugar del QR mientras no esté cargada la imagen */
+    .hueco-qr {
+        display: block;
+        width: 72%;
+        max-width: 210px;
+        aspect-ratio: 1 / 1;
+        margin: 0 auto;
+        border: 1px dashed #d9a883;
+        border-radius: 10px;
+    }
+
+</style>
+
+<script>
+    import { animarEntrada } from "../scripts/animaciones";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const bloque = document.getElementById("bloque-regalo");
+        if (bloque) animarEntrada(bloque.children, bloque);
+    });
+</script>

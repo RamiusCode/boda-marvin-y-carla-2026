@@ -1,0 +1,153 @@
+---
+// src/components/CodigoVestimenta.astro
+// Código de vestimenta sobre el fondo de acuarela: el dibujo del traje y el
+// vestido, la etiqueta, las dos columnas y la nota del color blanco.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const titulo = "Código de Vestimenta";
+const etiqueta = "FORMAL";
+
+const columnas = [
+    { rotulo: "Damas", detalle: "Vestido largo" },
+    { rotulo: "Caballeros", detalle: "Traje elegante" },
+];
+
+const nota = [
+    "Por cariño a la novia el vestido",
+    "de color blanco está reservado",
+    "para la novia",
+];
+// ──────────────────────────────────────────────────────────────
+---
+
+<section id="vestimenta" class="relative w-full overflow-hidden">
+    <!-- Fondo de acuarela -->
+    <img
+        src="/imagenes/foto3.png"
+        alt=""
+        width="935"
+        height="1629"
+        aria-hidden="true"
+        class="absolute inset-0 h-full w-full object-cover"
+    />
+
+    <div
+        id="bloque-vestimenta"
+        class="relative flex flex-col items-center px-8 py-16 text-center"
+    >
+        <!-- El dibujo va con máscara: el trazo negro quedaría duro -->
+        <span
+            class="icono icono-terracota dibujo-vestimenta"
+            style="--ic:url('/imagenes/vestimenta.png')"
+            aria-hidden="true"></span>
+
+        <h2 class="font-dancing titulo-vestimenta">{titulo}</h2>
+
+        <p class="font-cormorant etiqueta-vestimenta">{etiqueta}</p>
+
+        <div class="columnas-vestimenta">
+            {
+                columnas.map((columna, i) => (
+                    <>
+                        {i > 0 && <span class="divisor-vestimenta" />}
+                        <div class="columna-vestimenta">
+                            <h3 class="font-cormorant rotulo-vestimenta">
+                                {columna.rotulo}
+                            </h3>
+                            <p class="font-cormorant detalle-vestimenta">
+                                {columna.detalle}
+                            </p>
+                        </div>
+                    </>
+                ))
+            }
+        </div>
+
+        <p class="font-cormorant nota-vestimenta">
+            {nota.map((linea) => <span class="block">{linea}</span>)}
+        </p>
+    </div>
+</section>
+
+<style>
+    .dibujo-vestimenta {
+        width: 34%;
+        max-width: 140px;
+        /* La proporción del dibujo es 455x572 */
+        aspect-ratio: 455 / 572;
+    }
+
+    .titulo-vestimenta {
+        color: #a4482a;
+        font-size: clamp(1.7rem, 7.6vw, 2.1rem);
+        line-height: 1.3;
+        margin-top: 1.1rem;
+    }
+
+    .etiqueta-vestimenta {
+        color: #7a3418;
+        font-size: clamp(1.5rem, 6.8vw, 1.9rem);
+        letter-spacing: 0.1em;
+        /* text-indent compensa el hueco que el tracking deja después de la
+           última letra; sin esto el renglón se ve corrido a la izquierda */
+        text-indent: 0.1em;
+        line-height: 1.3;
+        margin-top: 0.9rem;
+    }
+
+    .columnas-vestimenta {
+        display: flex;
+        align-items: stretch;
+        justify-content: center;
+        width: 100%;
+        max-width: 360px;
+        margin-top: 1.8rem;
+    }
+
+    /* min-width 0: sin esto la columna del rótulo más largo se ensancha y
+       las dos dejan de medir igual */
+    .columna-vestimenta {
+        flex: 1;
+        min-width: 0;
+        padding: 0 0.6rem;
+    }
+
+    .divisor-vestimenta {
+        width: 1px;
+        background: #c88a6a;
+        margin: 0.2rem 0;
+    }
+
+    /* Mismo cuerpo que las direcciones de las otras secciones, para que no
+       descuadre con el resto de la invitación. */
+    .rotulo-vestimenta {
+        color: #b06a4c;
+        font-size: clamp(1.15rem, 5.3vw, 1.4rem);
+        line-height: 1.4;
+    }
+
+    .detalle-vestimenta {
+        color: #8e3a1e;
+        font-size: clamp(1.15rem, 5.3vw, 1.4rem);
+        font-weight: 600;
+        line-height: 1.4;
+        margin-top: 0.2rem;
+    }
+
+    .nota-vestimenta {
+        color: #7a3418;
+        font-size: clamp(1.15rem, 5.3vw, 1.4rem);
+        line-height: 1.55;
+        margin-top: 2rem;
+        padding: 1rem 1.2rem;
+        border: 1px dashed #c2764f;
+    }
+</style>
+
+<script>
+    import { animarEntrada } from "../scripts/animaciones";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const bloque = document.getElementById("bloque-vestimenta");
+        if (bloque) animarEntrada(bloque.children, bloque);
+    });
+</script>

@@ -1,0 +1,130 @@
+---
+import CorazonesFlotantes from "./CorazonesFlotantes.astro";
+
+// src/components/Despedida.astro
+// Cierre: la banda con el agradecimiento y, debajo, la foto con el nombre
+// de los novios.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const gracias = [
+    "Gracias a Dios por permitirnos este",
+    "día.",
+    "¡No falten!",
+];
+const anuncio = "NUESTRA BODA";
+const novio = "Marvin";
+const novia = "Carla";
+const foto = "/imagenes/foto1.png";
+// ──────────────────────────────────────────────────────────────
+---
+
+<section id="despedida" class="w-full">
+    <!-- Banda terracota con el agradecimiento -->
+    <div id="banda-gracias" class="franja relative w-full px-7 py-10">
+        <div class="franja-fondo absolute inset-0" aria-hidden="true"></div>
+
+        <p class="franja-texto relative font-dancing texto-gracias">
+            {gracias.map((linea) => <span class="block">{linea}</span>)}
+        </p>
+    </div>
+
+    <!-- Foto de cierre con los nombres -->
+    <div id="foto-despedida" class="relative w-full">
+        <img
+            src={foto}
+            alt=""
+            width="720"
+            height="1440"
+            aria-hidden="true"
+            class="block h-auto w-full"
+        />
+
+        <div class="absolute inset-0 velo-despedida"></div>
+
+        <CorazonesFlotantes />
+
+        <div class="bloque-nombres">
+            <p class="font-cormorant anuncio-despedida">{anuncio}</p>
+            <h2 class="font-verandah nombres-despedida">
+                {novio}<span class="amper">&amp;</span>{novia}
+            </h2>
+        </div>
+    </div>
+</section>
+
+<style>
+    .franja-fondo {
+        background: #b45733;
+    }
+
+    .texto-gracias {
+        color: #fdf1e6;
+        font-size: clamp(1.35rem, 6.2vw, 1.7rem);
+        line-height: 1.5;
+        text-align: center;
+        text-shadow: 0 3px 10px rgba(70, 28, 16, 0.3);
+    }
+
+    /* Velo terracota: la foto entra en la paleta y el texto se lee */
+    .velo-despedida {
+        background:
+            linear-gradient(
+                to bottom,
+                rgba(78, 33, 19, 0.35) 0%,
+                rgba(88, 38, 22, 0.28) 45%,
+                rgba(78, 33, 19, 0.62) 100%
+            ),
+            rgba(176, 84, 52, 0.14);
+    }
+
+    .bloque-nombres {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 8%;
+        padding: 0 1.5rem;
+        text-align: center;
+    }
+
+    .anuncio-despedida {
+        color: #f6e8db;
+        font-size: clamp(0.95rem, 4.4vw, 1.15rem);
+        letter-spacing: 0.42em;
+        /* text-indent compensa el hueco que el tracking deja después de la
+           última letra; sin esto el renglón se ve corrido a la izquierda */
+        text-indent: 0.42em;
+        line-height: 1.2;
+        text-shadow: 0 3px 10px rgba(70, 28, 16, 0.55);
+    }
+
+    .nombres-despedida {
+        color: #fdf6ee;
+        font-size: clamp(2.1rem, 10vw, 2.9rem);
+        line-height: 1.25;
+        margin-top: 0.5rem;
+        white-space: nowrap;
+        text-shadow:
+            0 1px 0 rgba(255, 255, 255, 0.22),
+            0 6px 16px rgba(70, 28, 16, 0.6);
+    }
+
+    /* El "&" en serif: en la caligrafía se confunde con las letras vecinas */
+    .amper {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 0.72em;
+        margin: 0 0.18em;
+        vertical-align: 0.06em;
+    }
+</style>
+
+<script>
+    import { animarEntrada, animarFranja } from "../scripts/animaciones";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const banda = document.getElementById("banda-gracias");
+        if (banda) animarFranja(banda);
+
+        const foto = document.getElementById("foto-despedida");
+        const nombres = foto?.querySelector<HTMLElement>(".bloque-nombres");
+        if (foto && nombres) animarEntrada(nombres.children, foto);
+    });
+</script>

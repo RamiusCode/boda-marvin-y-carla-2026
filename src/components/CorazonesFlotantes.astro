@@ -1,0 +1,85 @@
+---
+// src/components/CorazonesFlotantes.astro
+// Corazones crema subiendo despacio. Se usa dentro de las secciones de fondo
+// oscuro (terracota o foto), que es donde se ven: el elemento padre tiene que
+// ser position: relative, porque la capa va absoluta sobre él.
+const corazones = [
+    { clase: "c1", izq: "8%", ancho: 22, tope: 0.28, dura: 23, demora: 0 },
+    { clase: "c2", izq: "22%", ancho: 15, tope: 0.22, dura: 29, demora: 4 },
+    { clase: "c3", izq: "38%", ancho: 27, tope: 0.3, dura: 26, demora: 9 },
+    { clase: "c4", izq: "54%", ancho: 17, tope: 0.24, dura: 32, demora: 2 },
+    { clase: "c5", izq: "68%", ancho: 24, tope: 0.27, dura: 25, demora: 12 },
+    { clase: "c6", izq: "82%", ancho: 14, tope: 0.2, dura: 30, demora: 6 },
+    { clase: "c7", izq: "92%", ancho: 20, tope: 0.25, dura: 27, demora: 15 },
+];
+---
+
+<div class="corazones" aria-hidden="true">
+    {
+        corazones.map((c) => (
+            <span
+                class="corazon"
+                style={`left:${c.izq};width:${c.ancho}px;--tope:${c.tope};animation-duration:${c.dura}s;animation-delay:${c.demora}s`}
+            >
+                <svg viewBox="0 0 32 29">
+                    <path d="M16 28.5 3.6 16.4C.4 13.3.4 8.2 3.6 5.1a8 8 0 0 1 11.2 0l1.2 1.2 1.2-1.2a8 8 0 0 1 11.2 0c3.2 3.1 3.2 8.2 0 11.3L16 28.5z" />
+                </svg>
+            </span>
+        ))
+    }
+</div>
+
+<style>
+    .corazones {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    .corazon {
+        position: absolute;
+        bottom: -14vh;
+        /* Nacen abajo y suben; solo se animan transform y opacity para que
+           el scroll no se resienta. */
+        animation-name: subir-corazon;
+        animation-timing-function: linear;
+        animation-iteration-count: infinite;
+        will-change: transform, opacity;
+    }
+
+    .corazon svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        fill: #fdf1e6;
+        filter: drop-shadow(0 2px 6px rgba(90, 40, 22, 0.28));
+    }
+
+    @keyframes subir-corazon {
+        0% {
+            transform: translate3d(0, 0, 0) scale(0.85) rotate(-6deg);
+            opacity: 0;
+        }
+        12% {
+            opacity: var(--tope, 0.3);
+        }
+        50% {
+            transform: translate3d(14px, -55vh, 0) scale(1) rotate(5deg);
+        }
+        80% {
+            opacity: var(--tope, 0.3);
+        }
+        100% {
+            transform: translate3d(-10px, -115vh, 0) scale(1.08) rotate(-4deg);
+            opacity: 0;
+        }
+    }
+
+    /* Quien pide menos movimiento no ve nada flotando */
+    @media (prefers-reduced-motion: reduce) {
+        .corazones {
+            display: none;
+        }
+    }
+</style>

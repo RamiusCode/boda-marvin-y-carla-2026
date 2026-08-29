@@ -1,0 +1,50 @@
+---
+// src/components/Invitacion.astro
+// El cuerpo completo de la invitación, en un solo lugar.
+import Portada from "./Portada.astro";
+import NombresFlores from "./NombresFlores.astro";
+import Versiculo from "./Versiculo.astro";
+import NombresPadres from "./NombresPadres.astro";
+import Fecha from "./Fecha.astro";
+import Mensaje from "./Mensaje.astro";
+import CeremoniaReligiosa from "./CeremoniaReligiosa.astro";
+import RecepcionSocial from "./RecepcionSocial.astro";
+import Cronograma from "./Cronograma.astro";
+import CodigoVestimenta from "./CodigoVestimenta.astro";
+import Pase from "./Pase.astro";
+import SugerenciaRegalo from "./SugerenciaRegalo.astro";
+import Restriccion from "./Restriccion.astro";
+import Puntualidad from "./Puntualidad.astro";
+import Historia from "./Historia.astro";
+import Confirmar from "./Confirmar.astro";
+import Despedida from "./Despedida.astro";
+import BotonMusica from "./BotonMusica.astro";
+---
+
+<!-- PORTADA (cubre todo hasta que se toca el botón de ingreso) -->
+<Portada />
+
+<!-- CONTENIDO DE LA INVITACIÓN -->
+<div id="contenido-principal">
+    <NombresFlores />
+    <Versiculo />
+      <Fecha />
+    <Mensaje />
+    <NombresPadres />
+  
+    <CeremoniaReligiosa />
+    <RecepcionSocial />
+      <CodigoVestimenta />
+    <Pase />
+    <SugerenciaRegalo />
+    <Restriccion />
+    <Puntualidad />
+    <!-- <Cronograma /> -->
+  
+    <!-- <Historia /> -->
+    <!-- <Confirmar /> -->
+    <Despedida />
+</div>
+
+<!-- Control de música flotante -->
+<BotonMusica />

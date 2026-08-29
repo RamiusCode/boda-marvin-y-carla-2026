@@ -1,0 +1,185 @@
+---
+// src/components/NombresFlores.astro
+// Portada interior: foto a pantalla completa con marco fino, el anillo,
+// "NUESTRA BODA" y los nombres de los novios. Abajo, la doble flecha que
+// invita a seguir bajando.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const anuncio = "NUESTRA BODA";
+const novio = "Marvin";
+const novia = "Carla";
+const foto = "/imagenes/foto1.png";
+// ──────────────────────────────────────────────────────────────
+---
+
+<section
+    id="arco-novios"
+    class="relative w-full h-screen min-h-[600px] overflow-hidden"
+>
+    <!-- Foto de fondo -->
+    <img
+        src={foto}
+        alt=""
+        width="720"
+        height="1440"
+        aria-hidden="true"
+        class="absolute inset-0 w-full h-full object-cover"
+    />
+
+    <!--
+       Velo terracota: la foto es muy clara y sin él las letras crema se
+       pierden. El degradado carga los extremos y deja el centro más limpio
+       para que se vea la imagen.
+    -->
+    <div class="absolute inset-0 velo-terracota"></div>
+
+    <!-- Marco fino, como el filete impreso de la invitación -->
+    <div class="absolute inset-[14px] border border-[#f2e2d3]/60"></div>
+
+    <!-- Contenido -->
+    <div
+        id="hero-novios"
+        class="relative h-full flex flex-col items-center text-center px-8 pt-[16%]"
+    >
+        <!-- Los anillos van pintados de crema con máscara, no con filtros -->
+        <span
+            class="icono icono-crema w-[58px] h-[58px] mb-4 drop-shadow-[0_3px_8px_rgba(70,28,16,0.5)]"
+            style="--ic:url('/imagenes/anillos.png')"
+            aria-hidden="true"></span>
+
+        <p class="anuncio-boda font-cormorant">{anuncio}</p>
+
+        <h1 class="nombres-hero font-verandah">
+            {novio}<span class="amper">&amp;</span>{novia}
+        </h1>
+
+        <!-- Doble flecha: seguir bajando -->
+        <button
+            id="flecha-scroll"
+            type="button"
+            aria-label="Bajar"
+            class="absolute left-1/2 -translate-x-1/2 bottom-[22%] cursor-pointer border-0 bg-transparent p-2"
+        >
+            <svg
+                viewBox="0 0 40 30"
+                width="34"
+                height="26"
+                fill="none"
+                stroke="#f6e8db"
+                stroke-width="2.4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="drop-shadow-[0_3px_8px_rgba(70,28,16,0.5)]"
+            >
+                <polyline points="6,4 20,15 34,4"></polyline>
+                <polyline points="6,14 20,25 34,14"></polyline>
+            </svg>
+        </button>
+    </div>
+</section>
+
+<style>
+    .velo-terracota {
+        background:
+            linear-gradient(
+                to bottom,
+                rgba(78, 33, 19, 0.72) 0%,
+                rgba(88, 38, 22, 0.5) 38%,
+                rgba(80, 33, 19, 0.34) 62%,
+                rgba(78, 33, 19, 0.68) 100%
+            ),
+            /* Un velo parejo de terracota para que la foto entre en la
+               paleta del resto de la invitación */
+                rgba(176, 84, 52, 0.22);
+    }
+
+    .anuncio-boda {
+        color: #f6e8db;
+        font-size: clamp(0.95rem, 4.4vw, 1.15rem);
+        letter-spacing: 0.42em;
+        /* La letra final no arrastra el bloque fuera de eje por el tracking */
+        text-indent: 0.42em;
+        line-height: 1.2;
+        text-shadow: 0 3px 10px rgba(70, 28, 16, 0.55);
+    }
+
+    .nombres-hero {
+        color: #fdf6ee;
+        font-size: clamp(2.1rem, 10vw, 2.9rem);
+        line-height: 1.25;
+        margin-top: 0.6rem;
+        white-space: nowrap;
+        text-shadow:
+            0 1px 0 rgba(255, 255, 255, 0.22),
+            0 6px 16px rgba(70, 28, 16, 0.6);
+    }
+
+    /* El "&" en serif: en la caligrafía se confunde con las letras vecinas */
+    .amper {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 0.72em;
+        margin: 0 0.18em;
+        vertical-align: 0.06em;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #flecha-scroll {
+            animation: none;
+        }
+    }
+</style>
+
+<script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const hero = document.getElementById("hero-novios");
+        const flecha = document.getElementById("flecha-scroll");
+        if (!hero) return;
+
+        // Los anillos, el anuncio y los nombres entran escalonados; la
+        // flecha se anima aparte porque después queda flotando.
+        const bloques = Array.from(hero.children).filter(
+            (el) => el !== flecha,
+        );
+
+        gsap.from(bloques, {
+            scrollTrigger: { trigger: hero, start: "top 85%" },
+            opacity: 0,
+            y: 26,
+            duration: 0.9,
+            stagger: 0.16,
+            ease: "power2.out",
+        });
+
+        if (flecha) {
+            gsap.fromTo(
+                flecha,
+                { opacity: 0 },
+                {
+                    scrollTrigger: { trigger: hero, start: "top 85%" },
+                    opacity: 1,
+                    duration: 0.8,
+                    delay: 0.6,
+                    ease: "power2.out",
+                },
+            );
+
+            // Flota despacio para que se lea como "seguí bajando"
+            gsap.to(flecha, {
+                y: 10,
+                duration: 1.4,
+                repeat: -1,
+                yoyo: true,
+                ease: "sine.inOut",
+            });
+
+            flecha.addEventListener("click", () => {
+                const alto = window.innerHeight;
+                window.scrollTo({ top: alto * 0.92, behavior: "smooth" });
+            });
+        }
+    });
+</script>

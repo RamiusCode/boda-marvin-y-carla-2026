@@ -1,0 +1,447 @@
+---
+// src/components/Portada.astro - Portada tipo sobre de terracota: el sobre
+// ocupa toda la pantalla, las flores caen desde las esquinas de arriba,
+// los nombres van sobre la solapa y el sello de lacre es el botón que
+// arranca la música y abre la invitación.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const novio = "Marvin";
+const novia = "Carla";
+const union = "y";
+// ──────────────────────────────────────────────────────────────
+
+// El nombre del invitado llega por prop desde las invitaciones
+// personalizadas; si va vacío, el renglón "Para:" no se dibuja.
+export interface Props {
+    invitado?: string;
+}
+const { invitado = "Adriana Candia" } = Astro.props;
+---
+
+<!-- CAPA BLANCA DE TRANSICIÓN — tapa el fondo del layout durante el fade -->
+<div
+    id="capa-blanca"
+    style="
+    position: fixed;
+    inset: 0;
+    background: #ffffff;
+    z-index: 8499;
+    opacity: 1;
+    pointer-events: none;
+"
+>
+</div>
+
+<!--
+   La portada va por debajo del botón flotante de música (z 9000) para que
+   el control siga accesible mientras la portada se desvanece.
+-->
+<section
+    class="fixed inset-0 w-full h-screen flex justify-center z-[8500]"
+    id="portada-section"
+    style="background-color: #c8603c;"
+>
+    <!-- Columna móvil: el diseño nunca se estira en tablet / PC -->
+    <div
+        class="relative w-full max-w-[430px] h-full overflow-hidden"
+        style="background-color: #c8603c; background-image: url('/imagenes/sobre.webp'); background-size: cover; background-position: center; background-repeat: no-repeat; box-shadow: 0 0 40px rgba(0,0,0,0.08);"
+    >
+        <!--
+           Flores de las esquinas: es la misma imagen dos veces, la de la
+           derecha espejada para que las ramas se abran hacia afuera.
+        -->
+        <img
+            id="flor-izq"
+            src="/imagenes/florlateral.png"
+            alt=""
+            width="244"
+            height="497"
+            aria-hidden="true"
+            class="absolute top-[7%] left-0 w-[23%] h-auto pointer-events-none select-none"
+        />
+        <img
+            id="flor-der"
+            src="/imagenes/florlateral.png"
+            alt=""
+            width="244"
+            height="497"
+            aria-hidden="true"
+            class="absolute top-[7%] right-0 w-[23%] h-auto pointer-events-none select-none -scale-x-100"
+        />
+
+        <!--
+           Nombres sobre la solapa. La punta de la solapa cae a ~0.67 del
+           alto, así que el bloque se apoya dentro de ese triángulo: arranca
+           al 23% y respira hasta el sello.
+        -->
+        <div
+            id="nombres-portada"
+            class="absolute left-0 right-0 top-[23%] px-8 text-center"
+        >
+            <h1 class="nombre-novios font-verandah">{novio}</h1>
+
+            <!-- La "y" entre dos filetes dorados, como en el sobre impreso -->
+            <div class="union-novios">
+                <span class="filete" aria-hidden="true"></span>
+                <span class="font-verandah union-letra">{union}</span>
+                <span class="filete" aria-hidden="true"></span>
+            </div>
+
+            <h1 class="nombre-novios font-verandah">{novia}</h1>
+        </div>
+
+        <!--
+           Sello de lacre = botón de ingreso. Va justo en la punta de la
+           solapa, que es donde iría el lacre de verdad.
+        -->
+        <button
+            id="btn-ingresar"
+            type="button"
+            aria-label="Abrir la invitación"
+            class="absolute left-1/2 top-[60%] -translate-x-1/2 -translate-y-1/2 cursor-pointer border-0 bg-transparent p-0"
+        >
+            <span class="pulso-sello" aria-hidden="true"></span>
+            <img
+                src="/imagenes/boton.png"
+                alt=""
+                width="460"
+                height="451"
+                class="relative w-[118px] h-auto select-none drop-shadow-[0_10px_18px_rgba(80,25,10,0.35)]"
+            />
+            <!-- Manito que invita a tocar el sello -->
+            <span class="manito" aria-hidden="true">
+                <svg viewBox="0 0 64 84" width="40" height="52">
+                    <path
+                        d="M22 48V14a6 6 0 0 1 12 0v22h2v-8a5 5 0 0 1 10 0v8h2v-5a5 5 0 0 1 10 0v22c0 13-8 22-20 22-9 0-14-4-18-11L9 52c-2-4 3-8 6-4l7 8z"
+                        fill="#f7dcc4"
+                        stroke="#8a4a2c"
+                        stroke-width="2.5"
+                        stroke-linejoin="round"></path>
+                </svg>
+            </span>
+        </button>
+
+        <!-- Destinatario -->
+        {
+            invitado && (
+                <div
+                    id="bloque-invitado"
+                    class="absolute left-0 right-0 bottom-[12%] px-10 text-left"
+                >
+                    <p class="font-verandah etiqueta-para">Para:</p>
+                    <p class="font-verandah nombre-invitado">{invitado}</p>
+                    <span class="raya-invitado" aria-hidden="true" />
+                </div>
+            )
+        }
+    </div>
+</section>
+
+<style>
+    body.portada-activa {
+        overflow: hidden !important;
+        height: 100vh !important;
+    }
+
+    /* La capa blanca tapa el fondo del layout siempre */
+    #capa-blanca {
+        transition: opacity 0.4s ease;
+    }
+
+    /* ── Nombres ────────────────────────────────────────────── */
+    .nombre-novios {
+        color: #fdf6ee;
+        font-size: clamp(2.4rem, 12.5vw, 3.2rem);
+        line-height: 1.1;
+        /* El sobre es oscuro: la sombra despega las letras del papel */
+        text-shadow:
+            0 1px 0 rgba(255, 255, 255, 0.3),
+            0 6px 14px rgba(88, 30, 14, 0.45);
+    }
+
+    .union-novios {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.7rem;
+        margin: 1.1rem 0;
+    }
+
+    .filete {
+        display: block;
+        width: 40px;
+        height: 1px;
+        background: #e8a874;
+    }
+
+    .union-letra {
+        color: #e8a874;
+        font-size: clamp(1.7rem, 7.6vw, 2.1rem);
+        line-height: 1;
+        text-shadow: 0 3px 8px rgba(88, 30, 14, 0.4);
+    }
+
+    /* ── Sello ──────────────────────────────────────────────── */
+    /* Aro que late detrás del lacre para que se lea como botón */
+    .pulso-sello {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 118px;
+        height: 118px;
+        margin: -59px 0 0 -59px;
+        border-radius: 9999px;
+        border: 1px solid rgba(253, 235, 218, 0.75);
+        opacity: 0;
+        pointer-events: none;
+        animation: pulso 2.6s ease-out infinite;
+    }
+
+    @keyframes pulso {
+        0% {
+            transform: scale(0.9);
+            opacity: 0.5;
+        }
+        70%,
+        100% {
+            transform: scale(1.45);
+            opacity: 0;
+        }
+    }
+
+    .manito {
+        position: absolute;
+        right: -4px;
+        bottom: -16px;
+        pointer-events: none;
+        filter: drop-shadow(0 4px 8px rgba(80, 25, 10, 0.35));
+        animation: toque 2.6s ease-in-out infinite;
+    }
+
+    @keyframes toque {
+        0%,
+        70%,
+        100% {
+            transform: translate(0, 0);
+        }
+        80% {
+            transform: translate(-6px, -8px);
+        }
+        90% {
+            transform: translate(-3px, -4px);
+        }
+    }
+
+    /* Quien pide menos movimiento no ve latidos */
+    @media (prefers-reduced-motion: reduce) {
+        .pulso-sello,
+        .manito {
+            animation: none;
+        }
+    }
+
+    /* ── Destinatario ───────────────────────────────────────── */
+    .etiqueta-para {
+        color: #fdf1e6;
+        font-size: clamp(1.25rem, 5.6vw, 1.5rem);
+        line-height: 1.2;
+        text-shadow: 0 3px 8px rgba(88, 30, 14, 0.4);
+    }
+
+    .nombre-invitado {
+        color: #fdf6ee;
+        font-size: clamp(1.75rem, 8.2vw, 2.15rem);
+        line-height: 1.35;
+        margin-top: 0.3rem;
+        text-shadow:
+            0 1px 0 rgba(255, 255, 255, 0.25),
+            0 5px 12px rgba(88, 30, 14, 0.45);
+    }
+
+    .raya-invitado {
+        display: block;
+        height: 1px;
+        margin-top: 0.2rem;
+        background: rgba(253, 235, 218, 0.8);
+    }
+</style>
+
+<script>
+    import { gsap } from "gsap";
+
+    if (typeof window !== "undefined") {
+        document.addEventListener("DOMContentLoaded", () => {
+            document.body.classList.add("portada-activa");
+
+            const boton = document.getElementById("btn-ingresar");
+            const nombres = document.getElementById("nombres-portada");
+            const florIzq = document.getElementById("flor-izq");
+            const florDer = document.getElementById("flor-der");
+            const invitado = document.getElementById("bloque-invitado");
+            if (!boton || !nombres) return;
+
+            // ── Estado inicial ──────────────────────────────────────
+            gsap.set([florIzq, florDer], { opacity: 0, y: -24 });
+            gsap.set(nombres.children, { opacity: 0, y: 18 });
+            // El sello ya nace centrado por las clases -translate-*, así que
+            // solo se anima la escala desde su propio centro.
+            gsap.set(boton, { opacity: 0, scale: 0.7 });
+            if (invitado) gsap.set(invitado, { opacity: 0, y: 14 });
+
+            // ── Animaciones de entrada ──────────────────────────────
+            const tl = gsap.timeline({ delay: 0.3 });
+
+            tl.to([florIzq, florDer], {
+                opacity: 1,
+                y: 0,
+                duration: 1.1,
+                stagger: 0.15,
+                ease: "power3.out",
+            })
+                .to(
+                    nombres.children,
+                    {
+                        opacity: 1,
+                        y: 0,
+                        duration: 0.8,
+                        stagger: 0.16,
+                        ease: "power2.out",
+                    },
+                    0.5,
+                )
+                .to(
+                    boton,
+                    {
+                        opacity: 1,
+                        scale: 1,
+                        duration: 0.7,
+                        ease: "back.out(1.6)",
+                    },
+                    1.25,
+                );
+
+            if (invitado) {
+                tl.to(
+                    invitado,
+                    { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" },
+                    1.5,
+                );
+            }
+
+            // ── Latido sutil del sello (invita a tocarlo) ───────────
+            tl.add(() => {
+                gsap.to(boton, {
+                    scale: 1.05,
+                    duration: 1.6,
+                    repeat: -1,
+                    yoyo: true,
+                    ease: "sine.inOut",
+                });
+            });
+
+            // ── Hover ───────────────────────────────────────────────
+            // El escalado va por GSAP y no con hover:scale de Tailwind:
+            // el latido de arriba escribe transform inline y le ganaría.
+            boton.addEventListener("mouseenter", () => {
+                gsap.to(boton, {
+                    scale: 1.1,
+                    duration: 0.3,
+                    ease: "power2.out",
+                });
+            });
+            boton.addEventListener("mouseleave", () => {
+                gsap.to(boton, { scale: 1, duration: 0.3, ease: "power2.out" });
+            });
+
+            const portadaSection = document.getElementById("portada-section");
+            const capaBlanca = document.getElementById("capa-blanca");
+
+            // ── Suelta el scroll y deja la invitación arrancada en el
+            //    arco de NombresFlores, su primera sección.
+            const abrirInvitacion = () => {
+                document.body.classList.remove("portada-activa");
+                document.body.style.overflow = "auto";
+
+                // Salto seco, no suave: la portada todavía se está
+                // desvaneciendo encima y el arco tiene que estar ya en su
+                // lugar cuando termina de irse.
+                const destino = document.getElementById("arco-novios");
+                if (destino) {
+                    destino.scrollIntoView({ block: "start" });
+                } else {
+                    window.scrollTo({ top: 0 });
+                }
+            };
+
+            // ── Click en el sello: música + salida de la portada ─────
+            boton.addEventListener("click", () => {
+                gsap.killTweensOf(boton);
+
+                // El botón flotante de BotonMusica.astro aparece solo al
+                // detectar que la melodía ya está sonando.
+                const audio = new Audio("/musica/melodia2.mp3");
+                audio.loop = true;
+                audio.volume = 0.5;
+                audio.play().catch((error) => {
+                    console.log("❌ Error al reproducir audio:", error);
+                });
+                (window as any).audioGlobal = audio;
+                (window as any).estaReproduciendoGlobal = true;
+
+                gsap.timeline()
+                    // El sello primero se hunde, como sellando, y recién
+                    // después se abre y se va.
+                    .to(boton, {
+                        scale: 0.88,
+                        duration: 0.22,
+                        ease: "power2.in",
+                    })
+                    .to(boton, {
+                        scale: 1.15,
+                        opacity: 0,
+                        duration: 0.45,
+                        ease: "power2.out",
+                    })
+                    .to(
+                        nombres.children,
+                        {
+                            opacity: 0,
+                            y: -12,
+                            duration: 0.4,
+                            stagger: 0.06,
+                            ease: "power2.in",
+                        },
+                        0.25,
+                    )
+                    .to(
+                        [florIzq, florDer, invitado].filter(Boolean),
+                        {
+                            opacity: 0,
+                            duration: 0.4,
+                            ease: "power2.in",
+                        },
+                        0.35,
+                    )
+                    .to(
+                        portadaSection,
+                        {
+                            opacity: 0,
+                            duration: 0.5,
+                            ease: "power2.in",
+                            onStart: abrirInvitacion,
+                            onComplete: () => {
+                                portadaSection?.remove();
+                                // Desvanecer la capa blanca suavemente
+                                gsap.to(capaBlanca, {
+                                    opacity: 0,
+                                    duration: 0.4,
+                                    ease: "power2.out",
+                                    onComplete: () => capaBlanca?.remove(),
+                                });
+                            },
+                        },
+                        0.75,
+                    );
+            });
+        });
+    }
+</script>

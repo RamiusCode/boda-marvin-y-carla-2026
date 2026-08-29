@@ -1,0 +1,128 @@
+---
+// src/components/Contador.astro
+// Cuenta regresiva "Falta poco" en cuatro casillas traslúcidas. Va dentro
+// del panel de la foto, en Fecha.astro.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const titulo = "Falta poco";
+// Fecha y hora de la boda
+const fechaBoda = "2027-01-09T14:00:00";
+// ──────────────────────────────────────────────────────────────
+
+const casillas = [
+    { id: "dias", rotulo: "Días" },
+    { id: "horas", rotulo: "Hs." },
+    { id: "minutos", rotulo: "Min." },
+    { id: "segundos", rotulo: "Seg." },
+];
+---
+
+<div id="contador" class="w-full flex flex-col items-center" data-fecha={fechaBoda}>
+    <p class="font-verandah titulo-contador">{titulo}</p>
+
+    <div class="casillas-contador">
+        {
+            casillas.map((casilla) => (
+                <div class="casilla">
+                    {/*
+                       Número y rótulo en serif, no en caligrafía: son datos
+                       que cambian cada segundo y tienen que leerse de golpe.
+                    */}
+                    <span id={casilla.id} class="font-cormorant numero-contador">
+                        00
+                    </span>
+                    <span class="font-cormorant rotulo-contador">
+                        {casilla.rotulo}
+                    </span>
+                </div>
+            ))
+        }
+    </div>
+</div>
+
+<style>
+    .titulo-contador {
+        color: #fbeee2;
+        font-size: clamp(1.4rem, 6.4vw, 1.75rem);
+        line-height: 1.2;
+        margin-bottom: 0.6rem;
+        text-shadow: 0 4px 12px rgba(70, 28, 16, 0.5);
+    }
+
+    .casillas-contador {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        max-width: 324px;
+    }
+
+    /* min-width 0: sin esto el rótulo más largo ensancha su casilla y las
+       cuatro dejan de medir igual. */
+    .casilla {
+        flex: 1;
+        min-width: 0;
+        /* Cuadradas y vacías: por dentro se ve la foto, como en el diseño */
+        aspect-ratio: 1 / 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.1rem;
+        padding: 0.2rem;
+        border: 1px solid rgba(251, 238, 226, 0.85);
+        background: transparent;
+    }
+
+    .numero-contador {
+        color: #fdf6ee;
+        font-size: clamp(1.5rem, 7vw, 1.85rem);
+        font-weight: 600;
+        line-height: 1.1;
+        /* Cifras de caja alta: las de estilo antiguo bailan de altura */
+        font-variant-numeric: lining-nums;
+        text-shadow: 0 2px 8px rgba(70, 28, 16, 0.5);
+    }
+
+    .rotulo-contador {
+        color: #fbeee2;
+        font-size: clamp(0.78rem, 3.7vw, 0.92rem);
+        letter-spacing: 0.04em;
+        line-height: 1.2;
+        white-space: nowrap;
+        text-shadow: 0 2px 6px rgba(70, 28, 16, 0.45);
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const bloque = document.getElementById("contador");
+        if (!bloque) return;
+
+        const objetivo = new Date(bloque.dataset.fecha as string).getTime();
+        const el = (id: string) => document.getElementById(id);
+
+        const pintar = () => {
+            const resta = Math.max(objetivo - Date.now(), 0);
+            const seg = Math.floor(resta / 1000);
+
+            const dias = Math.floor(seg / 86400);
+            const horas = Math.floor((seg % 86400) / 3600);
+            const minutos = Math.floor((seg % 3600) / 60);
+            const segundos = seg % 60;
+
+            const dosDigitos = (n: number) => n.toString().padStart(2, "0");
+
+            const d = el("dias");
+            const h = el("horas");
+            const m = el("minutos");
+            const s = el("segundos");
+            if (d) d.textContent = dias.toString();
+            if (h) h.textContent = dosDigitos(horas);
+            if (m) m.textContent = dosDigitos(minutos);
+            if (s) s.textContent = dosDigitos(segundos);
+        };
+
+        pintar();
+        setInterval(pintar, 1000);
+    });
+</script>

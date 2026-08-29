@@ -1,0 +1,46 @@
+---
+import CorazonesFlotantes from "./CorazonesFlotantes.astro";
+
+// src/components/Mensaje.astro
+// Franja terracota con el mensaje a los invitados, entre la foto de la
+// fecha y lo que sigue.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const mensaje = [
+    "Compartir esos momentos con",
+    "ustedes los hace inolvidables",
+];
+// ──────────────────────────────────────────────────────────────
+---
+
+<section id="mensaje" class="franja relative w-full overflow-hidden px-7 py-14">
+    <div class="franja-fondo absolute inset-0" aria-hidden="true"></div>
+
+    <CorazonesFlotantes />
+
+    <p class="franja-texto relative font-verandah texto-mensaje">
+        {mensaje.map((linea) => <span class="block">{linea}</span>)}
+    </p>
+</section>
+
+<style>
+    .franja-fondo {
+        background: #bd6039;
+    }
+
+    .texto-mensaje {
+        color: #fbf0e6;
+        font-size: clamp(1.45rem, 6.8vw, 1.85rem);
+        line-height: 1.75;
+        text-align: center;
+        text-shadow: 0 4px 12px rgba(70, 28, 16, 0.35);
+    }
+</style>
+
+<script>
+    import { animarFranja } from "../scripts/animaciones";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const seccion = document.getElementById("mensaje");
+        if (seccion) animarFranja(seccion);
+    });
+</script>

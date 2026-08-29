@@ -1,0 +1,181 @@
+---
+import CorazonesFlotantes from "./CorazonesFlotantes.astro";
+
+// src/components/CeremoniaReligiosa.astro
+// Ceremonia religiosa sobre un bloque terracota liso: la hora, el dibujo de
+// la iglesia, el nombre del templo con su dirección y el botón al mapa.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const titulo = "Ceremonia Religiosa";
+const hora = "14:00";
+const rotulo = "Parroquia";
+const templo = ["NUESTRA SEÑORA", "DE POMPEYA"];
+const direccion = [
+    "Calle Jamaica esquina calle Cuba",
+    "( Zona Miraflores )",
+];
+const mapa = "https://maps.app.goo.gl/hptrPVszhB98Gjc67";
+const textoBoton = "Ver mapa";
+// ──────────────────────────────────────────────────────────────
+---
+
+<section id="ceremonia-religiosa" class="relative w-full overflow-hidden">
+    <CorazonesFlotantes />
+
+    <div
+        id="bloque-religiosa"
+        class="relative flex flex-col items-center px-7 py-16 text-center"
+    >
+        <h2 class="font-dancing titulo-religiosa">{titulo}</h2>
+
+        <p class="hora-religiosa">
+            <!-- El reloj se pinta con máscara, no con filtros -->
+            <span
+                class="icono icono-crema reloj-religiosa"
+                style="--ic:url('/imagenes/hora.png')"
+                aria-hidden="true"></span>
+            <span class="font-cormorant hora-texto">{hora}</span>
+        </p>
+
+        <!-- El dibujo también va con máscara: el trazo negro no se vería -->
+        <span
+            class="icono icono-crema dibujo-iglesia"
+            style="--ic:url('/imagenes/iglesia.png')"
+            aria-hidden="true"></span>
+
+        <p class="font-dancing rotulo-templo">{rotulo}</p>
+
+        <h3 class="font-cormorant nombre-templo">
+            {templo.map((linea) => <span class="block">{linea}</span>)}
+        </h3>
+
+        <p class="font-cormorant direccion-templo">
+            {direccion.map((linea) => <span class="block">{linea}</span>)}
+        </p>
+
+        <a
+            href={mapa}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="font-cormorant boton-mapa"
+        >
+            <svg viewBox="0 0 24 24" aria-hidden="true" class="pin-mapa">
+                <path
+                    d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"
+                    fill="currentColor"></path>
+            </svg>
+            {textoBoton}
+        </a>
+    </div>
+</section>
+
+<style>
+    /* Terracota liso: acá ya no va la foto de fondo */
+    #ceremonia-religiosa {
+        background: #b45733;
+    }
+
+    .titulo-religiosa {
+        color: #fdf6ee;
+        font-size: clamp(1.9rem, 8.6vw, 2.4rem);
+        line-height: 1.25;
+    }
+
+    .hora-religiosa {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        margin-top: 0.4rem;
+        color: #fbeee2;
+    }
+
+    .reloj-religiosa {
+        width: 1.5rem;
+        height: 1.5rem;
+        flex: none;
+    }
+
+    .hora-texto {
+        font-size: clamp(1.4rem, 6.4vw, 1.75rem);
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        /* Cifras de caja alta: las de estilo antiguo bailan de altura */
+        font-variant-numeric: lining-nums;
+    }
+
+    .dibujo-iglesia {
+        width: 62%;
+        max-width: 250px;
+        /* La proporción del dibujo es 811x630 */
+        aspect-ratio: 811 / 630;
+        margin-top: 1rem;
+    }
+
+    .rotulo-templo {
+        color: #fbeee2;
+        font-size: clamp(1.15rem, 5.2vw, 1.4rem);
+        line-height: 1.3;
+        margin-top: 0.9rem;
+    }
+
+    .nombre-templo {
+        color: #fdf6ee;
+        font-size: clamp(1.35rem, 6.2vw, 1.7rem);
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        /* text-indent compensa el hueco que el tracking deja después de la
+           última letra; sin esto el renglón se ve corrido a la izquierda */
+        text-indent: 0.06em;
+        line-height: 1.35;
+        margin-top: 0.2rem;
+    }
+
+    /* Mismo tamaño y estilo que la dirección de la recepción, en crema
+       porque acá el fondo es terracota. */
+    .direccion-templo {
+        color: #f6e2d3;
+        font-size: clamp(1.15rem, 5.3vw, 1.4rem);
+        line-height: 1.55;
+        margin-top: 0.9rem;
+    }
+
+    /*
+       El botón del modelo: fondo claro, texto oscuro y forma de hoja: en
+       punta arriba a la izquierda y abajo a la derecha, redondeado en las
+       otras dos esquinas.
+    */
+    .boton-mapa {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        margin-top: 1.8rem;
+        padding: 0.7rem 1.8rem;
+        border-radius: 2px 24px 2px 24px;
+        background: #e6c4ad;
+        color: #7a3418;
+        font-size: clamp(1rem, 4.6vw, 1.2rem);
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        box-shadow: 0 5px 14px rgba(90, 40, 22, 0.16);
+        transition: transform 0.3s ease;
+    }
+
+    .boton-mapa:hover {
+        transform: scale(1.04);
+    }
+
+    .pin-mapa {
+        width: 1.15em;
+        height: 1.15em;
+        flex: none;
+    }
+</style>
+
+<script>
+    import { animarEntrada } from "../scripts/animaciones";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const bloque = document.getElementById("bloque-religiosa");
+        if (bloque) animarEntrada(bloque.children, bloque);
+    });
+</script>

@@ -1,0 +1,97 @@
+---
+// src/components/Puntualidad.astro
+// Nuestra historia: el título con el corazón y los dos párrafos.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const titulo = "Nuestra historia";
+
+const primero = [
+    "Nos conocimos de niños, crecimos,",
+    "tomamos caminos distintos y la vida",
+    "volvió a encontrarnos.",
+];
+
+// La frase final va resaltada, como en el mensaje original.
+const segundoInicio = "Hoy, aquellos niños";
+const segundoResalte = "se eligen para siempre.";
+// ──────────────────────────────────────────────────────────────
+---
+
+<section id="puntualidad" class="relative w-full overflow-hidden px-8 py-16">
+    <!-- Fondo de acuarela -->
+    <img
+        src="/imagenes/foto3.png"
+        alt=""
+        width="935"
+        height="1629"
+        aria-hidden="true"
+        class="absolute inset-0 h-full w-full object-cover"
+    />
+
+    <div
+        id="bloque-puntualidad"
+        class="relative flex flex-col items-center text-center"
+    >
+        <h2 class="font-dancing titulo-historia">
+            {titulo}
+            <svg class="corazon-historia" viewBox="0 0 32 29" aria-hidden="true">
+                <path
+                    d="M16 28.5 3.6 16.4C.4 13.3.4 8.2 3.6 5.1a8 8 0 0 1 11.2 0l1.2 1.2 1.2-1.2a8 8 0 0 1 11.2 0c3.2 3.1 3.2 8.2 0 11.3L16 28.5z"
+                    fill="#b45733"></path>
+            </svg>
+        </h2>
+
+        <p class="font-cormorant texto-historia">
+            {primero.map((linea) => <span class="block">{linea}</span>)}
+        </p>
+
+        <p class="font-cormorant texto-historia cierre-historia">
+            {segundoInicio}
+            <span class="resalte-historia">{segundoResalte}</span>
+            <svg class="corazon-historia" viewBox="0 0 32 29" aria-hidden="true">
+                <path
+                    d="M16 28.5 3.6 16.4C.4 13.3.4 8.2 3.6 5.1a8 8 0 0 1 11.2 0l1.2 1.2 1.2-1.2a8 8 0 0 1 11.2 0c3.2 3.1 3.2 8.2 0 11.3L16 28.5z"
+                    fill="#b45733"></path>
+            </svg>
+        </p>
+    </div>
+</section>
+
+<style>
+    .titulo-historia {
+        color: #a4482a;
+        font-size: clamp(1.7rem, 7.6vw, 2.1rem);
+        line-height: 1.3;
+    }
+
+    .corazon-historia {
+        display: inline-block;
+        width: 0.72em;
+        height: 0.66em;
+        margin-left: 0.18em;
+        vertical-align: -0.02em;
+    }
+
+    .texto-historia {
+        color: #7a3418;
+        font-size: clamp(1.15rem, 5.3vw, 1.4rem);
+        line-height: 1.65;
+        margin-top: 1.4rem;
+    }
+
+    .cierre-historia {
+        margin-top: 1.6rem;
+    }
+
+    .resalte-historia {
+        font-weight: 600;
+    }
+</style>
+
+<script>
+    import { animarEntrada } from "../scripts/animaciones";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const bloque = document.getElementById("bloque-puntualidad");
+        if (bloque) animarEntrada(bloque.children, bloque);
+    });
+</script>
