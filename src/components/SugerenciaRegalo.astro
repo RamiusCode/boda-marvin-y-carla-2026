@@ -219,28 +219,9 @@ const foto = "/imagenes/perrtio3.png";
         margin: 1.2rem 0.4rem 1rem;
     }
 
-    /*
-       El nombre del banco, en dorado y versalitas.
-
-       El dorado va en dos capas: primero un color macizo, que es lo que se
-       ve si el navegador no soporta recortar el fondo contra el texto, y
-       encima el degradado que le da el brillo metálico. Un amarillo plano
-       se leería como resaltador; el degradado es lo que lo hace parecer
-       tinta dorada de imprenta.
-    */
+    /* El nombre del banco, en dorado macizo y versalitas */
     .banco-regalo {
         color: #b0862b;
-        background-image: linear-gradient(
-            100deg,
-            #a97b22 0%,
-            #e6ca7d 42%,
-            #f2e2ac 50%,
-            #e6ca7d 58%,
-            #a97b22 100%
-        );
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
         font-size: clamp(1.12rem, 5vw, 1.3rem);
         font-weight: 700;
         text-transform: uppercase;

@@ -294,12 +294,15 @@ const momentos = t.momentos.map((nombre, i) => ({
        Cola de reproducción: los momentos entran siempre en orden y nunca
        arrancan todos juntos. Cada uno, al entrar en pantalla, se anota acá.
 
-       El siguiente no espera a que el anterior termine: larga cuando el
-       anterior va por la cuarta parte. Se solapan bastante, así la línea
-       baja como una sola cosa en vez de ir momento por momento, y la
-       secuencia completa acompaña el scroll del invitado.
+       El siguiente casi no espera: larga apenas arrancado el anterior, a
+       la vigésima parte de su recorrido —unos 0,1s—. Se solapan tanto que
+       la línea entera se arma de un tirón; el orden se sigue notando, pero
+       como una cascada y no como una fila de a uno.
+
+       No se pone en 0 a propósito: ahí los ocho momentos saldrían todos
+       juntos y se perdería la sensación de que la línea baja.
     */
-    const RELEVO = 0.25; // en qué punto del anterior arranca el siguiente
+    const RELEVO = 0.05; // en qué punto del anterior arranca el siguiente
 
     let cola: Promise<void> = Promise.resolve();
 
@@ -388,8 +391,8 @@ const momentos = t.momentos.map((nombre, i) => ({
 
         /*
            Cada momento tiene su propio trigger, pero la animación no corre
-           ahí: se encola. Así entran siempre en orden y encabalgados a la
-           cuarta parte del anterior, nunca todos juntos.
+           ahí: se encola. Así entran siempre en orden, encabalgados casi
+           sin espera entre uno y otro.
 
            Dentro de cada momento las piezas entran encadenadas y cada una
            con su propio gesto, para que la línea de tiempo se arme sola
