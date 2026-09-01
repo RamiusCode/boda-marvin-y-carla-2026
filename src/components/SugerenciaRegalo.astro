@@ -18,6 +18,7 @@ const { titulo, texto, rotuloQr, altQr, altFoto } = t;
 // Imagen del QR: dejala en public/imagenes/. Si se deja vacío, la caja
 // aparece igual pero con el recuadro punteado en lugar del código.
 const qr = "/imagenes/qr.png";
+const banco = "Banco Sol";
 const cuenta = "Cuenta N° 3441510-000-001";
 const titular = "Carla Andrea Salinas Zegarra";
 
@@ -108,6 +109,7 @@ const foto = "/imagenes/perrtio3.png";
 
             <span class="linea-qr linea-cuenta" aria-hidden="true"></span>
 
+            <p class="font-cormorant banco-regalo">{banco}</p>
             <p class="font-cormorant cuenta-regalo">{cuenta}</p>
             <p class="font-cormorant titular-regalo">{titular}</p>
         </div>
@@ -215,6 +217,39 @@ const foto = "/imagenes/perrtio3.png";
     /* La segunda línea separa el QR de los datos de la cuenta */
     .linea-cuenta {
         margin: 1.2rem 0.4rem 1rem;
+    }
+
+    /*
+       El nombre del banco, en dorado y versalitas.
+
+       El dorado va en dos capas: primero un color macizo, que es lo que se
+       ve si el navegador no soporta recortar el fondo contra el texto, y
+       encima el degradado que le da el brillo metálico. Un amarillo plano
+       se leería como resaltador; el degradado es lo que lo hace parecer
+       tinta dorada de imprenta.
+    */
+    .banco-regalo {
+        color: #b0862b;
+        background-image: linear-gradient(
+            100deg,
+            #a97b22 0%,
+            #e6ca7d 42%,
+            #f2e2ac 50%,
+            #e6ca7d 58%,
+            #a97b22 100%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: clamp(1.12rem, 5vw, 1.3rem);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        /* text-indent compensa el hueco que el tracking deja después de la
+           última letra; sin esto el renglón se ve corrido a la izquierda */
+        text-indent: 0.16em;
+        line-height: 1.3;
+        margin-bottom: 0.3rem;
     }
 
     .cuenta-regalo {
