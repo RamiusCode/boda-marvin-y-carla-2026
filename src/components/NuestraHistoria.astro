@@ -7,19 +7,16 @@
 // No confundir con Historia.astro, que es la versión larga: banda de color
 // y modal con cinco párrafos.
 
-// ── DATOS EDITABLES ───────────────────────────────────────────
-const titulo = "Nuestra historia";
+// Los textos viven en src/i18n; acá solo se elige el idioma.
+import { textos, type Idioma } from "../i18n";
 
-const primero = [
-    "Nos conocimos de niños, crecimos,",
-    "tomamos caminos distintos y la vida",
-    "volvió a encontrarnos.",
-];
+export interface Props {
+    idioma?: Idioma;
+}
+const { idioma = "es" } = Astro.props;
 
-// La frase final va resaltada, como en el modelo.
-const segundoInicio = "Hoy, aquellos niños";
-const segundoResalte = "se eligen para siempre.";
-// ──────────────────────────────────────────────────────────────
+const { titulo, primero, segundoInicio, segundoResalte } =
+    textos(idioma).historia;
 ---
 
 <!-- ═══════════════════════════════════════════════════════════ -->

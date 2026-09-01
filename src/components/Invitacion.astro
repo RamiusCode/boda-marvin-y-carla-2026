@@ -26,13 +26,29 @@ import BuenosDeseos from "./BuenosDeseos.astro";
 import NuestraHistoria from "./NuestraHistoria.astro";
 import Despedida from "./Despedida.astro";
 import BotonMusica from "./BotonMusica.astro";
+
+// El idioma llega desde la página: index.astro manda "es" y en/index.astro
+// manda "en". Cada sección traducida lo recibe y saca sus textos de
+// src/i18n; las que todavía no se tradujeron lo ignoran.
+import { textos, type Idioma } from "../i18n";
+
+export interface Props {
+    idioma?: Idioma;
+}
+const { idioma = "es" } = Astro.props;
+
+const t = textos(idioma);
 ---
 
 <!-- PORTADA (cubre todo hasta que se toca el botón de ingreso) -->
 <Portada />
 
 <!-- CONTENIDO DE LA INVITACIÓN -->
-<div id="contenido-principal">
+<div
+    id="contenido-principal"
+    data-pase={t.pase.pase}
+    data-pases={t.pase.pases}
+>
     <NombresFlores />
     <Dedicatoria />
     <Foto1 />
@@ -49,7 +65,7 @@ import BotonMusica from "./BotonMusica.astro";
     <RecepcionSocial />
       <CodigoVestimenta />
         <Cronograma />
-    <Puntualidad />
+    <Puntualidad idioma={idioma} />
      <SugerenciaRegalo />
     <Pase />
    
@@ -57,7 +73,7 @@ import BotonMusica from "./BotonMusica.astro";
   
   
     <BuenosDeseos />
-    <NuestraHistoria />
+    <NuestraHistoria idioma={idioma} />
 
     <!-- <Historia /> -->
     <!-- <Confirmar /> -->
@@ -89,14 +105,23 @@ import BotonMusica from "./BotonMusica.astro";
     const numeros = document.querySelectorAll<HTMLElement>(".numero-pases");
     const palabras = document.querySelectorAll<HTMLElement>(".palabra-pases");
 
+    /*
+       Singular y plural salen del idioma de la página, no escritos acá:
+       en la invitación en inglés un invitado con un solo pase tiene que
+       leer "seat", no "pase".
+    */
+    const contenido = document.getElementById("contenido-principal");
+    const palabraPase = contenido?.dataset.pase ?? "pase";
+    const palabraPases = contenido?.dataset.pases ?? "pases";
+
     function pintar(nombre: string | null, pases: number | null) {
         if (nombre) nombres.forEach((el) => (el.textContent = nombre));
 
         if (Number.isInteger(pases) && (pases as number) > 0) {
             numeros.forEach((el) => (el.textContent = String(pases)));
-            palabras.forEach(
-                (el) => (el.textContent = pases === 1 ? "pase" : "pases"),
-            );
+            palabras.forEach((el) => {
+                el.textContent = pases === 1 ? palabraPase : palabraPases;
+            });
         }
     }
 

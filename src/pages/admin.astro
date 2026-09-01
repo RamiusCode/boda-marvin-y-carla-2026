@@ -585,7 +585,7 @@
         .velo, #btn-menu { display: none; }
         .contenido { padding: 1.75rem 2rem 3rem; }
         .resumen { grid-template-columns: repeat(4, 1fr); }
-        .form-alta { grid-template-columns: 1fr 130px auto; align-items: end; }
+        .form-alta { grid-template-columns: 1fr 110px 130px auto; align-items: end; }
       }
     </style>
   </head>
@@ -744,6 +744,13 @@
                   <label class="etiqueta" for="in-pases">Pases</label>
                   <input id="in-pases" type="number" class="campo" min="1" max="20" value="2" required />
                 </div>
+                <div>
+                  <label class="etiqueta" for="in-idioma">Idioma</label>
+                  <select id="in-idioma" class="campo">
+                    <option value="es" selected>Español</option>
+                    <option value="en">English</option>
+                  </select>
+                </div>
                 <button type="submit" id="btn-guardar" class="btn btn-neon">Agregar</button>
               </form>
               <p id="form-error" class="aviso aviso-error oculto" style="margin-top: .85rem"></p>
@@ -826,6 +833,13 @@
             <div>
               <label class="etiqueta" for="ed-pases">Pases</label>
               <input id="ed-pases" type="number" class="campo" min="1" max="20" required />
+            </div>
+            <div>
+              <label class="etiqueta" for="ed-idioma">Idioma</label>
+              <select id="ed-idioma" class="campo">
+                <option value="es">Español</option>
+                <option value="en">English</option>
+              </select>
             </div>
             <p style="font-size: .83rem; color: var(--texto-tenue)">
               El link no cambia: el invitado verá los datos nuevos con el mismo enlace.
@@ -1251,7 +1265,7 @@
       async function cargarInvitados() {
         const { data, error } = await supabase
           .from("invitados")
-          .select("id, codigo, nombre, pases, confirmado, confirmado_en")
+          .select("id, codigo, nombre, pases, confirmado, confirmado_en, idioma")
           .order("creado_en", { ascending: false });
 
         if (error) {
@@ -1276,6 +1290,7 @@
 
         const nombre = $("in-nombre").value.trim();
         const pases = Number($("in-pases").value);
+        const idioma = $("in-idioma").value;
 
         if (!nombre) return;
         if (!Number.isInteger(pases) || pases < 1 || pases > 20) {
@@ -1290,8 +1305,8 @@
         for (let intento = 0; intento < 5; intento++) {
           const { data, error } = await supabase
             .from("invitados")
-            .insert({ codigo: generarCodigo(), nombre, pases })
-            .select("id, codigo, nombre, pases, confirmado, confirmado_en")
+            .insert({ codigo: generarCodigo(), nombre, pases, idioma })
+            .select("id, codigo, nombre, pases, confirmado, confirmado_en, idioma")
             .single();
 
           if (!error) { guardado = data; break; }
@@ -1307,6 +1322,7 @@
         invitados.unshift(guardado);
         $("in-nombre").value = "";
         $("in-pases").value = "2";
+        $("in-idioma").value = "es";
         $("in-nombre").focus();
         pintarLista();
         avisar("Invitado agregado");
@@ -1338,6 +1354,7 @@
         enEdicion = inv;
         $("ed-nombre").value = inv.nombre;
         $("ed-pases").value = String(inv.pases);
+        $("ed-idioma").value = inv.idioma || "es";
         mostrarError("editar-error", "");
         ver($("modal-editar"), true);
         $("ed-nombre").focus();
@@ -1349,6 +1366,7 @@
 
         const nombre = $("ed-nombre").value.trim();
         const pases = Number($("ed-pases").value);
+        const idioma = $("ed-idioma").value;
 
         if (!nombre || !Number.isInteger(pases) || pases < 1 || pases > 20) {
           mostrarError("editar-error", "Revisa el nombre y que los pases estén entre 1 y 20.");
@@ -1356,7 +1374,7 @@
         }
 
         const { error } = await supabase
-          .from("invitados").update({ nombre, pases }).eq("id", enEdicion.id);
+          .from("invitados").update({ nombre, pases, idioma }).eq("id", enEdicion.id);
 
         if (error) {
           mostrarError("editar-error", traducirError(error));
@@ -1412,8 +1430,13 @@
 
       // Mensaje listo para pegar en WhatsApp.
       // Los *asteriscos* son la negrita de WhatsApp: se ven en negrita al enviarlo.
-      function mensajeInvitacion(inv) {
-        return [
+      /*
+         El mensaje de WhatsApp también sale en el idioma del invitado: no
+         tiene sentido mandarle la invitación en inglés con un texto de
+         presentación en español.
+      */
+      const MENSAJES = {
+        es: [
           "*Con el corazón lleno de amor*",
           "",
           "Hemos decidido unir nuestras vidas y dar el paso más importante de nuestra historia.",
@@ -1423,10 +1446,31 @@
           "",
           "*Haz clic en el enlace para ver nuestra invitación*",
           "",
-          linkInvitado(inv.codigo),
+          "{link}",
           "",
           "¡Te esperamos para celebrar juntos este hermoso comienzo!",
-        ].join("\n");
+        ],
+        en: [
+          "*With our hearts full of love*",
+          "",
+          "We have decided to join our lives and take the most important step of our story.",
+          "We would love to share this special moment with the people we care about the most.",
+          "",
+          "It would be an honour to have you with us on our big day. 🤍",
+          "",
+          "*Tap the link to see our invitation*",
+          "",
+          "{link}",
+          "",
+          "We look forward to celebrating this beautiful beginning together!",
+        ],
+      };
+
+      function mensajeInvitacion(inv) {
+        const idioma = inv.idioma === "en" ? "en" : "es";
+        return MENSAJES[idioma]
+          .join("\n")
+          .replace("{link}", linkInvitado(inv.codigo, idioma));
       }
 
       // ═══ PINTAR LA LISTA ═══
@@ -1457,7 +1501,9 @@
         const permitido = puedeEditar();
 
         for (const inv of visibles) {
-          const link = linkInvitado(inv.codigo);
+          // El link lleva el idioma del invitado: el cliente copia y manda,
+          // sin tener que acordarse de nada.
+          const link = linkInvitado(inv.codigo, inv.idioma);
           const fila = document.createElement("tr");
 
           const tdNombre = document.createElement("td");

@@ -1,0 +1,14 @@
+---
+// src/pages/en/index.astro
+// La invitación en inglés. Mismo diseño, mismas fotos, mismo código: lo
+// único que cambia son los textos, que salen de src/i18n/en.ts.
+//
+// Se sirve en /en y en /en/codigo, gracias a la reescritura de
+// vercel.json.
+import Layout from "../../layouts/Layout.astro";
+import Invitacion from "../../components/Invitacion.astro";
+---
+
+<Layout title="Marvin & Carla | January 9th, 2027">
+    <Invitacion idioma="en" />
+</Layout>
