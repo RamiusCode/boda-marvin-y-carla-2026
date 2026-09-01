@@ -386,6 +386,22 @@ const deseosEjemplo = [
         display: none;
     }
 
+    /*
+       La manito avisa que se puede arrastrar. Solo en pantallas con mouse:
+       en celular no hay cursor y el dedo ya funciona sin pista visual.
+    */
+    @media (hover: hover) and (pointer: fine) {
+        .carrusel {
+            cursor: grab;
+        }
+
+        .carrusel.arrastrando {
+            cursor: grabbing;
+            /* Sin esto el arrastre va seleccionando el texto de las tarjetas */
+            user-select: none;
+        }
+    }
+
     .carrusel:focus-visible {
         outline: 2px solid var(--terracota);
         outline-offset: -4px;
@@ -1129,6 +1145,67 @@ const deseosEjemplo = [
             (evento) => {
                 carrusel.addEventListener(evento, reanudar, { passive: true });
             },
+        );
+
+        /*
+           ═══ ARRASTRAR CON EL MOUSE ═══
+           En celular el dedo ya funciona solo: overflow-x le da scroll
+           táctil nativo. Con el mouse no: arrastrar no hace nada, y el
+           invitado que quiere leer un deseo del costado se queda trabado.
+
+           Por eso esto corre SOLO para el mouse. Si lo aplicara también al
+           tacto habría que frenar el gesto nativo, y se perdería el
+           deslizamiento con inercia, que se siente mucho mejor.
+        */
+        let arrastrando = false;
+        let inicioX = 0;
+        let inicioScroll = 0;
+        let recorrido = 0;
+
+        carrusel.addEventListener("pointerdown", (e) => {
+            if (e.pointerType !== "mouse") return;
+
+            arrastrando = true;
+            recorrido = 0;
+            inicioX = e.clientX;
+            inicioScroll = carrusel.scrollLeft;
+            carrusel.classList.add("arrastrando");
+            // Sigue recibiendo los eventos aunque el mouse se vaya del carril
+            carrusel.setPointerCapture(e.pointerId);
+        });
+
+        carrusel.addEventListener("pointermove", (e) => {
+            if (!arrastrando) return;
+
+            const avance = e.clientX - inicioX;
+            recorrido = Math.max(recorrido, Math.abs(avance));
+            carrusel.scrollLeft = inicioScroll - avance;
+        });
+
+        function soltar(e: PointerEvent) {
+            if (!arrastrando) return;
+            arrastrando = false;
+            carrusel.classList.remove("arrastrando");
+            carrusel.releasePointerCapture?.(e.pointerId);
+        }
+
+        carrusel.addEventListener("pointerup", soltar);
+        carrusel.addEventListener("pointercancel", soltar);
+
+        /*
+           Si el invitado arrastró de verdad, el "click" que el navegador
+           dispara al soltar se descarta. Sin esto, arrastrar tomando la
+           tarjeta desde el botón terminaría abriendo el muro completo.
+        */
+        carrusel.addEventListener(
+            "click",
+            (e) => {
+                if (recorrido > 5) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            },
+            true,
         );
 
         // Rueda del mouse y trackpad: no hay "soltar", así que se reanuda
