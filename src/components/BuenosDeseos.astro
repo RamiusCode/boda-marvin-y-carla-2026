@@ -1066,7 +1066,7 @@ const deseosEjemplo = [
            frenada: se vería un vaivén, no un desplazamiento parejo.
         */
         const VELOCIDAD = 22; // px por segundo
-        const ESPERA = 2500; // cuánto queda quieto después de tocarlo
+        const ESPERA = 1200; // cuánto queda quieto después de tocarlo
 
         const quietito = window.matchMedia(
             "(prefers-reduced-motion: reduce)",
@@ -1208,23 +1208,32 @@ const deseosEjemplo = [
             true,
         );
 
-        // Rueda del mouse y trackpad: no hay "soltar", así que se reanuda
-        // por inactividad
+        /*
+           Solo la rueda HORIZONTAL frena el carrusel. La vertical es el
+           invitado bajando por la invitación: antes, con solo pasar el
+           mouse por encima mientras scrolleaba, el carril se quedaba
+           clavado.
+        */
         carrusel.addEventListener(
             "wheel",
-            () => {
+            (e) => {
+                if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
                 pausar();
                 reanudar();
             },
             { passive: true },
         );
 
-        // Con el teclado o el mouse encima tampoco se mueve solo: molesta
-        // para leer
+        /*
+           Con el teclado sí se frena: quien lo recorre con Tab necesita
+           que el foco no se le escape.
+
+           Con el mouse encima NO. Antes se frenaba, y bastaba con que el
+           cursor quedara quieto sobre esa zona —cosa que pasa siempre al
+           leer— para que el carrusel no arrancara más.
+        */
         carrusel.addEventListener("focusin", pausar);
         carrusel.addEventListener("focusout", reanudar);
-        carrusel.addEventListener("mouseenter", pausar);
-        carrusel.addEventListener("mouseleave", reanudar);
 
         // Fuera de pantalla no tiene sentido gastar cuadros
         const vigia = new IntersectionObserver(
