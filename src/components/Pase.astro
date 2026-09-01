@@ -2,37 +2,46 @@
 // src/components/Pase.astro
 // Tarjeta con los pases reservados para el invitado y, debajo, el pedido de
 // confirmación con el botón a WhatsApp.
-// ── DATOS EDITABLES ───────────────────────────────────────────
-const reservado = "Hemos reservado";
-const honor = "en tu honor";
-
-const tituloConfirmar = "Confirmación de Asistencia";
-const aviso = [
-    "Tu presencia es muy importante, no",
-    "olvides confirmar tu asistencia.",
-];
-const textoBoton = "Confirmar Asistencia";
-const yaConfirmado = "¡Gracias! Ya confirmaste tu asistencia.";
-
-// WhatsApp de los novios (código de país + número, sin + ni espacios).
-const whatsapp = "59163001482";
-const mensaje =
-    "Confirmo la asistencia a la boda de Marvin y Carla. Nos vemos el sábado 9 de enero. ¡Será un placer acompañarlos!";
-const enlace = `https://wa.me/${whatsapp}?text=${encodeURIComponent(mensaje)}`;
-// ──────────────────────────────────────────────────────────────
+// Los textos viven en src/i18n; acá solo se elige el idioma.
+import { textos, type Idioma } from "../i18n";
 
 // El nombre y la cantidad de pases llegan por prop desde las invitaciones
 // personalizadas; acá quedan los valores de muestra.
 export interface Props {
+    idioma?: Idioma;
     invitado?: string;
     pases?: number;
 }
-const { invitado = "Adriana Candia", pases = 2 } = Astro.props;
+const { idioma = "es", invitado = "Adriana Candia", pases = 2 } = Astro.props;
 
-const palabraPases = pases === 1 ? "pase" : "pases";
+const t = textos(idioma).pase;
+const {
+    reservado,
+    honor,
+    tituloConfirmar,
+    aviso,
+    textoBoton,
+    yaConfirmado,
+    modalTitulo,
+    modalTexto,
+    modalCancelar,
+    modalAceptar,
+} = t;
+
+// WhatsApp de los novios (código de país + número, sin + ni espacios).
+const whatsapp = "59163001482";
+const enlace = `https://wa.me/${whatsapp}?text=${encodeURIComponent(t.mensajeWhatsapp)}`;
+
+const palabraPases = pases === 1 ? t.pase : t.pases;
 ---
 
-<section id="pase" class="relative w-full overflow-hidden px-7 py-14">
+<section
+    id="pase"
+    class="relative w-full overflow-hidden px-7 py-14"
+    data-confirmando={t.confirmando}
+    data-aceptar={modalAceptar}
+    data-error={t.errorConfirmar}
+>
     <div id="bloque-pase" class="relative flex flex-col items-center text-center">
         <!-- Tarjeta terracota con los pases -->
         <div class="tarjeta-pase">
@@ -114,10 +123,10 @@ const palabraPases = pases === 1 ? "pase" : "pases";
             id="titulo-modal-asistencia"
             class="font-great-vibes modal-pase-titulo"
         >
-            ¿Confirmás tu asistencia?
+            {modalTitulo}
         </h3>
 
-        <p class="font-cormorant modal-pase-texto">Vas a confirmar como</p>
+        <p class="font-cormorant modal-pase-texto">{modalTexto}</p>
 
         <p class="font-verandah nombre-invitado modal-pase-nombre">
             {invitado}
@@ -134,14 +143,14 @@ const palabraPases = pases === 1 ? "pase" : "pases";
                 class="font-cormorant boton-cancelar"
                 data-cerrar-asistencia
             >
-                Cancelar
+                {modalCancelar}
             </button>
             <button
                 id="btn-confirmar-si"
                 type="button"
                 class="font-cormorant boton-confirmar"
             >
-                Sí, confirmo
+                {modalAceptar}
             </button>
         </div>
     </div>
@@ -421,6 +430,18 @@ const palabraPases = pases === 1 ? "pase" : "pases";
         }
 
         // ═══ EL PASO INTERMEDIO ═══
+        /*
+           Los textos que se escriben en caliente vienen en los data- de la
+           sección: acá adentro no se puede importar el diccionario, así que
+           el idioma viaja por el HTML.
+        */
+        const seccion = document.getElementById("pase");
+        const dicc = {
+            confirmando: seccion?.dataset.confirmando ?? "Confirmando…",
+            aceptar: seccion?.dataset.aceptar ?? "Sí, confirmo",
+            error: seccion?.dataset.error ?? "No pudimos guardarlo.",
+        };
+
         const modal = document.getElementById("modal-asistencia");
         const btnSi = document.getElementById(
             "btn-confirmar-si",
@@ -455,7 +476,7 @@ const palabraPases = pases === 1 ? "pase" : "pases";
             if (!invitado?.codigo) return;
 
             btnSi.disabled = true;
-            btnSi.textContent = "Confirmando…";
+            btnSi.textContent = dicc.confirmando;
             btnConfirmar.disabled = true;
             try {
                 const { supabase, configurado } = await import(
@@ -480,12 +501,11 @@ const palabraPases = pases === 1 ? "pase" : "pases";
                 */
                 cerrarModal();
                 btnSi.disabled = false;
-                btnSi.textContent = "Sí, confirmo";
+                btnSi.textContent = dicc.aceptar;
                 btnConfirmar.disabled = false;
                 btnConfirmar.textContent = textoOriginal;
                 if (textoConfirmado) {
-                    textoConfirmado.textContent =
-                        "No pudimos guardarlo. Probá de nuevo en un rato.";
+                    textoConfirmado.textContent = dicc.error;
                     yaConfirmado.hidden = false;
                     window.setTimeout(() => {
                         yaConfirmado.hidden = true;

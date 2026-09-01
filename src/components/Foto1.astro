@@ -9,15 +9,19 @@
 // tocar el CSS. Al entrar arranca ampliada y vuelve a su tamaño: el zoom
 // queda contenido por el overflow de la ventana.
 
-// ── DATOS EDITABLES ───────────────────────────────────────────
+// Los textos viven en src/i18n; acá solo se elige el idioma.
+import { textos, type Idioma } from "../i18n";
+
+export interface Props {
+    idioma?: Idioma;
+}
+const { idioma = "es" } = Astro.props;
+
 const foto = "/imagenes/foto3.jpeg";
 // La imagen trae texto adentro, así que el alt lo repite para quien no la ve
-const alt =
-    "Estos niños se casan: bienvenidos a la boda de Marvin y Carla";
-// Sin epígrafe: la imagen ya dice todo. Poné una frase acá si querés que
-// aparezca debajo del marco.
+const alt = textos(idioma).foto.alt;
+// Sin epígrafe: la imagen ya dice todo.
 const frase = "";
-// ──────────────────────────────────────────────────────────────
 ---
 
 <!-- ═══════════════════════════════════════════════════════════ -->

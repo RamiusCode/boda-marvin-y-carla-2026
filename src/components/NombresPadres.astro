@@ -5,26 +5,28 @@
 // El papel de acuarela ya no vive acá: lo pone el <main> del Layout, fijo
 // y continuo para toda la invitación. La sección va transparente.
 
-// ── DATOS EDITABLES ───────────────────────────────────────────
-const bendicion = ["Con la bendición de Dios", "y de nuestros padres"];
+// Los textos viven en src/i18n; acá solo se elige el idioma.
+import { textos, type Idioma } from "../i18n";
 
+export interface Props {
+    idioma?: Idioma;
+}
+const { idioma = "es" } = Astro.props;
+
+const t = textos(idioma).padres;
+const { bendicion, cierre } = t;
+
+// Los nombres no se traducen; el rótulo sí.
 const padres = [
     {
-        titulo: "Padres de la novia",
+        titulo: t.padresNovia,
         nombres: ["Edwin Salinas (+)", "Sandra Zegarra"],
     },
     {
-        titulo: "Padres del novio",
+        titulo: t.padresNovio,
         nombres: ["Raúl Llanos", "Lilian de Llanos"],
     },
 ];
-
-const cierre = [
-    "Nos complace invitarles a",
-    "compartir con nosotros",
-    "este día tan especial.",
-];
-// ──────────────────────────────────────────────────────────────
 ---
 
 <!-- ═══════════════════════════════════════════════════════════ -->

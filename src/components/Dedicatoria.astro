@@ -9,55 +9,33 @@
 // el de la carta dentro del modal (fondo2.png), porque ahí la hoja flota
 // sobre el velo oscuro y sin él el texto quedaría ilegible.
 
-// ── DATOS EDITABLES ───────────────────────────────────────────
-const saludo = "Hola";
+// Los textos viven en src/i18n; acá solo se elige el idioma.
+import { textos, type Idioma } from "../i18n";
+
+export interface Props {
+    idioma?: Idioma;
+}
+const { idioma = "es" } = Astro.props;
+
+const t = textos(idioma).dedicatoria;
+const { saludo, gancho, ganchoDestacado, textoBoton, altRetrato, cierre } = t;
+
+// Nombres propios: iguales en los dos idiomas.
 const perrita = "Lili";
 const novio = "Marvin";
 
-// Lo que se ve en la página, antes de abrir la carta
-const gancho = "Soy Lili, la perrita consentida de mi mamá humana,";
-const ganchoDestacado = "y tengo algo lindo que contarte.";
-const textoBoton = "Ábreme mi carta";
-
-// La carta completa, dentro del modal
+// La carta completa, dentro del modal. El destacado del tercer bloque es
+// el nombre del novio, así que se arma acá y no en el diccionario.
 const bloques = [
-    {
-        texto: "Soy Lili, la perrita consentida de mi mamá humana, y hoy quiero darte la ",
-        destacado: "bienvenida a un día muy especial.",
-    },
-    {
-        texto:
-            "Hace mucho tiempo, mamá humana y yo éramos solo dos. " +
-            "Compartíamos nuestras rutinas, nuestras tardes, " +
-            "nuestros juegos y un amor inmenso que nos hacía felices.",
-    },
-    {
-        texto: "Pero en un momento determinado, apareció alguien muy especial en nuestras vidas: ",
-        destacado: "Marvin.",
-    },
+    { texto: t.bloque1, destacado: t.bloque1Destacado },
+    { texto: t.bloque2 },
+    { texto: t.bloque3, destacado: novio + "." },
 ];
 
 const razones = [
-    {
-        n: "1",
-        texto:
-            "Aceptar a mi mamá humana tal como es, con su carácter fuerte, " +
-            "sus días buenos y los no tan buenos. La ayudó a ser más tranquila, " +
-            "más feliz y a creer que el amor verdadero sí existe.",
-    },
-    {
-        n: "2",
-        texto:
-            "Quererme a mí, y eso es lo más importante para mí, mamá humana. " +
-            "Con su amor y paciencia, me hizo sentir parte de su vida, " +
-            "de su corazón y de su familia.",
-    },
+    { n: "1", texto: t.razon1 },
+    { n: "2", texto: t.razon2 },
 ];
-
-const cierre =
-    "Te invitamos a celebrar con nosotros el inicio de esta nueva etapa, " +
-    "donde el amor nos une y la felicidad nos acompaña.";
-// ──────────────────────────────────────────────────────────────
 ---
 
 <!-- ═══════════════════════════════════════════════════════════ -->
@@ -115,7 +93,7 @@ const cierre =
                 <img
                     id="retrato-lili"
                     src="/imagenes/perrito2.png"
-                    alt="Lili, la perrita de los novios, rodeada de flores"
+                    alt={altRetrato}
                     class="retrato"
                 />
 
@@ -234,12 +212,12 @@ const cierre =
                     }
 
                     <p class="parrafo parrafo-corto">
-                        Y todo cambió para mejor.
+                        {t.cambio}
                         <span class="corazon">&#9829;</span>
                     </p>
 
                     <h3 class="subtitulo font-great-vibes">
-                        {novio} hizo dos cosas muy importantes:
+                        {novio} {t.subtitulo}
                     </h3>
 
                     <div class="tarjetas">
@@ -253,27 +231,23 @@ const cierre =
                         }
                     </div>
 
-                    <p class="parrafo">
-                        Hoy, mamá humana y yo queremos decirte que ya no estamos
-                        solas.
-                    </p>
+                    <p class="parrafo">{t.hoy}</p>
 
                     <p class="destacado destacado-bloque font-great-vibes">
-                        Ahora somos tres, y nuestro hogar está lleno de amor,
-                        respeto, risas y muchos paseos juntos.
+                        {t.somosTres}
                     </p>
 
                     <p class="parrafo">{cierre}</p>
 
                     <p class="firma">
-                        Con amor, <span class="firma-nombre font-great-vibes"
+                        {t.firma} <span class="firma-nombre font-great-vibes"
                             >{perrita}</span
                         >
                         <span class="patita">&#128062;</span>
                     </p>
 
                     <p class="nota font-great-vibes">
-                        Siempre juntos,<br />por siempre familia.
+                        {t.nota[0]}<br />{t.nota[1]}
                     </p>
                 </div>
             </div>

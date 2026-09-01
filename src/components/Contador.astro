@@ -7,17 +7,25 @@
 // Va dentro del panel del mapa, en Fecha.astro: por eso está en terracota
 // sobre claro y no en crema sobre foto.
 
-// ── DATOS EDITABLES ───────────────────────────────────────────
-const titulo = "Falta poco";
+// Los textos viven en src/i18n; acá solo se elige el idioma.
+import { textos, type Idioma } from "../i18n";
+
+export interface Props {
+    idioma?: Idioma;
+}
+const { idioma = "es" } = Astro.props;
+
+const t = textos(idioma).contador;
+const titulo = t.titulo;
+
 // Fecha y hora de la boda
 const fechaBoda = "2027-01-09T14:00:00";
-// ──────────────────────────────────────────────────────────────
 
 const casillas = [
-    { id: "dias", rotulo: "Días", icono: "calendario" },
-    { id: "horas", rotulo: "Hs.", icono: "reloj" },
-    { id: "minutos", rotulo: "Min.", icono: "reloj-arena" },
-    { id: "segundos", rotulo: "Seg.", icono: "corazon" },
+    { id: "dias", rotulo: t.dias, icono: "calendario" },
+    { id: "horas", rotulo: t.horas, icono: "reloj" },
+    { id: "minutos", rotulo: t.minutos, icono: "reloj-arena" },
+    { id: "segundos", rotulo: t.segundos, icono: "corazon" },
 ];
 ---
 

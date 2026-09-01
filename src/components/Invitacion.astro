@@ -41,7 +41,7 @@ const t = textos(idioma);
 ---
 
 <!-- PORTADA (cubre todo hasta que se toca el botón de ingreso) -->
-<Portada />
+<Portada idioma={idioma} />
 
 <!-- CONTENIDO DE LA INVITACIÓN -->
 <div
@@ -50,34 +50,34 @@ const t = textos(idioma);
     data-pases={t.pase.pases}
 >
     <NombresFlores />
-    <Dedicatoria />
-    <Foto1 />
-    <Dedicatoria2 />
-    <Versiculo />
-      <Fecha />
-    <Mensaje />
-    <NombresPadres />
+    <Dedicatoria idioma={idioma} />
+    <Foto1 idioma={idioma} />
+    <Dedicatoria2 idioma={idioma} />
+    <Versiculo idioma={idioma} />
+      <Fecha idioma={idioma} />
+    <Mensaje idioma={idioma} />
+    <NombresPadres idioma={idioma} />
 
-    <NombresPadrinos />
-    <Dedicatoria3 />
+    <NombresPadrinos idioma={idioma} />
+    <Dedicatoria3 idioma={idioma} />
 
-    <CeremoniaReligiosa />
-    <RecepcionSocial />
-      <CodigoVestimenta />
-        <Cronograma />
+    <CeremoniaReligiosa idioma={idioma} />
+    <RecepcionSocial idioma={idioma} />
+      <CodigoVestimenta idioma={idioma} />
+        <Cronograma idioma={idioma} />
     <Puntualidad idioma={idioma} />
-     <SugerenciaRegalo />
-    <Pase />
+     <SugerenciaRegalo idioma={idioma} />
+    <Pase idioma={idioma} />
    
     <!-- <Restriccion /> -->
   
   
-    <BuenosDeseos />
+    <BuenosDeseos idioma={idioma} />
     <NuestraHistoria idioma={idioma} />
 
     <!-- <Historia /> -->
     <!-- <Confirmar /> -->
-    <Despedida />
+    <Despedida idioma={idioma} />
 </div>
 
 <!-- Control de música flotante -->

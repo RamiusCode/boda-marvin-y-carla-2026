@@ -2,18 +2,19 @@
 // src/components/SugerenciaRegalo.astro
 // Sugerencia de regalo: el QR para transferencia y, debajo, la nota de que
 // la invitación es solo para adultos.
+// Los textos viven en src/i18n; acá solo se elige el idioma.
+import { textos, type Idioma } from "../i18n";
+
+export interface Props {
+    idioma?: Idioma;
+}
+const { idioma = "es" } = Astro.props;
+
+const t = textos(idioma).regalo;
+const { titulo, texto, rotuloQr, altQr, altFoto } = t;
+
 // ── DATOS EDITABLES ───────────────────────────────────────────
-const titulo = "Sugerencia de Regalo";
-
-const texto = [
-    "Tu presencia es el mejor regalo para compartir",
-    "este momento único. Ya tenemos nuestra casita",
-    "completa, nuestro ferrari y el yate, ¡solo nos",
-    "falta pagarlo! Como sugerencia de regalo te",
-    "dejamos el siguiente QR.",
-];
-
-const rotuloQr = "TRANSFERENCIA QR";
+// El número de cuenta y el titular no se traducen.
 // Imagen del QR: dejala en public/imagenes/. Si se deja vacío, la caja
 // aparece igual pero con el recuadro punteado en lugar del código.
 const qr = "/imagenes/qr.png";
@@ -82,7 +83,7 @@ const foto = "/imagenes/perrtio3.png";
         <!-- El PNG ya trae su marco de papel rasgado y sus flores -->
         <img
             src={foto}
-            alt="Lu, la perrita de los novios, en un yate al atardecer"
+            alt={altFoto}
             width="799"
             height="579"
             class="foto-regalo"
@@ -97,7 +98,7 @@ const foto = "/imagenes/perrtio3.png";
                 qr ? (
                     <img
                         src={qr}
-                        alt="Código QR para transferencia"
+                        alt={altQr}
                         class="imagen-qr"
                     />
                 ) : (

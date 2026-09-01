@@ -3,37 +3,42 @@
 // Cronograma sobre el papel de acuarela: título, y debajo la línea de
 // tiempo en una sola columna — el icono a la izquierda, el punto sobre el
 // eje y la hora con su momento a la derecha.
-// ── DATOS EDITABLES ───────────────────────────────────────────
-const titulo = "Cronograma";
+// Los textos viven en src/i18n; acá solo se elige el idioma.
+import { textos, type Idioma } from "../i18n";
 
-// Los iconos salen de /public/imagenes. recepción.png lleva tilde en el
-// nombre: va escapado para que la URL no dependa de cómo lo codifique cada
-// servidor.
-const momentos = [
-    { hora: "14:00", nombre: ["Ceremonia Religiosa"], icono: "anillos.png" },
-    {
-        hora: "16:30",
-        nombre: ["Ceremonia Civil en", "el Salón"],
-        icono: "ceremoniacivil.png",
-    },
-    { hora: "17:00", nombre: ["Brindis"], icono: "brindis.png" },
-    { hora: "17:30", nombre: ["Vals de Novios"], icono: "vals.png" },
-    {
-        hora: "18:00",
-        nombre: ["Recepción Social"],
-        icono: "recepci%C3%B3n.png",
-    },
-    { hora: "19:00", nombre: ["Cena"], icono: "cena.png" },
-    {
-        hora: "21:00",
-        // Cortado en tres y no en dos: este era el renglón más largo y era
-        // el que estiraba el ancho de toda la línea de tiempo.
-        nombre: ["Corte de Torta", "y Lanzamiento", "de Bouquet"],
-        icono: "torta.png",
-    },
-    { hora: "00:00", nombre: ["Despedida"], icono: "despedida.png" },
+export interface Props {
+    idioma?: Idioma;
+}
+const { idioma = "es" } = Astro.props;
+
+const t = textos(idioma).cronograma;
+const titulo = t.titulo;
+
+/*
+   Las horas y los iconos no dependen del idioma; solo el nombre de cada
+   momento. Por eso van emparejados por posicion con t.momentos.
+
+   recepción.png lleva tilde en el nombre: va escapado para que la URL no
+   dependa de como lo codifique cada servidor.
+*/
+const HORAS = ["14:00", "16:30", "17:00", "17:30", "18:00", "19:00", "21:00", "00:00"];
+const HORAS_EN = ["2:00 PM", "4:30 PM", "5:00 PM", "5:30 PM", "6:00 PM", "7:00 PM", "9:00 PM", "12:00 AM"];
+const ICONOS = [
+    "anillos.png",
+    "ceremoniacivil.png",
+    "brindis.png",
+    "vals.png",
+    "recepci%C3%B3n.png",
+    "cena.png",
+    "torta.png",
+    "despedida.png",
 ];
-// ──────────────────────────────────────────────────────────────
+
+const momentos = t.momentos.map((nombre, i) => ({
+    hora: (idioma === "en" ? HORAS_EN : HORAS)[i],
+    nombre,
+    icono: ICONOS[i],
+}));
 ---
 
 <!-- ═══════════════════════════════════════════════════════════ -->

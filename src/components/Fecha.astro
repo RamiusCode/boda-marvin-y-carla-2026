@@ -9,46 +9,41 @@
 // queda justo en el hueco que le deja .zona-mapa.
 import Contador from "./Contador.astro";
 
+// Los textos viven en src/i18n; acá solo se elige el idioma.
+import { textos, type Idioma } from "../i18n";
+
+export interface Props {
+    idioma?: Idioma;
+}
+const { idioma = "es" } = Astro.props;
+
+const t = textos(idioma).fecha;
+
 // ── DATOS EDITABLES ───────────────────────────────────────────
-const anuncio = "¡Nos Casamos!";
 const inicialNovio = "M";
 const inicialNovia = "C";
 const anio = 2027;
 const mes = 1; // 1 = enero
 const dia = 9;
-const hora = "14:00 hrs";
 // ──────────────────────────────────────────────────────────────
 
-const DIAS_SEMANA = ["D", "L", "M", "M", "J", "V", "S"];
-const NOMBRES_DIA = [
-    "Domingo",
-    "Lunes",
-    "Martes",
-    "Miércoles",
-    "Jueves",
-    "Viernes",
-    "Sábado",
-];
-const NOMBRES_MES = [
-    "Enero",
-    "Febrero",
-    "Marzo",
-    "Abril",
-    "Mayo",
-    "Junio",
-    "Julio",
-    "Agosto",
-    "Septiembre",
-    "Octubre",
-    "Noviembre",
-    "Diciembre",
-];
+const anuncio = t.anuncio;
+const hora = t.hora;
+
+const DIAS_SEMANA = t.diasSemana;
+const NOMBRES_DIA = t.nombresDia;
+const NOMBRES_MES = t.nombresMes;
 
 // El almanaque se arma solo con la fecha de arriba: cambiando día, mes y año
 // se reacomodan la grilla y la marca del día.
 const fechaBoda = new Date(anio, mes - 1, dia);
 const diaSemana = NOMBRES_DIA[fechaBoda.getDay()];
 const nombreMes = NOMBRES_MES[mes - 1];
+
+const fechaLarga = t.formatoFecha
+    .replace("{dia}", diaSemana)
+    .replace("{numero}", String(dia))
+    .replace("{mes}", nombreMes);
 
 const arranque = new Date(anio, mes - 1, 1).getDay(); // huecos antes del 1
 const diasDelMes = new Date(anio, mes, 0).getDate();
@@ -135,9 +130,7 @@ const semanas = Array.from({ length: celdas.length / 7 }, (_, i) =>
                     <i class="rombo"></i>
                 </span>
 
-                <p class="fecha-larga font-great-vibes">
-                    {diaSemana} {dia} de {nombreMes}
-                </p>
+                <p class="fecha-larga font-great-vibes">{fechaLarga}</p>
 
                 <p class="hora">
                     <!-- El reloj se pinta con máscara, no con filtros -->
@@ -172,7 +165,7 @@ const semanas = Array.from({ length: celdas.length / 7 }, (_, i) =>
                     }
                 </div>
 
-                <Contador />
+                <Contador idioma={idioma} />
             </div>
         </div>
     </div>

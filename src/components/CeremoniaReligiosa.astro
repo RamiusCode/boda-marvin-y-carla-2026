@@ -6,18 +6,20 @@
 // Al ir sobre fondo claro todo va en terracota, al revés que la recepción,
 // que es un bloque de color con el texto en crema. Por lo mismo esta
 // sección no lleva los corazones flotantes: son crema y no se verían.
-// ── DATOS EDITABLES ───────────────────────────────────────────
-const titulo = "Ceremonia Religiosa";
-const hora = "14:00";
-const rotulo = "Parroquia";
+// Los textos viven en src/i18n; acá solo se elige el idioma.
+import { textos, type Idioma } from "../i18n";
+
+export interface Props {
+    idioma?: Idioma;
+}
+const { idioma = "es" } = Astro.props;
+
+const { titulo, rotulo, direccion, textoBoton } = textos(idioma).ceremonia;
+
+// La hora, el nombre del templo y el mapa no se traducen
+const hora = idioma === "en" ? "2:00 PM" : "14:00";
 const templo = ["NUESTRA SEÑORA", "DE POMPEYA"];
-const direccion = [
-    "Calle Jamaica esquina calle Cuba",
-    "( Zona Miraflores )",
-];
 const mapa = "https://maps.app.goo.gl/hptrPVszhB98Gjc67";
-const textoBoton = "Ver mapa";
-// ──────────────────────────────────────────────────────────────
 ---
 
 <section id="ceremonia-religiosa" class="relative w-full overflow-hidden">

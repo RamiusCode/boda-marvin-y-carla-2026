@@ -24,9 +24,18 @@
 // abajo en vez de un hueco o un error.
 // ─────────────────────────────────────────────────────────────
 
+// Los textos viven en src/i18n; acá solo se elige el idioma.
+import { textos, type Idioma } from "../i18n";
+
+export interface Props {
+    idioma?: Idioma;
+}
+const { idioma = "es" } = Astro.props;
+
+const t = textos(idioma).deseos;
+const { titulo, textoBoton } = t;
+
 // ── DATOS EDITABLES ───────────────────────────────────────────
-const titulo = "Buenos Deseos";
-const textoBoton = "ESCRIBE UN DESEO";
 
 // Cuántos se ven en el carrusel. El botón "Ver todos" aparece recién
 // cuando hay más que esto.
@@ -76,6 +85,15 @@ const deseosEjemplo = [
     class="relative w-full overflow-hidden py-16"
     data-visibles={String(VISIBLES)}
     data-texto-boton={textoBoton}
+    data-texto-boton-editar={t.textoBotonEditar}
+    data-ver-todos={t.verTodos}
+    data-ver-mas={t.verMas}
+    data-de={t.de}
+    data-gracias={t.gracias}
+    data-actualizado={t.actualizado}
+    data-error-nombre={t.errorNombre}
+    data-error-mensaje={t.errorMensaje}
+    data-error-envio={t.errorEnvio}
     data-ejemplos={JSON.stringify(deseosEjemplo)}
 >
     <!--
@@ -120,7 +138,7 @@ const deseosEjemplo = [
             class="carrusel"
             tabindex="0"
             role="list"
-            aria-label="Buenos deseos de los invitados"
+            aria-label={titulo}
         >
         </div>
 
@@ -223,11 +241,11 @@ const deseosEjemplo = [
 
         <form id="form-deseo" class="modal-hoja" novalidate>
             <h3 id="titulo-modal-deseo" class="modal-titulo font-great-vibes">
-                Dejanos tu deseo
+                {t.modalTitulo}
             </h3>
 
             <label class="campo">
-                <span class="etiqueta font-cormorant">Tu nombre</span>
+                <span class="etiqueta font-cormorant">{t.campoNombre}</span>
                 <input
                     id="deseo-nombre"
                     name="nombre"
@@ -240,7 +258,7 @@ const deseosEjemplo = [
             </label>
 
             <label class="campo">
-                <span class="etiqueta font-cormorant">Tu mensaje</span>
+                <span class="etiqueta font-cormorant">{t.campoMensaje}</span>
                 <textarea
                     id="deseo-mensaje"
                     name="mensaje"
@@ -274,7 +292,7 @@ const deseosEjemplo = [
                 type="submit"
                 class="boton-deseo boton-enviar"
             >
-                <span class="boton-texto font-cormorant">Enviar mi deseo</span>
+                <span class="boton-texto font-cormorant">{t.enviar}</span>
             </button>
         </form>
     </div>
@@ -823,6 +841,25 @@ const deseosEjemplo = [
     type Deseo = { nombre: string; mensaje: string };
 
     document.addEventListener("DOMContentLoaded", () => {
+        /*
+           Los textos que se escriben desde el script vienen en los data- de
+           la sección: acá adentro no se puede importar el diccionario, así
+           que el idioma viaja por el HTML.
+        */
+        const d = document.getElementById("buenos-deseos")?.dataset ?? {};
+        const dicc = {
+            botonEditar: d.textoBotonEditar ?? "EDITAR MI DESEO",
+            botonEscribir: d.textoBoton ?? "ESCRIBE UN DESEO",
+            verTodos: d.verTodos ?? "Ver todos los deseos",
+            verMas: d.verMas ?? "Ver más",
+            de: d.de ?? "De:",
+            gracias: d.gracias ?? "¡Gracias!",
+            actualizado: d.actualizado ?? "Listo.",
+            errorNombre: d.errorNombre ?? "Falta tu nombre.",
+            errorMensaje: d.errorMensaje ?? "El mensaje quedó muy cortito.",
+            errorEnvio: d.errorEnvio ?? "No pudimos enviarlo.",
+        };
+
         const seccion = document.getElementById("buenos-deseos");
         const carrusel = document.getElementById("carrusel-deseos");
         const puntos = document.getElementById("puntos-deseos");
@@ -915,7 +952,7 @@ const deseosEjemplo = [
 
             const de = document.createElement("p");
             de.className = "de font-cormorant";
-            de.textContent = "De:";
+            de.textContent = dicc.de;
 
             const nombre = document.createElement("p");
             nombre.className = "nombre font-cormorant";
@@ -928,7 +965,7 @@ const deseosEjemplo = [
             const verMas = document.createElement("button");
             verMas.type = "button";
             verMas.className = "ver-mas font-cormorant";
-            verMas.textContent = "♥ Ver más ♥";
+            verMas.textContent = "♥ " + dicc.verMas + " ♥";
             // Abre el muro completo parado en este deseo, en vez de
             // expandir la tarjeta y empujar todo lo de abajo.
             verMas.addEventListener("click", () => abrirMuro(indice));
@@ -1009,8 +1046,8 @@ const deseosEjemplo = [
             const texto = abrir.querySelector(".boton-texto");
             if (texto) {
                 texto.textContent = propio
-                    ? "EDITAR MI DESEO"
-                    : seccion.dataset.textoBoton ?? "ESCRIBE UN DESEO";
+                    ? dicc.botonEditar
+                    : dicc.botonEscribir;
             }
         }
 
@@ -1049,7 +1086,7 @@ const deseosEjemplo = [
             const sobran = deseos.length > VISIBLES;
             verTodos.hidden = !sobran;
             if (sobran) {
-                verTodos.textContent = `Ver todos los deseos (${deseos.length})`;
+                verTodos.textContent = `${dicc.verTodos} (${deseos.length})`;
             }
         }
 
@@ -1458,11 +1495,11 @@ const deseosEjemplo = [
             const mensaje = campoMensaje?.value.trim() ?? "";
 
             if (nombre.length < 2) {
-                mostrarError("Escribinos tu nombre, así sabemos de quién es.");
+                mostrarError(dicc.errorNombre);
                 return;
             }
             if (mensaje.length < 5) {
-                mostrarError("El mensaje quedó muy cortito.");
+                mostrarError(dicc.errorMensaje);
                 return;
             }
             if (enviar) enviar.disabled = true;
@@ -1473,7 +1510,7 @@ const deseosEjemplo = [
             if (enviar) enviar.disabled = false;
 
             if (!guardado) {
-                mostrarError("No pudimos enviarlo. Probá de nuevo en un rato.");
+                mostrarError(dicc.errorEnvio);
                 return;
             }
 
@@ -1494,9 +1531,7 @@ const deseosEjemplo = [
             if (contador) contador.textContent = "0 / 400";
             cerrarFormulario();
 
-            aviso.textContent = eraEdicion
-                ? "Listo, actualizamos tu deseo."
-                : "¡Gracias! Tu deseo ya está en el muro.";
+            aviso.textContent = eraEdicion ? dicc.actualizado : dicc.gracias;
             aviso.hidden = false;
         });
 

@@ -10,10 +10,15 @@ import CorazonesFlotantes from "./CorazonesFlotantes.astro";
 // La única diferencia con Versiculo son los márgenes: aquel entra con
 // -mt-28 y -mb-14rem porque va encajado entre dos fotos y se monta sobre
 // ellas. Este va entre dos hojas de papel, así que lleva márgenes normales.
-// ── DATOS EDITABLES ───────────────────────────────────────────
-const versiculo = "El amor no pasará jamás.";
-const cita = "1 Corintios 13:8";
-// ──────────────────────────────────────────────────────────────
+// Los textos viven en src/i18n; acá solo se elige el idioma.
+import { textos, type Idioma } from "../i18n";
+
+export interface Props {
+    idioma?: Idioma;
+}
+const { idioma = "es" } = Astro.props;
+
+const { texto: versiculo, cita } = textos(idioma).versiculo2;
 ---
 
 <!-- Sin overflow-hidden: los dos rectángulos se salen por los costados a

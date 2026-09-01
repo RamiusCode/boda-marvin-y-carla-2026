@@ -10,21 +10,16 @@
 // fotomano.png (1038x711) ya viene con su marco de papel rasgado y sus
 // flores dentro del PNG, así que va tal cual: no lleva marco de CSS.
 
-// ── DATOS EDITABLES ───────────────────────────────────────────
-const titulo = "¡Nos casamos!";
+// Los textos viven en src/i18n; acá solo se elige el idioma.
+import { textos, type Idioma } from "../i18n";
 
-const bendicion = [
-    "Con la bendición de Dios, de nuestros padres",
-    "y en compañía de nuestros padrinos",
-];
+export interface Props {
+    idioma?: Idioma;
+}
+const { idioma = "es" } = Astro.props;
 
-const invitacion =
-    "Tenemos el honor de invitarte a celebrar " +
-    "el inicio de nuestra nueva etapa, " +
-    "donde el amor nos une y la felicidad nos acompaña.";
-
-const cierre = "¡Te esperamos!";
-// ──────────────────────────────────────────────────────────────
+const { titulo, bendicion, invitacion, cierre, altFoto } =
+    textos(idioma).nosCasamos;
 ---
 
 <!-- ═══════════════════════════════════════════════════════════ -->

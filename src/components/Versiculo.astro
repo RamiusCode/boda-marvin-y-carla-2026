@@ -5,11 +5,15 @@ import CorazonesFlotantes from "./CorazonesFlotantes.astro";
 // Versículo sobre dos rectángulos terracota: uno atrás, derecho y a sangre
 // por los dos costados, y encima la tarjeta ladeada con el texto. Los filos
 // del de atrás asoman arriba y abajo, que es lo que da el aire suelto.
-// ── DATOS EDITABLES ───────────────────────────────────────────
-const versiculo =
-    "Así que no son ya más dos, sino una sola carne; por tanto, lo que Dios ha unido, no lo separe el hombre.";
-const cita = "Mateo 19:6";
-// ──────────────────────────────────────────────────────────────
+// Los textos viven en src/i18n; acá solo se elige el idioma.
+import { textos, type Idioma } from "../i18n";
+
+export interface Props {
+    idioma?: Idioma;
+}
+const { idioma = "es" } = Astro.props;
+
+const { texto: versiculo, cita } = textos(idioma).versiculo;
 ---
 
 <!-- Sin overflow-hidden: los dos rectángulos se salen por los costados a

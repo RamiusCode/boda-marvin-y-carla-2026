@@ -2,21 +2,21 @@
 // src/components/CodigoVestimenta.astro
 // Código de vestimenta sobre el fondo de acuarela: el dibujo del traje y el
 // vestido, la etiqueta, las dos columnas y la nota del color blanco.
-// ── DATOS EDITABLES ───────────────────────────────────────────
-const titulo = "Código de Vestimenta";
-const etiqueta = "FORMAL";
+// Los textos viven en src/i18n; acá solo se elige el idioma.
+import { textos, type Idioma } from "../i18n";
+
+export interface Props {
+    idioma?: Idioma;
+}
+const { idioma = "es" } = Astro.props;
+
+const t = textos(idioma).vestimenta;
+const { titulo, etiqueta, nota } = t;
 
 const columnas = [
-    { rotulo: "Damas", detalle: "Vestido largo" },
-    { rotulo: "Caballeros", detalle: "Traje elegante" },
+    { rotulo: t.damas, detalle: t.damasDetalle },
+    { rotulo: t.caballeros, detalle: t.caballerosDetalle },
 ];
-
-const nota = [
-    "Por cariño a la novia el vestido",
-    "de color blanco está reservado",
-    "para la novia",
-];
-// ──────────────────────────────────────────────────────────────
 ---
 
 <section id="vestimenta" class="relative w-full overflow-hidden">

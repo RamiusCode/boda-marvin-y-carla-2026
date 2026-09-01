@@ -3,18 +3,22 @@
 // ocupa toda la pantalla, las flores caen desde las esquinas de arriba,
 // los nombres van sobre la solapa y el sello de lacre es el botón que
 // arranca la música y abre la invitación.
-// ── DATOS EDITABLES ───────────────────────────────────────────
-const novio = "Marvin";
-const novia = "Carla";
-const union = "y";
-// ──────────────────────────────────────────────────────────────
+// Los textos viven en src/i18n; acá solo se elige el idioma.
+import { textos, type Idioma } from "../i18n";
 
-// El nombre del invitado llega por prop desde las invitaciones
-// personalizadas; si va vacío, el renglón "Para:" no se dibuja.
 export interface Props {
+    idioma?: Idioma;
+    // El nombre del invitado llega desde las invitaciones personalizadas;
+    // si va vacío, el renglón "Para:" no se dibuja.
     invitado?: string;
 }
-const { invitado = "Adriana Candia" } = Astro.props;
+const { idioma = "es", invitado = "Adriana Candia" } = Astro.props;
+
+// Los nombres no se traducen: son los mismos en las dos versiones.
+const novio = "Marvin";
+const novia = "Carla";
+
+const { union, para } = textos(idioma).portada;
 ---
 
 <!-- CAPA BLANCA DE TRANSICIÓN — tapa el fondo del layout durante el fade -->
@@ -127,7 +131,7 @@ const { invitado = "Adriana Candia" } = Astro.props;
                     id="bloque-invitado"
                     class="absolute left-0 right-0 bottom-[12%] px-10 text-left"
                 >
-                    <p class="font-verandah etiqueta-para">Para:</p>
+                    <p class="font-verandah etiqueta-para">{para}</p>
                     <p class="font-verandah nombre-invitado">{invitado}</p>
                     <span class="raya-invitado" aria-hidden="true" />
                 </div>

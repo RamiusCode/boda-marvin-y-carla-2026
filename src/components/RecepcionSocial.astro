@@ -3,16 +3,18 @@
 // Recepción social: mismo bloque terracota que la ceremonia religiosa, con
 // el arco de la fiesta en lugar de la iglesia. Lo que la distingue son los
 // ramos en dos esquinas opuestas.
-// ── DATOS EDITABLES ───────────────────────────────────────────
-const titulo = "Recepción Social";
-const hora = "16:30";
-const salon = ["SALÓN DE EVENTOS", "“ROBLES”"];
-const direccion = [
-    "Calle Cañada Strongest #1822",
-    "( A media cuadra de la Plaza del Estudiante )",
-];
+// Los textos viven en src/i18n; acá solo se elige el idioma.
+import { textos, type Idioma } from "../i18n";
+
+export interface Props {
+    idioma?: Idioma;
+}
+const { idioma = "es" } = Astro.props;
+
+const { titulo, salon, direccion, textoBoton } = textos(idioma).recepcion;
+
+const hora = idioma === "en" ? "4:30 PM" : "16:30";
 const mapa = "https://maps.app.goo.gl/optHBhjQMEwJr1Mx7";
-const textoBoton = "Ver mapa";
 // El archivo tiene tilde en el nombre: va escapado para que la URL no
 // dependa de cómo codifique cada servidor.
 const dibujo = "/imagenes/recepci%C3%B3n.png";
