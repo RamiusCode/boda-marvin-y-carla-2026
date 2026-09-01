@@ -960,6 +960,46 @@
         pantalla("pantalla-panel");
         await cargarInvitados();
         await cargarDeseos();
+        escucharCambios();
+      }
+
+      // ═══ TIEMPO REAL ═══
+      /*
+         Supabase avisa por un canal abierto cuando algo cambia en la base,
+         asi que el panel se entera solo: si un invitado confirma desde su
+         celular, la pastilla se pone verde sin tocar F5.
+
+         Se vuelve a pedir la lista entera en vez de parchear la fila que
+         cambio. Con listas de boda -decenas, no miles- la consulta es
+         instantanea, y evita toda una familia de errores: filas duplicadas,
+         contadores desfasados, borrados que no se reflejan.
+
+         El respiro de 300 ms junta los avisos que llegan en rafaga. Sin el,
+         cargar diez invitados de una dispara diez consultas seguidas.
+      */
+      let respiroInvitados = 0;
+      let respiroDeseos = 0;
+
+      function escucharCambios() {
+        supabase
+          .channel("panel")
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "invitados" },
+            () => {
+              clearTimeout(respiroInvitados);
+              respiroInvitados = setTimeout(cargarInvitados, 300);
+            }
+          )
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "deseos" },
+            () => {
+              clearTimeout(respiroDeseos);
+              respiroDeseos = setTimeout(cargarDeseos, 300);
+            }
+          )
+          .subscribe();
       }
 
       // ═══ VISTAS ═══
