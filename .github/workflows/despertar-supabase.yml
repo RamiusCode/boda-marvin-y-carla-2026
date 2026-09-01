@@ -1,0 +1,53 @@
+# ═══════════════════════════════════════════════════════════════════
+# DESPERTADOR DE SUPABASE
+#
+# El plan gratuito de Supabase pausa el proyecto tras 7 días sin
+# actividad. Si eso pasa, los invitados abren su link y no ven su
+# nombre, y los novios no pueden entrar al panel.
+#
+# Este trabajo hace una consulta diaria a la base para que Supabase
+# nunca vea una semana de silencio.
+#
+# La clave que se usa es la publishable: es pública por diseño, ya
+# viaja en el JavaScript del sitio y cualquiera puede leerla desde el
+# navegador. No es un secreto y por eso va escrita aquí.
+# La que NUNCA debe aparecer en este archivo es la service_role.
+# ═══════════════════════════════════════════════════════════════════
+
+name: Despertar Supabase
+
+on:
+  schedule:
+    # Todos los días a las 12:00 UTC (08:00 en Bolivia)
+    - cron: "0 12 * * *"
+  # Permite lanzarlo a mano desde la pestaña Actions de GitHub
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consultar la base de datos
+        env:
+          SUPABASE_URL: https://wugejxbqriruiiumvpqm.supabase.co
+          SUPABASE_KEY: sb_publishable_Gm62UAhKYK-8YGy-Lev9lw_n33JVSgr
+        run: |
+          # Se llama a la misma función que usa la invitación. Con un
+          # código inventado: no devuelve nada, pero Postgres se ejecuta
+          # y eso es lo que cuenta como actividad.
+          codigo=$(curl -s -o /tmp/respuesta.txt -w "%{http_code}" \
+            -X POST "$SUPABASE_URL/rest/v1/rpc/buscar_invitado" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"codigo_buscado":"despertador"}')
+
+          echo "HTTP $codigo"
+          cat /tmp/respuesta.txt
+
+          if [ "$codigo" != "200" ]; then
+            echo "::error::Supabase respondió $codigo. Puede que el proyecto esté pausado: entra a supabase.com y dale a Restore."
+            exit 1
+          fi
+
+          echo "Base despierta."

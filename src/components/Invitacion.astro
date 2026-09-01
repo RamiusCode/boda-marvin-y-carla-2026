@@ -66,3 +66,77 @@ import BotonMusica from "./BotonMusica.astro";
 
 <!-- Control de música flotante -->
 <BotonMusica />
+
+<script>
+    /*
+       ═══════════════════════════════════════════════════════════
+       EL NOMBRE DEL INVITADO
+       ═══════════════════════════════════════════════════════════
+       El link personalizado trae un código: mi-invitacion.com/k7m2p
+       Con ese código se busca en la base quién es y cuántos pases tiene, y
+       se completan los dos lugares donde aparece: la Portada y el Pase.
+
+       El nombre NO viaja en el link, solo el código. Por eso, si el
+       cliente corrige un nombre mal escrito, el link ya enviado muestra el
+       nombre corregido sin tener que reenviar nada.
+
+       Este script vive acá y no en el Layout a propósito: así no corre en
+       /admin, donde el primer tramo de la ruta ("admin") se leería como si
+       fuera el código de un invitado.
+    */
+    const nombres =
+        document.querySelectorAll<HTMLElement>(".nombre-invitado");
+    const numeros = document.querySelectorAll<HTMLElement>(".numero-pases");
+    const palabras = document.querySelectorAll<HTMLElement>(".palabra-pases");
+
+    function pintar(nombre: string | null, pases: number | null) {
+        if (nombre) nombres.forEach((el) => (el.textContent = nombre));
+
+        if (Number.isInteger(pases) && (pases as number) > 0) {
+            numeros.forEach((el) => (el.textContent = String(pases)));
+            palabras.forEach(
+                (el) => (el.textContent = pases === 1 ? "pase" : "pases"),
+            );
+        }
+    }
+
+    import("../lib/supabase")
+        .then(({ supabase, configurado, codigoDeLaUrl }) => {
+            const codigo = codigoDeLaUrl();
+
+            // Sin código es la invitación general, la que se comparte en un
+            // grupo: se queda con los valores de muestra del componente.
+            if (!codigo || !configurado || !supabase) return null;
+
+            /*
+               Los nombres de muestra se ocultan mientras se resuelve la
+               búsqueda: si no, el invitado alcanza a leer el nombre de otra
+               persona antes del reemplazo. Se guardan para poder
+               devolverlos si la consulta falla.
+            */
+            const respaldo = Array.from(nombres, (el) => el.textContent ?? "");
+            nombres.forEach((el) => (el.style.visibility = "hidden"));
+
+            return supabase
+                .rpc("buscar_invitado", { codigo_buscado: codigo })
+                .then(({ data, error }) => {
+                    if (!error && data && data.length) {
+                        pintar(data[0].nombre, data[0].pases);
+                    } else {
+                        // Código inexistente: se devuelven los de muestra
+                        nombres.forEach((el, i) => {
+                            el.textContent = respaldo[i];
+                        });
+                    }
+                    nombres.forEach((el) => (el.style.visibility = ""));
+                });
+        })
+        .catch(() => {
+            /*
+               Sin internet o base dormida. La invitación tiene que verse
+               igual: se destapan los nombres de muestra y el invitado ni se
+               entera de que algo falló.
+            */
+            nombres.forEach((el) => (el.style.visibility = ""));
+        });
+</script>
