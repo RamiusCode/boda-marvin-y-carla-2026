@@ -68,12 +68,20 @@ const { title } = Astro.props;
         max-width: 430px;
         margin: 0 auto;
         min-height: 100vh;
-        background-image: url("/imagenes/fondoprincipal.webp");
+        /*
+           El papel de acuarela va acá y no en cada sección: así se ve como
+           una sola hoja continua de punta a punta, sin costuras entre
+           componentes.
+
+           attachment: fixed lo deja quieto mientras la invitación scrollea
+           por encima.
+        */
+        background-image: url("/imagenes/foto3.png");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
         background-attachment: fixed;
-        background-color: #f7f5f2;
+        background-color: #f9efe4;
         box-shadow: 0 0 40px rgba(0, 0, 0, 0.08);
       }
     </style>

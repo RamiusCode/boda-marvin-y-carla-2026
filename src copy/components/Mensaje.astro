@@ -1,4 +1,6 @@
 ---
+import CorazonesFlotantes from "./CorazonesFlotantes.astro";
+
 // src/components/Mensaje.astro
 // Franja terracota con el mensaje a los invitados, entre la foto de la
 // fecha y lo que sigue.
@@ -12,6 +14,8 @@ const mensaje = [
 
 <section id="mensaje" class="franja relative w-full overflow-hidden px-7 py-14">
     <div class="franja-fondo absolute inset-0" aria-hidden="true"></div>
+
+    <CorazonesFlotantes />
 
     <p class="franja-texto relative font-verandah texto-mensaje">
         {mensaje.map((linea) => <span class="block">{linea}</span>)}

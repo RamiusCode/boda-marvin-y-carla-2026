@@ -1,0 +1,282 @@
+---
+// src/components/NombresPadres.astro
+// Bendición y nombres de los padres sobre papel de acuarela.
+//
+// El fondo (foto3.png, 935x1629) ya trae las acuarelas en las esquinas y
+// el centro limpio, así que la sección no necesita flores sueltas encima:
+// el adorno viene en el papel y el texto se queda en el aire que le deja.
+//
+// Se pinta con background-size: 100% 100%, o sea que manda el ancho, y la
+// min-height guarda la proporción real (174.2% del ancho). Si el texto
+// pidiera más alto, el papel se estira nada más que a lo largo.
+
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const fondo = "/imagenes/foto3.png";
+
+const bendicion = ["Con la bendición de Dios", "y de nuestros padres"];
+
+const padres = [
+    {
+        titulo: "Padres de la novia",
+        nombres: ["Edwin Salinas (+)", "Sandra Zegarra"],
+    },
+    {
+        titulo: "Padres del novio",
+        nombres: ["Raúl Llanos", "Lilian de Llanos"],
+    },
+];
+
+const cierre = [
+    "Nos complace invitarles a",
+    "compartir con nosotros",
+    "este día tan especial.",
+];
+// ──────────────────────────────────────────────────────────────
+---
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 👰 PADRES · la bendición y los nombres                       -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--
+   Sin padding: la hoja apoya directo contra las secciones de arriba y de
+   abajo, sin dejar asomar el fondo de la página entre medio.
+-->
+<section id="padres" class="relative w-full">
+    <!-- El marco declara el container para las unidades cqw de adentro -->
+    <div class="hoja-marco">
+        <div class="hoja" style={`--fondo: url('${fondo}')`}>
+            <!--
+               Las cuatro esquinas, como en la Dedicatoria: las de arriba
+               son las de abajo espejadas en vertical, así el ramo cierra
+               con una sola imagen.
+            -->
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor flor-alto-izq"
+            />
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor flor-alto-der"
+            />
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor flor-pie-izq"
+            />
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor flor-pie-der"
+            />
+
+            <div id="bloque-padres" class="contenido">
+                <p class="bendicion font-great-vibes">
+                    {bendicion.map((linea) => <span class="renglon">{linea}</span>)}
+                </p>
+
+                <span class="separador" aria-hidden="true">
+                    <i class="raya"></i>
+                    <b class="corazon">&#9829;</b>
+                    <i class="raya"></i>
+                </span>
+
+                {
+                    padres.map((grupo) => (
+                        <div class="grupo">
+                            <h3 class="rotulo font-great-vibes">
+                                {grupo.titulo}
+                            </h3>
+
+                            <div class="lista">
+                                {grupo.nombres.map((nombre) => (
+                                    <p class="nombre font-cormorant">{nombre}</p>
+                                ))}
+                            </div>
+                        </div>
+                    ))
+                }
+
+                <span class="separador" aria-hidden="true">
+                    <i class="raya"></i>
+                    <b class="corazon">&#9829;</b>
+                    <i class="raya"></i>
+                </span>
+
+                <p class="cierre font-great-vibes">
+                    {cierre.map((linea) => <span class="renglon">{linea}</span>)}
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    #padres {
+        --terracota: #b9563a;
+        --terracota-suave: #cd7a56;
+        --tinta: #7a4a34;
+    }
+
+    .hoja-marco {
+        width: 100%;
+        container-type: inline-size;
+    }
+
+    /*
+       El padding lateral del 13% deja el texto adentro del aire limpio del
+       papel: las acuarelas de foto3 muerden ~10% de cada lado.
+    */
+    .hoja {
+        position: relative;
+        width: 100%;
+        min-height: 174.2cqw;
+        padding: 3.2rem 13% 3.4rem;
+        display: flex;
+        align-items: center;
+    }
+
+    /*
+       El fondo va en un ::before y no en la hoja para dejarlo por debajo
+       del texto y de las flores sin depender del orden del markup. Va sin
+       máscara: el papel entra entero, con los filos netos.
+    */
+    .hoja::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background-image: var(--fondo);
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    /* ── Flores de las cuatro esquinas ── */
+    .flor {
+        position: absolute;
+        width: 29%;
+        height: auto;
+        z-index: 1;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    /* Apoyadas en los filos, sin volar afuera: ya no hay padding donde caer */
+    .flor-alto-izq {
+        top: 0;
+        left: -3%;
+        transform: scaleY(-1) rotate(4deg);
+    }
+
+    .flor-alto-der {
+        top: 0;
+        right: -3%;
+        transform: scaleX(-1) scaleY(-1) rotate(4deg);
+    }
+
+    .flor-pie-izq {
+        bottom: 0;
+        left: -3%;
+        transform: rotate(4deg);
+    }
+
+    .flor-pie-der {
+        bottom: 0;
+        right: -3%;
+        transform: scaleX(-1) rotate(4deg);
+    }
+
+    .contenido {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .renglon {
+        display: block;
+    }
+
+    /* ── Bendición y cierre, en caligrafía ── */
+    .bendicion,
+    .cierre {
+        color: var(--terracota);
+        font-size: clamp(1.35rem, 6.4cqw, 1.6rem);
+        line-height: 1.45;
+        margin: 0;
+    }
+
+    /* Rayita · corazón · rayita, el mismo remate que en la Fecha */
+    .separador {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 1.5rem 0;
+    }
+
+    .raya {
+        display: block;
+        width: 2.2rem;
+        height: 1px;
+        background: var(--terracota-suave);
+    }
+
+    .corazon {
+        color: var(--terracota);
+        font-size: 0.7rem;
+        line-height: 1;
+        font-weight: 400;
+    }
+
+    /* ── Cada pareja ── */
+    .grupo + .grupo {
+        margin-top: 1.9rem;
+    }
+
+    /*
+       El rótulo va en la caligrafía y los nombres en serif: así el dato que
+       importa se lee limpio y el adorno queda en el título.
+    */
+    .rotulo {
+        color: var(--terracota-suave);
+        font-weight: 400;
+        font-size: clamp(1.3rem, 6.2cqw, 1.55rem);
+        line-height: 1.3;
+        margin: 0;
+    }
+
+    .lista {
+        margin-top: 0.35rem;
+    }
+
+    .nombre {
+        color: var(--tinta);
+        font-size: clamp(1.12rem, 5.2cqw, 1.32rem);
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        /* Los dos nombres de cada pareja van pegados; el aire grande queda
+           entre el rótulo y el primer nombre. */
+        line-height: 1.42;
+        margin: 0;
+    }
+</style>
+
+<script>
+    import { animarEntrada } from "../scripts/animaciones";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const bloque = document.getElementById("bloque-padres");
+        if (!bloque) return;
+
+        animarEntrada(bloque.children, bloque);
+    });
+</script>

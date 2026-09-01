@@ -1,0 +1,394 @@
+---
+// src/components/NombresFlores.astro
+// Sobre abierto: el perrito sale desde adentro y queda con la parte de
+// abajo metida detrás de la solapa; las flores se apoyan encima de esa
+// solapa, y sobre ella caen el sello de lacre y los nombres.
+//
+// Referencias de medida (todo en % del ancho del sobre):
+//   sobre1 930x1167  ·  sobre2 930x711 (va al pie)
+//   El pico de la solapa queda al 63.9% de la altura: esa es la línea
+//   donde el perrito se esconde.
+
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const novio = "Marvin";
+const novia = "Carla";
+// ──────────────────────────────────────────────────────────────
+---
+
+<!--
+   El padding de abajo es más grande que el de arriba a propósito: la
+   sección que sigue (Versículo) entra con -mt-28, así que se come 7rem.
+   Con pb-44 quedan ~4rem de aire real entre el sobre y el versículo.
+-->
+<section
+    id="sobre-novios"
+    class="relative w-full flex items-center justify-center px-4 pt-14 pb-44 sm:pt-20 sm:pb-48 md:pt-24 md:pb-52"
+>
+    <div id="sobre-marco" class="sobre-marco">
+        <!-- CAPA 1 · sobre trasero (base abierta) -->
+        <img
+            id="sobre-atras"
+            src="/imagenes/sobre1.png"
+            alt=""
+            aria-hidden="true"
+            class="block w-full h-auto select-none"
+        />
+
+        <!-- CAPA 2 · el perrito, que sale desde adentro del sobre -->
+        <div id="sobre-interior" class="capa-interior">
+            <img
+                id="sobre-perrito"
+                src="/imagenes/perrito.png"
+                alt="Lu, el perrito de los novios"
+                class="deco perrito"
+            />
+        </div>
+
+        <!-- CAPA 3 · solapa delantera: le tapa las patas al perrito -->
+        <img
+            id="sobre-frente"
+            src="/imagenes/sobre2.png"
+            alt=""
+            aria-hidden="true"
+            class="capa-frente"
+        />
+
+        <!--
+           CAPA 4 · las flores, DETRÁS de la solapa y del perrito (el CSS
+           les da z-index 1). Van acá abajo en el orden del documento nada
+           más que para tenerlas juntas.
+           Cada una va envuelta en un <span>: GSAP le anima el transform al
+           span, y el espejo y la inclinación viven en la imagen de adentro
+           para que no se pisen entre sí.
+        -->
+        <div class="capa-flores">
+            <span class="deco flor flor-izq">
+                <img src="/imagenes/flores2.png" alt="" aria-hidden="true" />
+            </span>
+            <span class="deco flor flor-der">
+                <img src="/imagenes/flores2.png" alt="" aria-hidden="true" />
+            </span>
+            <span class="deco flor flor-baja-izq">
+                <img src="/imagenes/flores2.png" alt="" aria-hidden="true" />
+            </span>
+            <span class="deco flor flor-baja-der">
+                <img src="/imagenes/flores2.png" alt="" aria-hidden="true" />
+            </span>
+        </div>
+
+        <!-- CAPA 5 · sello de lacre, al centro de la solapa -->
+        <img
+            id="sobre-sello"
+            src="/imagenes/boton.png"
+            alt="Sello M & C"
+            class="sello"
+        />
+
+        <!-- CAPA 6 · nombres de los novios, con el & al medio -->
+        <div id="sobre-nombres" class="bloque-nombres">
+            <p class="nombre font-great-vibes">{novio}</p>
+            <p class="amper font-cormorant">&amp;</p>
+            <p class="nombre font-great-vibes">{novia}</p>
+        </div>
+    </div>
+</section>
+
+<style>
+    /*
+       Sin fondo propio: se ve la textura de papel del <main>. Un color
+       plano acá cortaría un rectángulo con filos contra esa textura.
+    */
+    #sobre-novios {
+        background: transparent;
+    }
+
+    /*
+       container-type deja usar unidades cqw: todas las capas se miden
+       contra el ancho del sobre y no del viewport, así el armado no se
+       descuadra en ningún tamaño de pantalla.
+    */
+    .sobre-marco {
+        position: relative;
+        width: 100%;
+        max-width: 26rem;
+        container-type: inline-size;
+        filter: drop-shadow(0 18px 34px rgba(120, 58, 32, 0.22));
+    }
+
+    /* Todo lo que va detrás de la solapa */
+    .capa-interior {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+    }
+
+    .capa-frente {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: auto;
+        z-index: 3;
+    }
+
+    .deco {
+        position: absolute;
+        height: auto;
+        user-select: none;
+        pointer-events: none;
+    }
+
+    /*
+       El perrito: se centra con margin negativo (la mitad de su ancho) y
+       no con translateX, porque GSAP le anima el transform para que flote.
+       Con width 57% mide 46.4% de la altura del sobre; arrancando en 29.1%
+       llega hasta el 75.5%, o sea que un cuarto de su cuerpo queda detrás
+       de la solapa (que empieza en el 63.9%).
+    */
+    .perrito {
+        left: 50%;
+        margin-left: -28.5%;
+        top: 29.1%;
+        width: 57%;
+        filter: drop-shadow(0 8px 16px rgba(120, 58, 32, 0.2));
+    }
+
+    /*
+       ── Flores: DETRÁS de la solapa (sobre2) ──
+       z-index 1 las deja arriba de sobre1 pero abajo del perrito (2) y de
+       la solapa (3): salen del interior del sobre y la solapa les corta la
+       parte de abajo, igual que al perrito.
+
+       El clip-path calca la silueta de sobre1: el pico arriba al centro y
+       las dos alas que bajan hasta el 40% de la altura (465 de 1167 px).
+       Sigue haciendo falta: a la altura del 24% el filo del ala está recién
+       en el 20% del ancho, así que sin recorte se salen del sobre.
+    */
+    .capa-flores {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        clip-path: polygon(50% 0, 100% 40%, 100% 100%, 0 100%, 0 40%);
+    }
+
+    .flor {
+        display: block;
+    }
+
+    .flor :global(img) {
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+
+    /*
+       El espejo y la inclinación quedan en la imagen de adentro (el <span>
+       de afuera lo maneja GSAP), así que cada flor declara su transform
+       completo.
+       Las cuatro van dentro del rombo blanco, flanqueando al perrito: la
+       solapa les come la parte de abajo y él les pasa por delante.
+    */
+    .flor-izq {
+        left: 1%;
+        top: 24%;
+        width: 30%;
+    }
+
+    .flor-izq :global(img) {
+        transform: scaleX(-1) rotate(4deg);
+    }
+
+    .flor-der {
+        left: 69%;
+        top: 26%;
+        width: 30%;
+    }
+
+    .flor-der :global(img) {
+        transform: rotate(-4deg);
+    }
+
+    /* El segundo par va más chico y corrido, para dar volumen al ramo */
+    .flor-baja-izq {
+        left: 7%;
+        top: 34%;
+        width: 20%;
+    }
+
+    .flor-baja-izq :global(img) {
+        transform: scaleX(-1) rotate(-7deg);
+    }
+
+    .flor-baja-der {
+        left: 73%;
+        top: 36%;
+        width: 20%;
+    }
+
+    .flor-baja-der :global(img) {
+        transform: rotate(7deg);
+    }
+
+    /*
+       ── Sello de lacre ──
+       Va montado a mitad sobre el filo de la solapa, como un lacre de
+       verdad: con 15% de ancho mide 11.7% de la altura del sobre, así que
+       arrancando en 58% su centro cae justo en el 63.9%, que es donde está
+       el pico de sobre2. Mitad arriba de la línea, mitad abajo.
+       Se centra con margin negativo (la mitad del ancho) y no con
+       translateX, porque GSAP le anima el transform al estamparse.
+    */
+    .sello {
+        position: absolute;
+        left: 50%;
+        margin-left: -7.5%;
+        top: 58%;
+        width: 15%;
+        height: auto;
+        z-index: 5;
+        filter: drop-shadow(0 5px 9px rgba(90, 40, 20, 0.35));
+    }
+
+    /* ── Nombres ── */
+    .bloque-nombres {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 73%;
+        z-index: 5;
+        text-align: center;
+    }
+
+    /*
+       Van en Great Vibes y no en Verandah: el trazo de la Verandah es
+       grueso de fábrica y se leía como negrita por más que el peso fuera
+       400. La sombra también va corta y suave, porque una sombra ancha
+       vuelve a engordar los trazos finos.
+    */
+    .nombre {
+        color: #fdf4ec;
+        font-weight: 400;
+        font-size: 10cqw;
+        line-height: 1.15;
+        text-shadow: 0 2px 6px rgba(96, 40, 20, 0.35);
+    }
+
+    /*
+       El & va en serif y no en la caligrafía: entre dos scripts se
+       confunde con las letras de al lado.
+    */
+    .amper {
+        color: rgba(253, 244, 236, 0.8);
+        font-weight: 300;
+        font-size: 4.8cqw;
+        line-height: 1.1;
+        /* Aire arriba y abajo para que el & respire entre los dos nombres */
+        margin: 1cqw 0;
+        text-shadow: 0 2px 6px rgba(96, 40, 20, 0.3);
+    }
+</style>
+
+<script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const marco = document.getElementById("sobre-marco");
+        if (!marco) return;
+
+        // Sin animación si el visitante pidió menos movimiento: el sobre
+        // ya está armado y visible en el HTML.
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+            return;
+
+        const interior = document.getElementById("sobre-interior");
+        const perrito = document.getElementById("sobre-perrito");
+        const flores = Array.from(marco.querySelectorAll(".flor"));
+        const nombres = Array.from(marco.querySelectorAll(".nombre, .amper"));
+
+        // El perrito arranca escondido dentro del sobre: la solapa
+        // delantera lo tapa mientras sube.
+        gsap.set(interior, { yPercent: 26, opacity: 0 });
+        gsap.set("#sobre-sello", { opacity: 0, scale: 1.6, rotate: -18 });
+        // Ahora que están detrás de la solapa, salen del sobre en vez de
+        // aparecer con un escalado.
+        gsap.set(flores, { opacity: 0, yPercent: 30 });
+        gsap.set(nombres, { opacity: 0, y: 22 });
+
+        const linea = gsap.timeline({
+            scrollTrigger: {
+                trigger: marco,
+                start: "top 78%",
+                toggleActions: "play none none reset",
+            },
+        });
+
+        linea
+            // 1 · el sobre se asienta
+            .fromTo(
+                "#sobre-atras",
+                { opacity: 0, scale: 0.94, y: 18 },
+                { opacity: 1, scale: 1, y: 0, duration: 1, ease: "power2.out" },
+            )
+            .fromTo(
+                "#sobre-frente",
+                { opacity: 0, y: 14 },
+                { opacity: 1, y: 0, duration: 0.9, ease: "power2.out" },
+                "<0.15",
+            )
+            // 2 · el perrito sale de adentro
+            .to(
+                interior,
+                { yPercent: 0, opacity: 1, duration: 1.7, ease: "power3.out" },
+                "-=0.4",
+            )
+            // 3 · las flores salen del sobre, atrás del perrito
+            .to(
+                flores,
+                {
+                    opacity: 1,
+                    yPercent: 0,
+                    duration: 1.4,
+                    stagger: 0.12,
+                    ease: "power3.out",
+                },
+                "-=1.5",
+            )
+            // 4 · el lacre se estampa
+            .to(
+                "#sobre-sello",
+                {
+                    opacity: 1,
+                    scale: 1,
+                    rotate: 0,
+                    duration: 0.8,
+                    ease: "back.out(1.7)",
+                },
+                "-=0.5",
+            )
+            // 5 · los nombres
+            .to(
+                nombres,
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.9,
+                    stagger: 0.22,
+                    ease: "power2.out",
+                },
+                "-=0.35",
+            )
+            // 6 · el perrito queda flotando apenas
+            .add(() => {
+                gsap.to(perrito, {
+                    y: -6,
+                    duration: 3.2,
+                    ease: "sine.inOut",
+                    yoyo: true,
+                    repeat: -1,
+                });
+            });
+    });
+</script>

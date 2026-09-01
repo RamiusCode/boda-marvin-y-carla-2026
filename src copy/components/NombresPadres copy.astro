@@ -1,0 +1,122 @@
+---
+// src/components/NombresPadres.astro
+// Bendición y nombres de los padres sobre el papel, con las flores en las
+// esquinas: arriba a la izquierda y abajo a la derecha, la misma rama girada.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const bendicion = ["Con la bendición de Dios", "y de nuestros padres"];
+
+const padres = [
+    {
+        titulo: "Padres de la novia",
+        nombres: ["Edwin Salinas (+)", "Sandra Zegarra"],
+    },
+    {
+        titulo: "Padres del novio",
+        nombres: ["Raúl Llanos", "Lilian de Llanos"],
+    },
+];
+
+const cierre = [
+    "Nos complace invitarles a",
+    "compartir con nosotros",
+    "este día tan especial.",
+];
+// ──────────────────────────────────────────────────────────────
+---
+
+<section id="padres" class="relative w-full overflow-hidden px-8 pt-28 pb-28">
+    <!-- Flores de las esquinas: la misma rama, la de abajo girada media vuelta -->
+    <img
+        src="/imagenes/florlateral.png"
+        alt=""
+        width="244"
+        height="497"
+        aria-hidden="true"
+        class="pointer-events-none absolute top-0 left-0 w-[20%] select-none"
+    />
+    <img
+        src="/imagenes/florlateral.png"
+        alt=""
+        width="244"
+        height="497"
+        aria-hidden="true"
+        class="pointer-events-none absolute bottom-0 right-0 w-[20%] -scale-x-100 select-none"
+    />
+
+    <div id="bloque-padres" class="relative flex flex-col items-center text-center">
+        <p class="font-dancing bendicion-padres">
+            {bendicion.map((linea) => <span class="block">{linea}</span>)}
+        </p>
+
+        {
+            padres.map((grupo) => (
+                <div class="grupo-padres">
+                    <h3 class="font-verandah rotulo-padres">{grupo.titulo}</h3>
+
+                    <div class="lista-nombres">
+                        {grupo.nombres.map((nombre) => (
+                            <p class="font-cormorant nombre-padre">{nombre}</p>
+                        ))}
+                    </div>
+                </div>
+            ))
+        }
+
+        <p class="font-dancing cierre-padres">
+            {cierre.map((linea) => <span class="block">{linea}</span>)}
+        </p>
+    </div>
+</section>
+
+<style>
+    .bendicion-padres {
+        color: #a4482a;
+        font-size: clamp(1.55rem, 7vw, 1.95rem);
+        line-height: 1.45;
+    }
+
+    .grupo-padres {
+        margin-top: 2.2rem;
+    }
+
+    /* El rótulo va en la caligrafía y los nombres en serif: así el dato que
+       importa se lee limpio y el adorno queda en el título. */
+    .rotulo-padres {
+        color: #b0603f;
+        font-size: clamp(1.62rem, 7.4vw, 2rem);
+        line-height: 1.5;
+    }
+
+    .lista-nombres {
+        margin-top: 0.4rem;
+    }
+
+    .nombre-padre {
+        color: #8e3a1e;
+        font-size: clamp(1.28rem, 5.8vw, 1.55rem);
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        line-height: 1.35;
+        /* Los dos nombres de cada pareja van pegados; el aire grande queda
+           entre el rótulo y el primer nombre. */
+        margin-top: 0;
+    }
+
+    .cierre-padres {
+        color: #a4482a;
+        font-size: clamp(1.45rem, 6.6vw, 1.8rem);
+        line-height: 1.5;
+        margin-top: 2.6rem;
+    }
+</style>
+
+<script>
+    import { animarEntrada } from "../scripts/animaciones";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const bloque = document.getElementById("bloque-padres");
+        if (!bloque) return;
+
+        animarEntrada(bloque.children, bloque);
+    });
+</script>

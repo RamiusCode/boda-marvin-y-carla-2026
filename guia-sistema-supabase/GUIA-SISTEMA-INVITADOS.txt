@@ -1,0 +1,539 @@
+═══════════════════════════════════════════════════════════════════════════════
+ GUÍA DE TRASPASO — SISTEMA DE INVITADOS PARA INVITACIONES DE BODA
+ Para replicar en otro proyecto de invitación
+═══════════════════════════════════════════════════════════════════════════════
+
+ PARA QUIEN LEA ESTO (otra terminal de Claude Code):
+ Este documento describe un sistema ya construido y probado en producción.
+ Sigue los pasos en orden. Al final hay una lista de errores que ya cometimos
+ una vez, para que no los repitas.
+
+ PROYECTO DE ORIGEN (de donde copiar los archivos):
+   D:\Invitaciones Web\boda\1-yan-carlos-y-estefany\
+
+ STACK DEL PROYECTO ORIGEN:
+   Astro 5 (salida estática) + Tailwind 4 + GSAP
+   Supabase (base de datos + login)
+   Desplegado en Vercel, repositorio en GitHub
+
+
+═══════════════════════════════════════════════════════════════════════════════
+ 1. QUÉ HACE EL SISTEMA
+═══════════════════════════════════════════════════════════════════════════════
+
+Los novios entran a un panel privado (/admin), escriben el nombre de un
+invitado y cuántos pases le tocan. El sistema genera un link corto y único:
+
+    https://la-invitacion.vercel.app/?i=k7m2p
+
+Ese link se manda por WhatsApp. Al abrirlo, la invitación muestra el nombre
+de ESE invitado y su cantidad de pases.
+
+LA VENTAJA CLAVE (es lo que se le vende al cliente):
+El nombre NO está dentro del link, solo un código. Vive en la base de datos.
+Si escribieron mal un nombre, lo corrigen en el panel y el link YA ENVIADO
+muestra el nombre corregido. No hay que reenviar nada.
+
+QUÉ NO HACE (se decidió dejarlo fuera a propósito):
+No registra confirmaciones de asistencia. Los invitados confirman por
+WhatsApp como siempre. Si el cliente lo pide, hay que agregar una columna
+`confirmado` a la tabla y un botón en la invitación.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+ 2. LOS ARCHIVOS (copiar tal cual del proyecto origen)
+═══════════════════════════════════════════════════════════════════════════════
+
+  src/lib/supabase.ts                        ← cliente + generador de códigos
+  src/pages/admin.astro                      ← el panel completo (1150 líneas)
+  supabase/schema.sql                        ← el SQL a correr en Supabase
+  .github/workflows/despertar-supabase.yml   ← el ping diario
+
+Y hay que MODIFICAR el componente de la invitación que muestra el pase
+(en el origen: src/components/PaseNombre.astro) para que lea el ?i= del link.
+
+RECOMENDACIÓN: copiar los 4 archivos con el explorador de Windows en vez de
+reescribirlos. admin.astro son 1150 líneas de HTML+CSS+JS ya afinadas y
+probadas; reescribirlas a mano solo introduce errores.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+ 3. PASO A PASO
+═══════════════════════════════════════════════════════════════════════════════
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 1 — Instalar la librería
+───────────────────────────────────────────────────────────────────────────────
+
+    npm install @supabase/supabase-js
+
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 2 — Crear el proyecto en Supabase (lo hace el humano, en el navegador)
+───────────────────────────────────────────────────────────────────────────────
+
+  a) supabase.com → New project
+  b) Región: South America (São Paulo) si el cliente está en Sudamérica
+  c) Guardar la contraseña de la base que genera (no se usa en el código,
+     pero conviene tenerla)
+  d) Esperar ~2 minutos
+
+  ⚠️ OJO CON EL LÍMITE: el plan gratis permite 2 PROYECTOS ACTIVOS por
+  organización. Si se hacen muchas bodas, NO crear un proyecto por boda.
+  Mejor usar una sola base para todas y agregar una columna `boda` a la
+  tabla `invitados` para separarlas. (Ver sección 6.)
+
+  e) Project Settings → API Keys. Copiar dos valores:
+       - Project URL          →  https://xxxxxxxx.supabase.co
+       - anon / publishable   →  empieza con sb_publishable_... o eyJhbGci...
+
+  ⚠️ NUNCA usar ni compartir la clave `service_role` / `secret`. Esa es la
+  llave maestra: quien la tenga puede borrar toda la base saltándose todas
+  las reglas de seguridad. Solo se usa la publishable.
+
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 3 — Crear las tablas
+───────────────────────────────────────────────────────────────────────────────
+
+  En Supabase → SQL Editor → New query → pegar TODO el contenido de
+  supabase/schema.sql → Run.
+
+  Va a salir un aviso "Potential issue detected / destructive operations".
+  Es normal: el script tiene `drop policy if exists` para poder correrlo
+  varias veces sin romperse. Darle a "Run query".
+
+  Resultado esperado: "Success. No rows returned"
+
+  QUÉ CREA EL SCRIPT:
+
+    tabla `invitados`   → id, codigo, nombre, pases, creado_en
+    tabla `perfiles`    → qué rol tiene cada usuario ('admin' o 'novio')
+    tabla `ajustes`     → un interruptor: registro_abierto (sí/no)
+
+    función `buscar_invitado(codigo)` → la puerta del invitado anónimo
+    función `es_admin()`              → ¿quien pide es administrador?
+    función `registro_abierto()`      → ¿está permitido agregar?
+
+    trigger al crear usuario → le crea el perfil con rol 'novio'
+
+    políticas RLS en las tres tablas
+
+
+  ⚠️ POR QUÉ IMPORTA EL RLS (Row Level Security):
+  La clave publishable viaja al navegador de cada invitado. Cualquiera la ve
+  con F12. Lo ÚNICO que impide que un curioso se descargue la lista completa
+  de invitados —o la borre— son esas políticas. Sin RLS el sistema queda
+  abierto de par en par.
+
+  El invitado anónimo NO tiene acceso a la tabla. Solo puede llamar a la
+  función `buscar_invitado`, que exige el código exacto y devuelve una sola
+  fila. No hay forma de listar todo.
+
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 4 — Crear los usuarios (lo hace el humano, en el navegador)
+───────────────────────────────────────────────────────────────────────────────
+
+  Supabase → Authentication → Users → Add user → Create new user
+
+  Crear dos:
+    1) El del desarrollador (rol admin)   ej: admin@invita.com
+    2) El de los novios     (rol novio)   ej: novios@boda.com
+
+  ⚠️ MARCAR "Auto Confirm User" en los dos. Si no se marca, Supabase espera
+  una confirmación por correo que nunca va a llegar y el usuario no puede
+  entrar nunca.
+
+  ⚠️ LOS CORREOS PUEDEN SER INVENTADOS. No hace falta que existan: funcionan
+  solo como nombre de usuario y con Auto Confirm no se envía ningún correo.
+  Consecuencia: no hay "olvidé mi contraseña". Anotar las contraseñas. El
+  dueño de la cuenta de Supabase igual puede cambiarlas desde el panel.
+
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 5 — Marcar al administrador
+───────────────────────────────────────────────────────────────────────────────
+
+  DESPUÉS de crear los usuarios, en SQL Editor:
+
+    insert into public.perfiles (id, rol)
+    select id, 'novio' from auth.users
+    on conflict (id) do nothing;
+
+    update public.perfiles
+    set rol = 'admin'
+    where id = (select id from auth.users where email = 'admin@invita.com');
+
+    select u.email, p.rol
+    from public.perfiles p
+    join auth.users u on u.id = p.id;
+
+  Debe devolver dos filas, una con rol 'admin' y otra con 'novio'.
+
+  ⚠️ EL ROL SE LLAMA EXACTAMENTE 'admin', NO 'superadmin'. La tabla tiene una
+  restricción que solo acepta 'admin' o 'novio'. Cualquier otro valor da:
+  ERROR 23514 violates check constraint "perfiles_rol_check"
+
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 6 — Variables de entorno locales
+───────────────────────────────────────────────────────────────────────────────
+
+  Crear un archivo .env en la raíz del proyecto:
+
+    PUBLIC_SUPABASE_URL=https://xxxxxxxx.supabase.co
+    PUBLIC_SUPABASE_KEY=sb_publishable_xxxxxxxx
+
+  ⚠️ EL PREFIJO ES `PUBLIC_`, NO `NEXT_PUBLIC_`.
+  La ventana "Connect" de Supabase muestra los ejemplos con NEXT_PUBLIC_
+  porque asume Next.js. Astro usa solo PUBLIC_. Este error nos costó un
+  despliegue roto.
+
+  Verificar que .gitignore tenga la línea `.env`. Las claves no se suben al
+  repositorio.
+
+  Crear también un .env.example (sin valores reales) para dejar constancia
+  de qué variables hace falta configurar.
+
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 7 — Conectar la invitación al sistema
+───────────────────────────────────────────────────────────────────────────────
+
+  En el componente que muestra el pase del invitado, dentro del <script>:
+
+    const params = new URLSearchParams(window.location.search);
+
+    function pintarPase(nombre, pases) {
+      if (nombre) {
+        const el = document.getElementById("nombre-invitado");
+        if (el) el.textContent = nombre;
+      }
+      if (Number.isInteger(pases) && pases > 0) {
+        const num = document.getElementById("numero-pases");
+        const palabra = document.getElementById("palabra-pases");
+        if (num) num.textContent = String(pases);
+        if (palabra) palabra.textContent = pases === 1 ? "pase" : "pases";
+      }
+    }
+
+    const codigo = params.get("i");
+
+    if (codigo && codigo.trim()) {
+      import("../lib/supabase")
+        .then(({ supabase, configurado }) => {
+          if (!configurado) return { data: null, error: true };
+          return supabase.rpc("buscar_invitado", { codigo_buscado: codigo.trim() });
+        })
+        .then(({ data, error }) => {
+          if (error || !data || !data.length) return;
+          pintarPase(data[0].nombre, data[0].pases);
+        })
+        .catch(() => {
+          /* sin conexión o base dormida: se deja el pase por defecto */
+        });
+    } else {
+      const nombreParam = params.get("nombre");
+      const pasesParam = Number(params.get("pases"));
+      pintarPase(nombreParam?.trim() || null, pasesParam);
+    }
+
+  ⚠️ USAR import() DINÁMICO, NO import ESTÁTICO ARRIBA DEL ARCHIVO.
+  La librería de Supabase pesa 212 KB (57 KB comprimida). Con import dinámico
+  solo se descarga cuando el link trae ?i=, así la invitación no carga peso
+  extra para nadie más.
+
+  ⚠️ ENVOLVER TODO EN .catch(). Si Supabase no responde (proyecto pausado,
+  sin internet), la invitación NO debe romperse: muestra el pase con los
+  valores por defecto y el invitado ni se entera.
+
+  SI LA INVITACIÓN NO MUESTRA PASES (solo el nombre):
+  Borrar las líneas de numero-pases y palabra-pases. La columna `pases`
+  queda en la base sin usar, no molesta. No hay que tocar el SQL.
+
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 8 — Desplegar en Vercel
+───────────────────────────────────────────────────────────────────────────────
+
+  a) Vercel → el proyecto → Settings → Environment Variables
+  b) Add Environment Variable
+  c) Type: elegir **Config**, NO "Secret"
+     (Secret oculta el valor para siempre. Estas claves son públicas por
+     diseño, conviene poder verlas después para verificar.)
+  d) Agregar las dos:
+       PUBLIC_SUPABASE_URL  = https://xxxxxxxx.supabase.co
+       PUBLIC_SUPABASE_KEY  = sb_publishable_xxxxxxxx
+     Marcar los tres entornos (Production es el único imprescindible).
+  e) Save
+
+  ⚠️ VERCEL NO RECONSTRUYE SOLO AL AGREGAR VARIABLES.
+  Hay que forzar el redespliegue:
+     Deployments → en el más reciente, menú ⋯ → Redeploy
+     → DESMARCAR "Use existing Build Cache" → Redeploy
+
+  Si no se hace este paso, el sitio sigue sirviendo el build viejo, sin las
+  variables, y /admin queda muerto.
+
+  f) Probar con Ctrl+Shift+R (recarga forzada, sin caché)
+
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 9 — El despertador (evita que Supabase se duerma)
+───────────────────────────────────────────────────────────────────────────────
+
+  EL PROBLEMA: el plan gratuito de Supabase PAUSA el proyecto tras 7 días
+  sin actividad. Entre que se reparten las invitaciones y llega la boda
+  pueden pasar semanas de calma. Si se pausa, los invitados abren su link
+  y no ven su nombre, y nadie se entera.
+
+  LA SOLUCIÓN: copiar .github/workflows/despertar-supabase.yml y cambiar
+  la URL y la clave. Hace una consulta diaria y con eso Supabase nunca ve
+  una semana de silencio.
+
+  Contenido (cambiar SUPABASE_URL y SUPABASE_KEY):
+
+    name: Despertar Supabase
+    on:
+      schedule:
+        - cron: "0 12 * * *"      # 12:00 UTC = 08:00 en Bolivia
+      workflow_dispatch:
+    jobs:
+      ping:
+        runs-on: ubuntu-latest
+        steps:
+          - name: Consultar la base de datos
+            env:
+              SUPABASE_URL: https://xxxxxxxx.supabase.co
+              SUPABASE_KEY: sb_publishable_xxxxxxxx
+            run: |
+              codigo=$(curl -s -o /tmp/respuesta.txt -w "%{http_code}" \
+                -X POST "$SUPABASE_URL/rest/v1/rpc/buscar_invitado" \
+                -H "apikey: $SUPABASE_KEY" \
+                -H "Authorization: Bearer $SUPABASE_KEY" \
+                -H "Content-Type: application/json" \
+                -d '{"codigo_buscado":"despertador"}')
+              echo "HTTP $codigo"
+              cat /tmp/respuesta.txt
+              if [ "$codigo" != "200" ]; then
+                echo "::error::Supabase respondió $codigo. Puede estar pausado."
+                exit 1
+              fi
+              echo "Base despierta."
+
+  Se puede probar a mano: GitHub → pestaña Actions → Despertar Supabase →
+  Run workflow. Debe salir HTTP 200 y devolver [].
+
+  NOTA: GitHub desactiva los cron en repositorios sin actividad por 60 días.
+  Avisa por correo antes y se reactiva con un clic.
+
+  ALTERNATIVA SIN GITHUB: cron-job.org (gratis, sin cuenta técnica).
+
+
+═══════════════════════════════════════════════════════════════════════════════
+ 4. DISEÑO DEL PANEL (por si hay que reconstruirlo)
+═══════════════════════════════════════════════════════════════════════════════
+
+El panel NO usa la tipografía ni los colores de la invitación. Es una
+herramienta de trabajo, no papelería. Tema oscuro estilo AdminLTE con acento
+verde neón.
+
+CSS aislado dentro de admin.astro, sin Tailwind, para que la herramienta y
+la invitación no se pisen.
+
+PALETA:
+    --fondo:         #070b11    (fondo de la página)
+    --panel:         #0e141d    (tarjetas)
+    --panel-alto:    #141c27    (hover, cabeceras de tabla)
+    --borde:         #1f2b3a
+    --borde-suave:   #172231
+    --texto:         #e3edf5
+    --texto-tenue:   #7d8fa5
+    --neon:          #00f5a0    (acento principal)
+    --neon-claro:    #5cffc4
+    --neon-fondo:    rgba(0, 245, 160, 0.12)
+    --neon-brillo:   rgba(0, 245, 160, 0.35)   ← para los halos
+    --peligro:       #ff4d6d
+    --peligro-fondo: rgba(255, 77, 109, 0.12)
+
+TIPOGRAFÍA:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial
+
+ESTRUCTURA:
+    - Barra lateral fija de 250px: marca arriba, menú, correo y rol abajo
+    - Barra superior pegajosa: botón de menú, título, botón Salir
+    - Cajas de resumen con borde neón a la izquierda (invitados / pases)
+    - Tarjeta del interruptor de admin (solo visible para rol 'admin')
+    - Tarjeta del formulario de alta
+    - Tarjeta de la lista con buscador y tabla
+    - Modales para editar y borrar
+    - Aviso flotante (toast) abajo al centro
+
+DETALLES DEL ESTILO NEÓN:
+    - Botones principales con box-shadow neón que se intensifica al pasar
+      el mouse
+    - El interruptor encendido brilla
+    - El ítem activo del menú lleva una guía luminosa vertical (::before)
+
+RESPONSIVE:
+    - Escritorio (>= 1024px): barra lateral visible, .principal con
+      margin-left 250px, formulario en 3 columnas
+    - Móvil: la barra lateral se esconde (translateX -100%) y se abre con
+      el botón hamburguesa, con velo oscuro detrás
+    - La tabla se convierte en tarjetas apiladas en <= 767px usando
+      display:block en table/tr/td y ::before con attr(data-rotulo) para
+      poner el nombre de cada campo. Un solo bloque de markup sirve para
+      ambos casos.
+
+  ⚠️ ERROR QUE COMETIMOS: la celda de acciones tenía flex-wrap:wrap y
+  width:1%, y en escritorio los cuatro botones se apilaban en columna
+  dejando las filas larguísimas. Solución: flex-wrap:nowrap y
+  white-space:nowrap en escritorio, y volver a wrap solo en móvil.
+
+  ⚠️ OTRO ERROR: el link es largo y empujaba las demás columnas. Solución:
+  max-width con text-overflow:ellipsis en escritorio, y ancho completo con
+  word-break en móvil.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+ 5. FUNCIONES DEL PANEL
+═══════════════════════════════════════════════════════════════════════════════
+
+  - Login con correo y contraseña
+  - Formulario: nombre + pases → Agregar
+  - Contadores: total de invitados y total de pases
+  - Buscador que filtra la lista
+  - Por cada invitado:
+        [Copiar mensaje]  → copia el texto completo de WhatsApp con el link
+        [Solo link]       → copia únicamente la URL
+        [Editar]          → modal, cambia nombre y pases sin cambiar el link
+        [Borrar]          → modal de confirmación
+  - Solo para rol 'admin': interruptor "Permitir registro de invitados".
+    Al apagarlo, los novios siguen viendo y compartiendo links pero no
+    pueden agregar, editar ni borrar. La restricción está en la BASE DE
+    DATOS (políticas RLS), no solo en la pantalla: esconder un botón no
+    protege nada.
+
+EL MENSAJE DE WHATSAPP (los *asteriscos* son la negrita de WhatsApp):
+
+    *Con el corazón lleno de amor*
+
+    Hemos decidido unir nuestras vidas y dar el paso más importante de
+    nuestra historia.
+    Queremos compartir este momento tan especial con las personas que más
+    queremos.
+
+    Será un honor contar con tu presencia en nuestro gran día. 🤍
+
+    *Haz clic en el enlace para ver nuestra invitación*
+
+    [aquí va el link del invitado]
+
+    ¡Te esperamos para celebrar juntos este hermoso comienzo!
+
+EL CÓDIGO DEL LINK:
+5 caracteres del alfabeto "23456789bcdfghjkmnpqrstvwxyz".
+Sin vocales (para que nunca salga una palabra por accidente) y sin
+caracteres que se confundan (0/O, 1/l/I), para poder dictarlo por teléfono.
+Si al insertar choca con uno existente (error 23505), se reintenta hasta
+5 veces.
+
+VARIOS USUARIOS A LA VEZ:
+No hay límite, pueden estar todos con la misma cuenta al mismo tiempo sin
+conflictos. PERO la lista no se refresca sola: si uno agrega mientras otro
+tiene la página abierta, el segundo necesita recargar (F5) para verlo.
+Se puede resolver con Supabase Realtime si el cliente lo pide.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+ 6. SI SE VAN A HACER VARIAS BODAS
+═══════════════════════════════════════════════════════════════════════════════
+
+El plan gratis de Supabase solo permite 2 proyectos activos. Para más bodas,
+usar UNA SOLA base para todas:
+
+  a) Agregar una columna a la tabla:
+
+        alter table public.invitados add column boda text not null default 'boda1';
+        create index on public.invitados (boda);
+
+  b) Cada invitación filtra por su valor de `boda`
+  c) La función buscar_invitado no necesita cambios: el código ya es único
+     entre todas las bodas
+  d) Los perfiles pueden llevar también a qué boda pertenece cada usuario,
+     para que los novios de una boda no vean los invitados de otra
+
+CONSEJO: no generalizar antes de tener el segundo caso real delante. Es
+mejor copiar los archivos y adaptarlos una segunda vez, y recién entonces
+decidir qué conviene compartir. Adivinar qué se va a necesitar suele salir
+mal.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+ 7. LISTA DE ERRORES QUE YA COMETIMOS (no repetirlos)
+═══════════════════════════════════════════════════════════════════════════════
+
+ 1. Usar NEXT_PUBLIC_ en vez de PUBLIC_ en las variables de entorno.
+    Astro solo expone las que empiezan con PUBLIC_.
+
+ 2. Agregar las variables en Vercel y no redesplegar. Vercel NO reconstruye
+    solo: el sitio en línea sigue con el build viejo y /admin queda muerto.
+
+ 3. Dejar que createClient() lance al cargar el módulo cuando faltan las
+    variables. Eso mata todo el script y la página se queda colgada en
+    "Cargando..." sin decir por qué. Solución: exportar un flag `configurado`
+    y crear el cliente solo si hay configuración, para poder avisar en
+    pantalla qué falta.
+
+ 4. Escribir 'superadmin' como rol. La tabla solo acepta 'admin' o 'novio'.
+
+ 5. Elegir "Secret" en el tipo de variable de Vercel. Estas claves son
+    públicas por diseño; con "Config" se pueden verificar después.
+
+ 6. flex-wrap:wrap en la celda de acciones: en escritorio apila los botones
+    en columna y estira las filas.
+
+ 7. Importar Supabase de forma estática en la invitación: agrega 212 KB a
+    todas las visitas aunque el link no traiga código.
+
+ 8. Confiar en esconder botones para restringir permisos. La restricción
+    tiene que estar en las políticas RLS de la base.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+ 8. QUÉ CAMBIAR EN CADA PROYECTO NUEVO
+═══════════════════════════════════════════════════════════════════════════════
+
+  [ ] .env               → URL y clave del nuevo Supabase
+  [ ] Vercel             → las mismas dos variables + Redeploy
+  [ ] admin.astro        → nombres de los novios en <title>, barra lateral
+                           y pantalla de login
+  [ ] admin.astro        → el texto del mensaje de WhatsApp
+                           (función mensajeInvitacion)
+  [ ] workflow .yml      → URL y clave del nuevo Supabase
+  [ ] Componente del pase → los ids nombre-invitado / numero-pases /
+                            palabra-pases deben coincidir con el HTML
+  [ ] Supabase           → crear los dos usuarios y marcar el admin
+
+
+═══════════════════════════════════════════════════════════════════════════════
+ 9. CÓMO PROBAR QUE TODO FUNCIONA
+═══════════════════════════════════════════════════════════════════════════════
+
+  1. Entrar a /admin con el usuario admin → debe verse el interruptor
+  2. Entrar con el usuario novio → NO debe verse el interruptor
+  3. Agregar un invitado de prueba → aparece en la lista con su link
+  4. Copiar el link, abrirlo en otra pestaña → se ve ese nombre en el pase
+  5. Editar el nombre desde el panel → recargar el link → muestra el nuevo
+     (ESTA es la prueba que demuestra el valor del sistema)
+  6. Apagar el interruptor con el admin → entrar como novio → el formulario
+     desaparece y sale el aviso de registro cerrado
+  7. Abrir el panel en un celular → barra lateral con hamburguesa y la
+     tabla convertida en tarjetas
+  8. Copiar mensaje → pegar en WhatsApp → los asteriscos salen en negrita
+  9. Borrar los invitados de prueba antes de entregar al cliente
+
+═══════════════════════════════════════════════════════════════════════════════
+ FIN
+═══════════════════════════════════════════════════════════════════════════════

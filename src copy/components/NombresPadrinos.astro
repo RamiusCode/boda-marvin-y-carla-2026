@@ -1,0 +1,325 @@
+---
+// src/components/NombresPadrinos.astro
+// Los padrinos de las dos ceremonias en una sola hoja, sobre fondo4.png
+// (941x1672).
+//
+// Ese fondo trae el bodegón —libro, cámara, marco— en el tercio de abajo,
+// así que el contenido se queda arriba y el padding inferior le deja el
+// aire para que se vea. Por eso el bloque no va centrado vertical como en
+// las otras hojas.
+
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const titulo = "Nuestros Padrinos";
+const fondo = "/imagenes/fondo4.png";
+
+const ceremonias = [
+    {
+        etiqueta: "Padrinos de Religión",
+        icono: "/imagenes/iglesia.png",
+        padrino: "Jimmy Zegarra",
+        madrina: "Yvenka Mansilla",
+    },
+    {
+        etiqueta: "Padrinos de Civil",
+        icono: "/imagenes/anillos.png",
+        padrino: "Raúl Llanos",
+        madrina: "Lilian de Llanos",
+    },
+];
+// ──────────────────────────────────────────────────────────────
+---
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 🤝 PADRINOS · religión y civil                               -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="padrinos" class="relative w-full">
+    <!-- El marco declara el container para las unidades cqw de adentro -->
+    <div class="hoja-marco">
+        <div class="hoja" style={`--fondo: url('${fondo}')`}>
+            <!-- Ramitas en las dos esquinas de arriba -->
+            <img
+                src="/imagenes/florlateral.png"
+                alt=""
+                aria-hidden="true"
+                class="rama rama-izq"
+            />
+            <img
+                src="/imagenes/florlateral.png"
+                alt=""
+                aria-hidden="true"
+                class="rama rama-der"
+            />
+
+            <!-- Y las peonías cerrando abajo, sobre el bodegón del fondo -->
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor flor-pie-izq"
+            />
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor flor-pie-der"
+            />
+
+            <div id="bloque-padrinos" class="contenido">
+                <h2 class="titulo font-great-vibes">{titulo}</h2>
+
+                <span class="corazon-sep" aria-hidden="true">&#9829;</span>
+
+                {
+                    ceremonias.map((c) => (
+                        <div class="ceremonia">
+                            {/* El icono se pinta con máscara, no con filtros */}
+                            <span
+                                class="icono icono-terracota simbolo"
+                                style={`--ic:url('${c.icono}')`}
+                                aria-hidden="true"
+                            />
+
+                            <span class="etiqueta font-cormorant">
+                                {c.etiqueta}
+                            </span>
+
+                            <p class="nombre font-cormorant">{c.padrino}</p>
+
+                            <p class="union" aria-label="y">
+                                <span class="chevrones" aria-hidden="true">
+                                    &#187;&#187;&#187;
+                                </span>
+                                <span class="amper font-cormorant">&amp;</span>
+                                <span class="chevrones" aria-hidden="true">
+                                    &#171;&#171;&#171;
+                                </span>
+                            </p>
+
+                            <p class="nombre font-cormorant">{c.madrina}</p>
+                        </div>
+                    ))
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    #padrinos {
+        --terracota: #b9563a;
+        --terracota-suave: #cd7a56;
+        --tinta: #7a4a34;
+        --crema: #fdf4ec;
+    }
+
+    .hoja-marco {
+        width: 100%;
+        container-type: inline-size;
+    }
+
+    /*
+       El papel manda por ancho y la min-height guarda su proporción real
+       (1672/941 = 177.7%). El padding de abajo es el que reserva el tercio
+       del bodegón: sin él el texto le caería encima a la cámara.
+    */
+    .hoja {
+        position: relative;
+        width: 100%;
+        min-height: 177.7cqw;
+        padding: 2.8rem 10% 62cqw;
+    }
+
+    /*
+       El fondo va en un ::before y no en la hoja para poder desvanecerle
+       el filo de arriba con una máscara sin tocar el texto ni las ramitas.
+
+       Abajo NO se desvanece: ahí apoya la tarjeta de Dedicatoria3, y el
+       degradado dejaba ver el papel de la página entre las dos secciones.
+    */
+    .hoja::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background-image: var(--fondo);
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+        background-position: center;
+        -webkit-mask-image: linear-gradient(
+            to bottom,
+            transparent 0,
+            #000 110px,
+            #000 100%
+        );
+        mask-image: linear-gradient(
+            to bottom,
+            transparent 0,
+            #000 110px,
+            #000 100%
+        );
+    }
+
+    /*
+       ── Ramitas de las esquinas de arriba ──
+       Bajadas al 11% y corridas 6% hacia afuera: asoman por el filo
+       lateral de la hoja en vez de quedar encajadas en la esquina.
+    */
+    .rama {
+        position: absolute;
+        top: 11%;
+        width: 19%;
+        height: auto;
+        z-index: 1;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .rama-izq {
+        left: -6%;
+        transform: scaleX(-1) rotate(-38deg);
+    }
+
+    .rama-der {
+        right: -6%;
+        transform: rotate(-38deg);
+    }
+
+    /*
+       ── Peonías del pie ──
+       Van apoyadas en el filo de abajo, encima del bodegón que trae el
+       fondo, igual que en el modelo.
+    */
+    .flor {
+        position: absolute;
+        bottom: 0;
+        width: 30%;
+        height: auto;
+        z-index: 1;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    /* Corridas bien a los lados, como las ramitas de arriba */
+    .flor-pie-izq {
+        left: -11%;
+        transform: scaleX(-1) rotate(4deg);
+    }
+
+    .flor-pie-der {
+        right: -11%;
+        transform: rotate(4deg);
+    }
+
+    .contenido {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    /* ── Título ── */
+    .titulo {
+        color: var(--terracota);
+        font-weight: 400;
+        /* Mismo cuerpo que .bendicion en NombresPadres: las dos secciones
+           abren con un texto en caligrafía y no pueden medir distinto */
+        font-size: clamp(1.9rem, 9cqw, 2.4rem);
+        line-height: 1.35;
+        margin: 0;
+    }
+
+    .corazon-sep {
+        display: block;
+        color: var(--terracota);
+        font-size: 0.8rem;
+        line-height: 1;
+        margin: 0.35rem 0 1.3rem;
+    }
+
+    /* ── Cada ceremonia ── */
+    .ceremonia {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .ceremonia + .ceremonia {
+        margin-top: 1.9rem;
+    }
+
+    .simbolo {
+        width: 2.5rem;
+        height: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* La cápsula del rótulo, en negativo sobre terracota */
+    .etiqueta {
+        display: inline-block;
+        padding: 0.16rem 1.05rem 0.22rem;
+        border-radius: 999px;
+        background: var(--terracota);
+        color: var(--crema);
+        font-size: clamp(0.92rem, 4.3cqw, 1.08rem);
+        letter-spacing: 0.03em;
+        line-height: 1.4;
+        margin-bottom: 0.6rem;
+    }
+
+    /*
+       Mismos valores que .nombre en NombresPadres: serif, 5.2cqw y peso
+       600. Las dos secciones listan personas y tienen que leerse iguales;
+       la caligrafía queda para los títulos.
+    */
+    .nombre {
+        color: var(--tinta);
+        font-size: clamp(1.12rem, 5.2cqw, 1.32rem);
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        line-height: 1.42;
+        margin: 0;
+    }
+
+    /* ── El nexo entre los dos nombres ── */
+    .union {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin: 0.1rem 0;
+    }
+
+    .chevrones {
+        color: var(--terracota-suave);
+        font-family: "Cormorant Garamond", serif;
+        font-size: 0.85rem;
+        letter-spacing: 0.1em;
+        line-height: 1;
+    }
+
+    /*
+       El & en serif itálica y a medio cuerpo del nombre: en la caligrafía
+       tendría el mismo tamaño que los nombres y se leería como un tercero.
+    */
+    .amper {
+        color: var(--terracota);
+        font-style: italic;
+        /* Acompaña a los nombres, ahora más chicos: si quedaba en 5cqw
+           pasaba a medir lo mismo que ellos */
+        font-size: clamp(0.9rem, 4.2cqw, 1.08rem);
+        line-height: 1;
+    }
+</style>
+
+<script>
+    import { animarEntrada } from "../scripts/animaciones";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const bloque = document.getElementById("bloque-padrinos");
+        if (!bloque) return;
+
+        animarEntrada(bloque.children, bloque);
+    });
+</script>

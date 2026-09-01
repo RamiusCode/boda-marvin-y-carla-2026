@@ -1,89 +1,171 @@
 ---
 // src/components/Puntualidad.astro
-// Nuestra historia: el título con el corazón y los dos párrafos.
+// El pedido de puntualidad, sobre el bloque terracota: una sola frase con
+// dos palabras resaltadas en caligrafía, el reloj arriba y el remate de
+// hojas abajo.
+//
+// Va en bloque de color y no sobre el papel, como la Recepción: la sección
+// es corta y tiene que cortar la lectura para que se note.
+
 // ── DATOS EDITABLES ───────────────────────────────────────────
-const titulo = "Nuestra historia";
-
-const primero = [
-    "Nos conocimos de niños, crecimos,",
-    "tomamos caminos distintos y la vida",
-    "volvió a encontrarnos.",
-];
-
-// La frase final va resaltada, como en el mensaje original.
-const segundoInicio = "Hoy, aquellos niños";
-const segundoResalte = "se eligen para siempre.";
+// La frase se arma por partes para poder resaltar dos palabras sueltas.
+const inicio = "Tu puntualidad es";
+const resalte1 = "clave";
+const medio = "para que todo salga como lo";
+const resalte2 = "soñamos";
+const final = ".";
 // ──────────────────────────────────────────────────────────────
 ---
 
-<section id="puntualidad" class="relative w-full overflow-hidden px-8 py-16">
-    <!-- Fondo de acuarela -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- ⏱️ PUNTUALIDAD                                              -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="puntualidad" class="relative w-full overflow-hidden">
+    <!--
+       Filete doble, como el marco del modelo. Van antes que los ramos en el
+       markup a propósito: sin z-index propio, el orden del documento
+       decide, y así las flores les pasan por encima como en la papelería
+       de verdad.
+    -->
+    <span class="filete filete-externo" aria-hidden="true"></span>
+    <span class="filete filete-interno" aria-hidden="true"></span>
+
+    <!-- Ramos en diagonal, como en las demás secciones -->
     <img
-        src="/imagenes/foto3.png"
+        src="/imagenes/flores2.png"
         alt=""
-        width="935"
-        height="1629"
         aria-hidden="true"
-        class="absolute inset-0 h-full w-full object-cover"
+        class="ramo ramo-si"
+    />
+    <img
+        src="/imagenes/flores2.png"
+        alt=""
+        aria-hidden="true"
+        class="ramo ramo-id"
     />
 
     <div
         id="bloque-puntualidad"
-        class="relative flex flex-col items-center text-center"
+        class="relative flex flex-col items-center px-9 py-16 text-center"
     >
-        <h2 class="font-dancing titulo-historia">
-            {titulo}
-            <svg class="corazon-historia" viewBox="0 0 32 29" aria-hidden="true">
-                <path
-                    d="M16 28.5 3.6 16.4C.4 13.3.4 8.2 3.6 5.1a8 8 0 0 1 11.2 0l1.2 1.2 1.2-1.2a8 8 0 0 1 11.2 0c3.2 3.1 3.2 8.2 0 11.3L16 28.5z"
-                    fill="#b45733"></path>
-            </svg>
-        </h2>
+        <!-- El reloj se pinta con máscara, no con filtros -->
+        <span
+            class="icono icono-crema reloj"
+            style="--ic:url('/imagenes/hora.png')"
+            aria-hidden="true"></span>
 
-        <p class="font-cormorant texto-historia">
-            {primero.map((linea) => <span class="block">{linea}</span>)}
+        <p class="frase font-cormorant">
+            {inicio}
+            <span class="resalte font-great-vibes">{resalte1}</span>
+            {medio}
+            <span class="resalte font-great-vibes">{resalte2}</span>{final}
         </p>
 
-        <p class="font-cormorant texto-historia cierre-historia">
-            {segundoInicio}
-            <span class="resalte-historia">{segundoResalte}</span>
-            <svg class="corazon-historia" viewBox="0 0 32 29" aria-hidden="true">
-                <path
-                    d="M16 28.5 3.6 16.4C.4 13.3.4 8.2 3.6 5.1a8 8 0 0 1 11.2 0l1.2 1.2 1.2-1.2a8 8 0 0 1 11.2 0c3.2 3.1 3.2 8.2 0 11.3L16 28.5z"
-                    fill="#b45733"></path>
-            </svg>
-        </p>
+        <span class="separador" aria-hidden="true">
+            <span class="chevrones font-cormorant">&#187;&#187;&#187;</span>
+            <b class="corazon">&#9829;</b>
+            <span class="chevrones font-cormorant">&#171;&#171;&#171;</span>
+        </span>
     </div>
 </section>
 
 <style>
-    .titulo-historia {
-        color: #a4482a;
-        font-size: clamp(1.7rem, 7.6vw, 2.1rem);
-        line-height: 1.3;
+    /* Terracota liso, el mismo tono que la recepción */
+    #puntualidad {
+        background: #b45733;
     }
 
-    .corazon-historia {
-        display: inline-block;
-        width: 0.72em;
-        height: 0.66em;
-        margin-left: 0.18em;
-        vertical-align: -0.02em;
+    /*
+       Filete doble: el de afuera marca el borde y el de adentro lo dobla
+       más tenue, que es lo que le da el aire de marco impreso en vez de un
+       simple recuadro.
+    */
+    .filete {
+        position: absolute;
+        border: 1px solid rgba(253, 244, 236, 0.32);
+        border-radius: 10px;
+        pointer-events: none;
     }
 
-    .texto-historia {
-        color: #7a3418;
-        font-size: clamp(1.15rem, 5.3vw, 1.4rem);
-        line-height: 1.65;
-        margin-top: 1.4rem;
+    .filete-externo {
+        inset: 13px;
     }
 
-    .cierre-historia {
+    .filete-interno {
+        inset: 19px;
+        border-color: rgba(253, 244, 236, 0.18);
+        border-radius: 7px;
+    }
+
+    /* ── Ramos de las esquinas ── */
+    .ramo {
+        position: absolute;
+        width: 32%;
+        height: auto;
+        z-index: 0;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .ramo-si {
+        top: 0;
+        left: -13%;
+        transform: scaleY(-1) rotate(4deg);
+    }
+
+    .ramo-id {
+        bottom: 0;
+        right: -13%;
+        transform: scaleX(-1) rotate(4deg);
+    }
+
+    .reloj {
+        width: 2.4rem;
+        height: 2.4rem;
+        margin-bottom: 1.2rem;
+    }
+
+    /* ── La frase ── */
+    .frase {
+        color: #fdf6ee;
+        font-size: clamp(1.35rem, 6.2vw, 1.7rem);
+        line-height: 1.75;
+        max-width: 20rem;
+    }
+
+    /*
+       Las dos palabras resaltadas van en caligrafía y un punto más grandes.
+       El vertical-align las recentra: Great Vibes se apoya bajo la línea
+       base y sin esto quedan colgando respecto del serif de al lado.
+    */
+    .resalte {
+        color: #ffe9d5;
+        font-size: 1.45em;
+        line-height: 1;
+        vertical-align: -0.08em;
+        margin: 0 0.06em;
+    }
+
+    /* Rayita · corazón · rayita, el mismo remate del resto de la invitación */
+    .separador {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
         margin-top: 1.6rem;
     }
 
-    .resalte-historia {
-        font-weight: 600;
+    .chevrones {
+        color: rgba(253, 244, 236, 0.75);
+        font-size: 0.85rem;
+        letter-spacing: 0.1em;
+        line-height: 1;
+    }
+
+    .corazon {
+        color: #fbeee2;
+        font-size: 0.85rem;
+        line-height: 1;
+        font-weight: 400;
     }
 </style>
 

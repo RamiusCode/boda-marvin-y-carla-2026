@@ -1,0 +1,470 @@
+---
+// src/components/Dedicatoria.astro
+// La carta de Lili: hoja de acuarela con el retrato del perrito arriba y
+// todo el texto de la dedicatoria abajo.
+//
+// El fondo (fondo2.png, 941x1672) se dibuja con background-size: 100% 100%,
+// o sea que manda el ancho: la hoja siempre entra completa, sin recortes.
+// La min-height le da la proporción real de la imagen (177.7% del ancho);
+// si el texto pide más alto, el fondo se estira nada más que a lo largo.
+// Los bordes laterales no se deforman (miden en % del ancho) y el aguado
+// de arriba y abajo engorda un poco, que es lo único que se nota.
+
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const saludo = "Hola";
+const perrita = "Lili";
+const novio = "Marvin";
+
+const bloques = [
+    {
+        texto: "Soy Lili, la perrita consentida de mi mamá humana, y hoy quiero darte la ",
+        destacado: "bienvenida a un día muy especial.",
+    },
+    {
+        texto:
+            "Hace mucho tiempo, mamá humana y yo éramos solo dos. " +
+            "Compartíamos nuestras rutinas, nuestras tardes, " +
+            "nuestros juegos y un amor inmenso que nos hacía felices.",
+    },
+    {
+        texto: "Pero en un momento determinado, apareció alguien muy especial en nuestras vidas: ",
+        destacado: "Marvin.",
+    },
+];
+
+const razones = [
+    {
+        n: "1",
+        texto:
+            "Aceptar a mi mamá humana tal como es, con su carácter fuerte, " +
+            "sus días buenos y los no tan buenos. La ayudó a ser más tranquila, " +
+            "más feliz y a creer que el amor verdadero sí existe.",
+    },
+    {
+        n: "2",
+        texto:
+            "Quererme a mí, y eso es lo más importante para mí, mamá humana. " +
+            "Con su amor y paciencia, me hizo sentir parte de su vida, " +
+            "de su corazón y de su familia.",
+    },
+];
+
+const cierre =
+    "Te invitamos a celebrar con nosotros el inicio de esta nueva etapa, " +
+    "donde el amor nos une y la felicidad nos acompaña.";
+// ──────────────────────────────────────────────────────────────
+---
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 🐾 DEDICATORIA · la carta de Lili                            -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--
+   El padding de abajo es más grande que el de arriba a propósito: la
+   sección que sigue (Versículo) entra con -mt-28, así que se come 7rem.
+   Con pb-44 quedan ~4rem de aire real entre la hoja y el versículo.
+-->
+<section id="dedicatoria" class="relative w-full pt-10 pb-44">
+    <!--
+       El marco es el que declara el container: si el container-type
+       estuviera en la hoja, sus propias unidades cqw resolverían contra el
+       viewport en vez de contra ella misma. Los dos miden lo mismo.
+    -->
+    <div class="hoja-marco">
+        <article id="hoja-dedicatoria" class="hoja">
+            <!--
+               Flores montadas sobre el filo de arriba: se salen de la hoja
+               y pisan la unión con la sección anterior, para que el corte
+               del fondo no se lea como una línea recta.
+            -->
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor-borde flor-alto-izq"
+            />
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor-borde flor-alto-der"
+            />
+
+            <!-- Flores al pie, detrás del texto -->
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor-borde flor-pie-izq"
+            />
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor-borde flor-pie-der"
+            />
+
+            <div class="contenido">
+                <h2 class="titulo font-great-vibes">{saludo}</h2>
+
+                <!-- El retrato ya viene con las flores incluidas en el PNG -->
+                <img
+                    id="retrato-lili"
+                    src="/imagenes/perrito2.png"
+                    alt="Lili, la perrita de los novios, rodeada de flores"
+                    class="retrato"
+                />
+
+                {
+                    bloques.map((b) => (
+                        <p class="parrafo">
+                        {b.texto}
+                        {b.destacado && (
+                            <span class="destacado font-great-vibes">
+                                {b.destacado}
+                            </span>
+                        )}
+                        </p>
+                    ))
+                }
+
+                <p class="parrafo parrafo-corto">
+                    Y todo cambió para mejor. <span class="corazon">&#9829;</span>
+                </p>
+
+                <h3 class="subtitulo font-great-vibes">
+                    {novio} hizo dos cosas muy importantes:
+                </h3>
+
+                <div class="tarjetas">
+                    {
+                        razones.map((r) => (
+                        <div class="tarjeta">
+                            <span class="numero">{r.n}</span>
+                            <p class="tarjeta-texto">{r.texto}</p>
+                        </div>
+                        ))
+                    }
+                </div>
+
+                <p class="parrafo">
+                    Hoy, mamá humana y yo queremos decirte que ya no estamos solas.
+                </p>
+
+                <p class="destacado destacado-bloque font-great-vibes">
+                    Ahora somos tres, y nuestro hogar está lleno de amor, respeto,
+                    risas y muchos paseos juntos.
+                </p>
+
+                <p class="parrafo">{cierre}</p>
+
+                <p class="firma">
+                    Con amor, <span class="firma-nombre font-great-vibes"
+                        >{perrita}</span
+                    >
+                    <span class="patita">&#128062;</span>
+                </p>
+
+                <p class="nota font-great-vibes">
+                    Siempre juntos,<br />por siempre familia.
+                </p>
+            </div>
+        </article>
+    </div>
+</section>
+
+<style>
+    /* ── Paleta de la hoja ── */
+    #dedicatoria {
+        --terracota: #b9563a;
+        --terracota-claro: #cd7a56;
+        --tinta: #7a4a34;
+    }
+
+    /*
+       Sin max-width ni margin: la hoja va a sangre, de filo a filo de la
+       columna. El ancho ya lo limita el <main> del Layout en 430px.
+    */
+    .hoja-marco {
+        width: 100%;
+        container-type: inline-size;
+    }
+
+    /*
+       El padding lateral del 11% no es decorativo: el aguado de acuarela
+       de fondo2 ocupa ~9.6% del ancho de cada lado, así que sin él el
+       texto caería encima del terracota.
+    */
+    .hoja {
+        position: relative;
+        width: 100%;
+        /*
+           background-size: 100% 100% = el ancho manda y el alto se estira;
+           min-height mantiene la proporción real (1672/941 = 177.7%)
+           cuando el texto no llega a llenarla.
+        */
+        min-height: 177.7cqw;
+        padding: 3rem 11% 3.4rem;
+    }
+
+    /*
+       El fondo va en un ::before y no en la hoja para poder desvanecerle
+       los filos con una máscara sin tocar el texto. Sin esto, el corte de
+       arriba de fondo2.png se ve como una línea recta contra el papel de
+       la página. El degradado es en px y no en %, así el desvanecido mide
+       lo mismo por más que la hoja crezca a lo largo.
+    */
+    .hoja::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background-image: url("/imagenes/fondo2.png");
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+        background-position: center;
+        -webkit-mask-image: linear-gradient(
+            to bottom,
+            transparent 0,
+            #000 78px,
+            #000 calc(100% - 70px),
+            transparent 100%
+        );
+        mask-image: linear-gradient(
+            to bottom,
+            transparent 0,
+            #000 78px,
+            #000 calc(100% - 70px),
+            transparent 100%
+        );
+    }
+
+    /* El texto va por encima del fondo y de las flores */
+    .contenido {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+    }
+
+    /* ── Flores de los filos ── */
+    .flor-borde {
+        position: absolute;
+        width: 29%;
+        height: auto;
+        z-index: 1;
+        opacity: 0.95;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    /*
+       Las de arriba son las de abajo espejadas en vertical (scaleY(-1)),
+       y salen 2.4rem por encima del filo para pisar la unión. Ese voladizo
+       entra dentro del pt-10 de la sección, así que no empuja nada.
+    */
+    .flor-alto-izq {
+        top: -2.4rem;
+        left: -3%;
+        transform: scaleY(-1) rotate(4deg);
+    }
+
+    .flor-alto-der {
+        top: -2.4rem;
+        right: -3%;
+        transform: scaleX(-1) scaleY(-1) rotate(4deg);
+    }
+
+    .flor-pie-izq {
+        bottom: 0;
+        left: -2%;
+        transform: rotate(4deg);
+    }
+
+    .flor-pie-der {
+        bottom: 0;
+        right: -2%;
+        transform: scaleX(-1) rotate(4deg);
+    }
+
+    /* ── Título ── */
+    .titulo {
+        color: var(--terracota);
+        font-weight: 400;
+        font-size: clamp(3.8rem, 19cqw, 5.2rem);
+        line-height: 1;
+        margin-bottom: 0.2rem;
+    }
+
+    /* ── Retrato ── */
+    .retrato {
+        display: block;
+        width: 100%;
+        max-width: 21rem;
+        height: auto;
+        margin: 0 auto 1.4rem;
+    }
+
+    /* ── Cuerpo del texto ── */
+    .parrafo {
+        color: var(--tinta);
+        font-family: "Cormorant Garamond", serif;
+        font-size: clamp(1.05rem, 4.9cqw, 1.22rem);
+        line-height: 1.68;
+        margin: 0 0 1.1rem;
+    }
+
+    .parrafo-corto {
+        margin-bottom: 1.5rem;
+    }
+
+    /* Las frases en caligrafía, un punto más grandes que el cuerpo */
+    .destacado {
+        color: var(--terracota);
+        font-size: 1.3em;
+        line-height: 1.35;
+    }
+
+    .destacado-bloque {
+        display: block;
+        font-size: clamp(1.35rem, 6.4cqw, 1.6rem);
+        line-height: 1.45;
+        margin: 0 0 1.4rem;
+    }
+
+    .corazon,
+    .patita {
+        color: var(--terracota);
+        font-size: 0.9em;
+    }
+
+    /* ── Subtítulo antes de las tarjetas ── */
+    .subtitulo {
+        color: var(--terracota);
+        font-weight: 400;
+        font-size: clamp(1.45rem, 6.9cqw, 1.8rem);
+        line-height: 1.4;
+        margin: 0.2rem 0 1.1rem;
+    }
+
+    /* ── Las dos tarjetas, lado a lado ── */
+    .tarjetas {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.7rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .tarjeta {
+        background: rgba(255, 249, 242, 0.72);
+        border: 1px solid rgba(185, 86, 58, 0.22);
+        border-radius: 0.5rem;
+        padding: 1.7rem 0.8rem 1rem;
+        position: relative;
+    }
+
+    /* El número va montado sobre el filo de arriba de la tarjeta */
+    .numero {
+        position: absolute;
+        top: -0.85rem;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 1.7rem;
+        height: 1.7rem;
+        border-radius: 50%;
+        background: var(--terracota);
+        color: #fff6ee;
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1rem;
+        line-height: 1.7rem;
+        text-align: center;
+    }
+
+    .tarjeta-texto {
+        color: var(--tinta);
+        font-family: "Cormorant Garamond", serif;
+        font-size: clamp(0.88rem, 4cqw, 1rem);
+        line-height: 1.55;
+        margin: 0;
+    }
+
+    /* ── Firma ── */
+    .firma {
+        color: var(--tinta);
+        font-family: "Cormorant Garamond", serif;
+        font-size: clamp(1.05rem, 4.9cqw, 1.22rem);
+        margin: 1.8rem 0 0;
+    }
+
+    .firma-nombre {
+        color: var(--terracota);
+        font-size: 2.6em;
+        line-height: 1;
+        vertical-align: -0.18em;
+        margin: 0 0.15em;
+    }
+
+    /* ── Nota final, corrida a la derecha como en el modelo ── */
+    .nota {
+        color: var(--terracota-claro);
+        font-size: clamp(1.1rem, 5.2cqw, 1.3rem);
+        line-height: 1.35;
+        text-align: right;
+        margin: 1.2rem 0 0;
+    }
+
+    /* En pantallas muy angostas las tarjetas se apilan */
+    @media (max-width: 340px) {
+        .tarjetas {
+            grid-template-columns: 1fr;
+            gap: 1.2rem;
+        }
+    }
+</style>
+
+<script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const hoja = document.getElementById("hoja-dedicatoria");
+        if (!hoja) return;
+
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+            return;
+
+        // La hoja entra entera y después el contenido se escalona encima.
+        gsap.fromTo(
+            hoja,
+            { opacity: 0, y: 30 },
+            {
+                opacity: 1,
+                y: 0,
+                duration: 1.1,
+                ease: "power2.out",
+                scrollTrigger: {
+                    trigger: hoja,
+                    start: "top 82%",
+                    toggleActions: "play none none reset",
+                },
+            },
+        );
+
+        const contenido = hoja.querySelector(".contenido");
+        if (!contenido) return;
+
+        gsap.from(Array.from(contenido.children), {
+            opacity: 0,
+            y: 22,
+            duration: 0.8,
+            stagger: 0.11,
+            ease: "power2.out",
+            delay: 0.25,
+            scrollTrigger: {
+                trigger: hoja,
+                start: "top 82%",
+                toggleActions: "play none none reset",
+            },
+        });
+    });
+</script>

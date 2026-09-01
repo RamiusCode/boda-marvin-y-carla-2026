@@ -1,0 +1,261 @@
+---
+// src/components/Foto1.astro
+// Imagen enmarcada, como una lámina: escuadras abiertas por fuera y un
+// paspartú marfil con su filete terracota adentro. La imagen ya trae el
+// color de la paleta, así que no lleva velo ni adornos encima.
+//
+// La ventana no fija proporción: toma la de la imagen (foto3.jpeg es
+// 1086x1448). Así entera y sin recortar, y cambiar la imagen no obliga a
+// tocar el CSS. Al entrar arranca ampliada y vuelve a su tamaño: el zoom
+// queda contenido por el overflow de la ventana.
+
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const foto = "/imagenes/foto3.jpeg";
+// La imagen trae texto adentro, así que el alt lo repite para quien no la ve
+const alt =
+    "Estos niños se casan: bienvenidos a la boda de Marvin y Carla";
+// Sin epígrafe: la imagen ya dice todo. Poné una frase acá si querés que
+// aparezca debajo del marco.
+const frase = "";
+// ──────────────────────────────────────────────────────────────
+---
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 🖼️  IMAGEN ENMARCADA                                        -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--
+   Padding chico abajo: ahora sigue Dedicatoria2, que se desvanece sus
+   primeros 70px con la máscara y ya aporta el aire. La compensación del
+   -mt-28 del Versículo pasó a esa sección, que es la que quedó antes.
+-->
+<section
+    id="foto-enmarcada"
+    class="relative w-full overflow-hidden px-6 pt-2 pb-10"
+>
+    <figure class="figura">
+        <!--
+           Marco de lámina: escuadras abiertas por fuera, aire, y adentro
+           un paspartú marfil con su filete terracota. El paspartú claro es
+           la clave: una banda de color macizo se lee como borde, una de
+           marfil se lee como enmarcado.
+        -->
+        <div id="foto-marco" class="marco">
+            <!-- Escuadras: el marco se insinúa en las esquinas, no cierra -->
+            <span class="esq esq-si" aria-hidden="true"></span>
+            <span class="esq esq-sd" aria-hidden="true"></span>
+            <span class="esq esq-ii" aria-hidden="true"></span>
+            <span class="esq esq-id" aria-hidden="true"></span>
+
+            <div class="lamina">
+                <div class="ventana">
+                    <img
+                        id="foto-enmarcada-img"
+                        src={foto}
+                        alt={alt}
+                        width="1086"
+                        height="1448"
+                        class="foto"
+                    />
+                </div>
+            </div>
+        </div>
+
+        {
+            frase && (
+                <figcaption id="foto-frase" class="frase font-great-vibes">
+                    {frase}
+                </figcaption>
+            )
+        }
+    </figure>
+</section>
+
+<style>
+    #foto-enmarcada {
+        --terracota: #b9563a;
+        --crema: #fdf4ec;
+        --hilo: rgba(185, 86, 58, 0.55);
+    }
+
+
+    /*
+       position: relative para que quede por encima del fondo. El fondo es
+       un <img> absoluto, y un absoluto se dibuja sobre el contenido en
+       flujo: sin esto la acuarela taparía el marco entero.
+    */
+    .figura {
+        position: relative;
+        margin: 0 auto;
+        max-width: 23rem;
+    }
+
+    /* El aire de afuera es donde viven las escuadras */
+    .marco {
+        position: relative;
+        padding: 15px;
+    }
+
+    /*
+       Escuadras: el marco exterior solo se dibuja en las esquinas y deja
+       los lados abiertos. Sugiere el encuadre sin encerrar la imagen, que
+       es lo que lo vuelve liviano en vez de un recuadro más.
+    */
+    .esq {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+    }
+
+    .esq-si {
+        top: 0;
+        left: 0;
+        border-top: 1px solid var(--hilo);
+        border-left: 1px solid var(--hilo);
+    }
+
+    .esq-sd {
+        top: 0;
+        right: 0;
+        border-top: 1px solid var(--hilo);
+        border-right: 1px solid var(--hilo);
+    }
+
+    .esq-ii {
+        bottom: 0;
+        left: 0;
+        border-bottom: 1px solid var(--hilo);
+        border-left: 1px solid var(--hilo);
+    }
+
+    .esq-id {
+        bottom: 0;
+        right: 0;
+        border-bottom: 1px solid var(--hilo);
+        border-right: 1px solid var(--hilo);
+    }
+
+    /*
+       El paspartú, en marfil. La sombra va baja y muy abierta: así se lee
+       como una lámina apoyada sobre el papel y no como una caja con
+       relieve.
+    */
+    .lamina {
+        position: relative;
+        padding: 17px;
+        background: linear-gradient(160deg, #fdf7f0 0%, #f6ebde 100%);
+        box-shadow:
+            0 0 0 1px rgba(185, 86, 58, 0.16),
+            0 18px 40px rgba(120, 58, 32, 0.18);
+    }
+
+    /*
+       El filete francés: la línea fina que en un paspartú de verdad se
+       traza sobre el cartón, separada de la ventana. Ese respiro entre la
+       línea y la foto es todo el efecto.
+    */
+    .lamina::after {
+        content: "";
+        position: absolute;
+        inset: 8px;
+        border: 1px solid rgba(185, 86, 58, 0.42);
+        pointer-events: none;
+    }
+
+    /*
+       La ventana recorta el zoom. No le fijo proporción: la toma de la
+       imagen, así entra entera y cambiar la foto no obliga a tocar el CSS.
+    */
+    .ventana {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        /*
+           Hilo al canto de la ventana: la imagen y el paspartú son los dos
+           marfil, y sin esta línea el borde de la foto se pierde contra el
+           cartón.
+        */
+        box-shadow: 0 0 0 1px rgba(185, 86, 58, 0.22);
+    }
+
+    .foto {
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+
+    .frase {
+        color: var(--terracota);
+        font-size: clamp(1.5rem, 7.2vw, 1.9rem);
+        line-height: 1.35;
+        text-align: center;
+        margin: 1.5rem auto 0;
+        /* Respeta el salto del dato, sin necesitar un <br> en el markup */
+        white-space: pre-line;
+    }
+</style>
+
+<script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const marco = document.getElementById("foto-marco");
+        const foto = document.getElementById("foto-enmarcada-img");
+        const frase = document.getElementById("foto-frase");
+        if (!marco || !foto) return;
+
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+            return;
+
+        const disparador = {
+            trigger: marco,
+            start: "top 85%",
+            toggleActions: "play none none reset",
+        };
+
+        // El marco se asienta
+        gsap.fromTo(
+            marco,
+            { opacity: 0, y: 26 },
+            {
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                ease: "power2.out",
+                scrollTrigger: disparador,
+            },
+        );
+
+        // ═══ EL ZOOM ═══
+        // Arranca ampliada y se va acomodando hasta su tamaño real. Lento
+        // y con power2.out para que se lea como un respiro, no como un
+        // efecto: frena de a poco en vez de cortar de golpe.
+        gsap.fromTo(
+            foto,
+            { scale: 1.24 },
+            {
+                scale: 1,
+                duration: 2.6,
+                ease: "power2.out",
+                scrollTrigger: disparador,
+            },
+        );
+
+        if (frase) {
+            gsap.fromTo(
+                frase,
+                { opacity: 0, y: 20 },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 1,
+                    delay: 0.55,
+                    ease: "power2.out",
+                    scrollTrigger: disparador,
+                },
+            );
+        }
+    });
+</script>

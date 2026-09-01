@@ -1,8 +1,18 @@
 ---
 // src/components/NombresPadres.astro
-// Bendición y nombres de los padres sobre el papel, con las flores en las
-// esquinas: arriba a la izquierda y abajo a la derecha, la misma rama girada.
+// Bendición y nombres de los padres sobre papel de acuarela.
+//
+// El fondo (foto3.png, 935x1629) ya trae las acuarelas en las esquinas y
+// el centro limpio, así que la sección no necesita flores sueltas encima:
+// el adorno viene en el papel y el texto se queda en el aire que le deja.
+//
+// Se pinta con background-size: 100% 100%, o sea que manda el ancho, y la
+// min-height guarda la proporción real (174.2% del ancho). Si el texto
+// pidiera más alto, el papel se estira nada más que a lo largo.
+
 // ── DATOS EDITABLES ───────────────────────────────────────────
+const fondo = "/imagenes/foto3.png";
+
 const bendicion = ["Con la bendición de Dios", "y de nuestros padres"];
 
 const padres = [
@@ -24,89 +34,319 @@ const cierre = [
 // ──────────────────────────────────────────────────────────────
 ---
 
-<section id="padres" class="relative w-full overflow-hidden px-8 pt-28 pb-28">
-    <!-- Flores de las esquinas: la misma rama, la de abajo girada media vuelta -->
-    <img
-        src="/imagenes/florlateral.png"
-        alt=""
-        width="244"
-        height="497"
-        aria-hidden="true"
-        class="pointer-events-none absolute top-0 left-0 w-[20%] select-none"
-    />
-    <img
-        src="/imagenes/florlateral.png"
-        alt=""
-        width="244"
-        height="497"
-        aria-hidden="true"
-        class="pointer-events-none absolute bottom-0 right-0 w-[20%] -scale-x-100 select-none"
-    />
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 👰 PADRES · la bendición y los nombres                       -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--
+   Sin padding: la hoja apoya directo contra las secciones de arriba y de
+   abajo, sin dejar asomar el fondo de la página entre medio.
+-->
+<section id="padres" class="relative w-full">
+    <!-- El marco declara el container para las unidades cqw de adentro -->
+    <div class="hoja-marco">
+        <div class="hoja" style={`--fondo: url('${fondo}')`}>
+            <!--
+               Las cuatro esquinas, como en la Dedicatoria: las de arriba
+               son las de abajo espejadas en vertical, así el ramo cierra
+               con una sola imagen.
+            -->
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor flor-alto-izq"
+            />
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor flor-alto-der"
+            />
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor flor-pie-izq"
+            />
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor flor-pie-der"
+            />
 
-    <div id="bloque-padres" class="relative flex flex-col items-center text-center">
-        <p class="font-dancing bendicion-padres">
-            {bendicion.map((linea) => <span class="block">{linea}</span>)}
-        </p>
+            <div id="bloque-padres" class="contenido">
+                <p class="bendicion font-great-vibes">
+                    {bendicion.map((linea) => <span class="renglon">{linea}</span>)}
+                </p>
 
-        {
-            padres.map((grupo) => (
-                <div class="grupo-padres">
-                    <h3 class="font-verandah rotulo-padres">{grupo.titulo}</h3>
+                <span class="separador" aria-hidden="true">
+                    <i class="raya"></i>
+                    <b class="corazon">&#9829;</b>
+                    <i class="raya"></i>
+                </span>
 
-                    <div class="lista-nombres">
-                        {grupo.nombres.map((nombre) => (
-                            <p class="font-cormorant nombre-padre">{nombre}</p>
-                        ))}
-                    </div>
-                </div>
-            ))
-        }
+                {
+                    padres.map((grupo) => (
+                        <div class="grupo">
+                            <h3 class="etiqueta font-cormorant">
+                                {grupo.titulo}
+                            </h3>
 
-        <p class="font-dancing cierre-padres">
-            {cierre.map((linea) => <span class="block">{linea}</span>)}
-        </p>
+                            {grupo.nombres.map((nombre, i) => (
+                                <>
+                                    {i > 0 && (
+                                        <p class="union" aria-label="y">
+                                            <span
+                                                class="chevrones"
+                                                aria-hidden="true"
+                                            >
+                                                &#187;&#187;&#187;
+                                            </span>
+                                            <span class="amper font-cormorant">
+                                                &amp;
+                                            </span>
+                                            <span
+                                                class="chevrones"
+                                                aria-hidden="true"
+                                            >
+                                                &#171;&#171;&#171;
+                                            </span>
+                                        </p>
+                                    )}
+                                    <p class="nombre font-cormorant">{nombre}</p>
+                                </>
+                            ))}
+                        </div>
+                    ))
+                }
+
+                <span class="separador" aria-hidden="true">
+                    <i class="raya"></i>
+                    <b class="corazon">&#9829;</b>
+                    <i class="raya"></i>
+                </span>
+
+                <p class="cierre font-great-vibes">
+                    {cierre.map((linea) => <span class="renglon">{linea}</span>)}
+                </p>
+            </div>
+        </div>
     </div>
 </section>
 
 <style>
-    .bendicion-padres {
-        color: #a4482a;
-        font-size: clamp(1.55rem, 7vw, 1.95rem);
+    #padres {
+        --terracota: #b9563a;
+        --terracota-suave: #cd7a56;
+        --tinta: #7a4a34;
+        --crema: #fdf4ec;
+    }
+
+    .hoja-marco {
+        width: 100%;
+        container-type: inline-size;
+    }
+
+    /*
+       El padding lateral del 13% deja el texto adentro del aire limpio del
+       papel: las acuarelas de foto3 muerden ~10% de cada lado.
+    */
+    .hoja {
+        position: relative;
+        width: 100%;
+        min-height: 174.2cqw;
+        padding: 3.2rem 13% 3.4rem;
+        display: flex;
+        align-items: center;
+    }
+
+    /*
+       El fondo va en un ::before y no en la hoja para poder desvanecerlo
+       sin tocar el texto ni las flores.
+
+       La máscara actúa solo abajo: arriba el papel entra con el filo neto,
+       y los últimos 110px se disuelven hacia la sección que sigue.
+    */
+    .hoja::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background-image: var(--fondo);
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+        background-position: center;
+        -webkit-mask-image: linear-gradient(
+            to bottom,
+            #000 0,
+            #000 calc(100% - 110px),
+            transparent 100%
+        );
+        mask-image: linear-gradient(
+            to bottom,
+            #000 0,
+            #000 calc(100% - 110px),
+            transparent 100%
+        );
+    }
+
+    /* ── Flores de las cuatro esquinas ── */
+    .flor {
+        position: absolute;
+        width: 29%;
+        height: auto;
+        z-index: 1;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    /* Apoyadas en los filos, sin volar afuera: ya no hay padding donde caer */
+    /*
+       Las de arriba van bien afuera: la bendición ahora entra a 9cqw y con
+       -3% el ramo le pisaba las primeras letras. Con 29% de ancho, el -15%
+       deja el filo derecho de la flor justo en el 14%, que es donde
+       arranca el texto (la hoja tiene 13% de padding).
+    */
+    .flor-alto-izq {
+        top: 0;
+        left: -15%;
+        transform: scaleY(-1) rotate(4deg);
+    }
+
+    .flor-alto-der {
+        top: 0;
+        right: -15%;
+        transform: scaleX(-1) scaleY(-1) rotate(4deg);
+    }
+
+    .flor-pie-izq {
+        bottom: 0;
+        left: -3%;
+        transform: rotate(4deg);
+    }
+
+    .flor-pie-der {
+        bottom: 0;
+        right: -3%;
+        transform: scaleX(-1) rotate(4deg);
+    }
+
+    .contenido {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .renglon {
+        display: block;
+    }
+
+    /* ── Bendición y cierre, en caligrafía ── */
+    .bendicion,
+    .cierre {
+        color: var(--terracota);
+        font-size: clamp(1.35rem, 6.4cqw, 1.6rem);
         line-height: 1.45;
+        margin: 0;
     }
 
-    .grupo-padres {
-        margin-top: 2.2rem;
+    /*
+       La bendición abre la sección y cumple el mismo papel que "Nuestros
+       Padrinos" en la otra: van al mismo cuerpo para que las dos secciones
+       arranquen igual.
+    */
+    .bendicion {
+        font-size: clamp(1.9rem, 9cqw, 2.4rem);
+        line-height: 1.35;
     }
 
-    /* El rótulo va en la caligrafía y los nombres en serif: así el dato que
-       importa se lee limpio y el adorno queda en el título. */
-    .rotulo-padres {
-        color: #b0603f;
-        font-size: clamp(1.62rem, 7.4vw, 2rem);
-        line-height: 1.5;
+    /* Rayita · corazón · rayita, el mismo remate que en la Fecha */
+    .separador {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 1.5rem 0;
     }
 
-    .lista-nombres {
-        margin-top: 0.4rem;
+    .raya {
+        display: block;
+        width: 2.2rem;
+        height: 1px;
+        background: var(--terracota-suave);
     }
 
-    .nombre-padre {
-        color: #8e3a1e;
-        font-size: clamp(1.28rem, 5.8vw, 1.55rem);
+    .corazon {
+        color: var(--terracota);
+        font-size: 0.7rem;
+        line-height: 1;
+        font-weight: 400;
+    }
+
+    /* ── Cada pareja ── */
+    .grupo {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .grupo + .grupo {
+        margin-top: 1.9rem;
+    }
+
+    /*
+       La cápsula del rótulo, en negativo sobre terracota. Valores idénticos
+       a .etiqueta de NombresPadrinos: las dos secciones son el mismo tipo
+       de bloque y tienen que leerse iguales.
+    */
+    .etiqueta {
+        display: inline-block;
+        padding: 0.16rem 1.05rem 0.22rem;
+        border-radius: 999px;
+        background: var(--terracota);
+        color: var(--crema);
+        font-weight: 400;
+        font-size: clamp(0.92rem, 4.3cqw, 1.08rem);
+        letter-spacing: 0.03em;
+        line-height: 1.4;
+        margin: 0 0 0.6rem;
+    }
+
+    .nombre {
+        color: var(--tinta);
+        font-size: clamp(1.12rem, 5.2cqw, 1.32rem);
         font-weight: 600;
         letter-spacing: 0.01em;
-        line-height: 1.35;
-        /* Los dos nombres de cada pareja van pegados; el aire grande queda
-           entre el rótulo y el primer nombre. */
-        margin-top: 0;
+        line-height: 1.42;
+        margin: 0;
     }
 
-    .cierre-padres {
-        color: #a4482a;
-        font-size: clamp(1.45rem, 6.6vw, 1.8rem);
-        line-height: 1.5;
-        margin-top: 2.6rem;
+    /* ── El nexo entre los dos nombres, como en Padrinos ── */
+    .union {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin: 0.1rem 0;
+    }
+
+    .chevrones {
+        color: var(--terracota-suave);
+        font-family: "Cormorant Garamond", serif;
+        font-size: 0.85rem;
+        letter-spacing: 0.1em;
+        line-height: 1;
+    }
+
+    .amper {
+        color: var(--terracota);
+        font-style: italic;
+        font-size: clamp(0.9rem, 4.2cqw, 1.08rem);
+        line-height: 1;
     }
 </style>
 

@@ -1,99 +1,280 @@
-﻿---
+---
 // src/components/Cronograma.astro
-// Banda "Cronograma" + línea de tiempo en zigzag con los momentos del día.
+// Cronograma sobre el papel de acuarela: título, y debajo la línea de
+// tiempo en una sola columna — el icono a la izquierda, el punto sobre el
+// eje y la hora con su momento a la derecha.
 // ── DATOS EDITABLES ───────────────────────────────────────────
-const titulo = "CRONOGRAMA";
+const titulo = "Cronograma";
 
-// Los iconos salen de /public/imagenes, donde cada archivo lleva el nombre
-// del momento al que corresponde.
+// Los iconos salen de /public/imagenes. recepción.png lleva tilde en el
+// nombre: va escapado para que la URL no dependa de cómo lo codifique cada
+// servidor.
 const momentos = [
-    { nombre: ["CEREMONIA", "CIVIL"], hora: "13:00", icono: "ceremoniacivil.png" },
-    { nombre: ["FOTOS"], hora: "13:30", icono: "fotos.png" },
-    { nombre: ["VALS"], hora: "14:00", icono: "vals.png" },
-    { nombre: ["BRINDIS"], hora: "14:30", icono: "brindis.png" },
-    { nombre: ["BAILE"], hora: "15:00", icono: "party.png" },
-    { nombre: ["CENA"], hora: "16:00", icono: "cena.png" },
-    { nombre: ["TORTA"], hora: "17:00", icono: "torta.png" },
-    { nombre: ["BAILE"], hora: "17:30", icono: "party.png" },
-    { nombre: ["DESPEDIDA", "NOVIOS"], hora: "21:30", icono: "despedida.png" },
+    { hora: "14:00", nombre: ["Ceremonia Religiosa"], icono: "anillos.png" },
+    {
+        hora: "16:30",
+        nombre: ["Ceremonia Civil en", "el Salón"],
+        icono: "ceremoniacivil.png",
+    },
+    { hora: "17:00", nombre: ["Brindis"], icono: "brindis.png" },
+    { hora: "17:30", nombre: ["Vals de Novios"], icono: "vals.png" },
+    {
+        hora: "18:00",
+        nombre: ["Recepción Social"],
+        icono: "recepci%C3%B3n.png",
+    },
+    { hora: "19:00", nombre: ["Cena"], icono: "cena.png" },
+    {
+        hora: "21:00",
+        // Cortado en tres y no en dos: este era el renglón más largo y era
+        // el que estiraba el ancho de toda la línea de tiempo.
+        nombre: ["Corte de Torta", "y Lanzamiento", "de Bouquet"],
+        icono: "torta.png",
+    },
+    { hora: "00:00", nombre: ["Despedida"], icono: "despedida.png" },
 ];
 // ──────────────────────────────────────────────────────────────
 ---
 
-<section
-    id="franja-cronograma"
-    class="franja relative w-full py-9 px-7 overflow-hidden"
->
-    <div class="franja-fondo absolute inset-0 bg-vino"></div>
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 🕰️ CRONOGRAMA · los momentos del día                        -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="cronograma" class="relative w-full overflow-hidden">
+    <!--
+       Filete impreso. Va antes que los ramos en el markup a propósito: sin
+       z-index propio, el orden del documento decide, y así las flores le
+       pasan por encima como en la papelería de verdad.
+    -->
+    <span class="filete" aria-hidden="true"></span>
 
-    <h2
-        class="franja-texto relative font-callingstone text-crema text-center text-[clamp(0.75rem,3.8vw,1.02rem)] tracking-[0.12em]"
-    >
-        {titulo}
-    </h2>
-</section>
+    <!-- Ramos en diagonal: arriba a la izquierda y abajo a la derecha -->
+    <img
+        src="/imagenes/flores2.png"
+        alt=""
+        aria-hidden="true"
+        class="ramo ramo-si"
+    />
+    <img
+        src="/imagenes/flores2.png"
+        alt=""
+        aria-hidden="true"
+        class="ramo ramo-id"
+    />
 
-<section class="w-full px-6 py-14">
-    <div id="linea-tiempo" class="relative max-w-[330px] mx-auto">
-        <!-- Línea central: sólida y en vino, como en el diseño -->
-        <div class="absolute left-1/2 top-3 bottom-3 w-px -translate-x-1/2 bg-vino"></div>
+    <div class="relative px-6 py-16">
+        <div id="encabezado-cronograma" class="encabezado">
+            <h2 class="titulo font-great-vibes">{titulo}</h2>
 
-        {
-            momentos.map((momento, i) => (
-                // Cada momento sube 16px (~15% de su alto) sobre el anterior:
-                // como se alternan izquierda y derecha, se encabalgan sin
-                // pisarse y la línea queda mucho más compacta.
-                <div
-                    class={`momento relative grid grid-cols-2 gap-3 ${
-                        i > 0 ? "-mt-4" : ""
-                    }`}
-                    data-lado={i % 2 === 0 ? "der" : "izq"}
-                >
-                    {/*
-                       Tramo horizontal que sale de la línea central hacia el
-                       lado donde está el ítem, a la altura del centro del
-                       icono (la mitad de sus 40px).
-                    */}
-                    <span
-                        class={`momento-marca absolute top-[20px] h-px w-[14px] bg-vino ${
-                            i % 2 === 0 ? "left-1/2" : "right-1/2"
-                        }`}
-                    />
+            <span class="separador" aria-hidden="true">
+                <span class="chevrones font-cormorant">&#187;&#187;&#187;</span>
+                <b class="corazon">&#9829;</b>
+                <span class="chevrones font-cormorant">&#171;&#171;&#171;</span>
+            </span>
+        </div>
 
-                    {/* Punto sobre la línea central, en el arranque del tramo */}
-                    <span class="momento-marca absolute left-1/2 top-[20px] -translate-x-1/2 -translate-y-1/2 w-[4px] h-[4px] rounded-full bg-vino" />
-
-                    <div
-                        class={`momento-contenido flex flex-col items-center text-center ${
-                            i % 2 === 0 ? "col-start-2" : "col-start-1"
-                        }`}
-                    >
+        <div id="linea-tiempo" class="linea-tiempo">
+            {
+                momentos.map((momento) => (
+                    // data-lado lo lee el script para saber de qué costado
+                    // entra el icono. Acá la columna es una sola, así que
+                    // todos vienen desde la izquierda.
+                    <div class="momento" data-lado="izq">
                         <span
-                            class="momento-icono icono icono-marron w-[40px] h-[40px]"
+                            class="momento-icono icono icono-terracota"
                             style={`--ic: url('/imagenes/${momento.icono}')`}
                             aria-hidden="true"
                         />
-                        <h3 class="font-callingstone text-vino text-[clamp(0.57rem,2.8vw,0.75rem)] tracking-[0.1em] leading-[1.7] mt-2">
-                            {momento.nombre.map((linea) => (
-                                <span class="momento-nombre block whitespace-nowrap">
-                                    {linea}
-                                </span>
-                            ))}
-                        </h3>
-                        <p class="momento-hora font-balham text-marron text-[clamp(0.66rem,3.1vw,0.83rem)] tracking-wide mt-1">
-                            {momento.hora}
-                        </p>
+
+                        {/* Punto sobre el eje vertical */}
+                        <span class="momento-marca punto" />
+
+                        <div class="momento-texto">
+                            <p class="momento-hora font-cormorant">
+                                {momento.hora}
+                            </p>
+                            <h3 class="momento-titulo font-cormorant">
+                                {momento.nombre.map((linea) => (
+                                    <span class="momento-nombre">{linea}</span>
+                                ))}
+                            </h3>
+                        </div>
                     </div>
-                </div>
-            ))
-        }
+                ))
+            }
+        </div>
     </div>
 </section>
+
+<style>
+    #cronograma {
+        --terracota: #a4482a;
+        --terracota-suave: #b06a4c;
+        --tinta: #7a3418;
+    }
+
+    /* Filete fino, como el impreso de la invitación */
+    .filete {
+        position: absolute;
+        inset: 14px;
+        border: 1px solid rgba(164, 72, 42, 0.3);
+        pointer-events: none;
+    }
+
+    /* ── Ramos de las esquinas ── */
+    .ramo {
+        position: absolute;
+        width: 30%;
+        height: auto;
+        z-index: 0;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .ramo-si {
+        top: 0;
+        left: -13%;
+        transform: scaleY(-1) rotate(4deg);
+    }
+
+    .ramo-id {
+        bottom: 0;
+        right: -13%;
+        transform: scaleX(-1) rotate(4deg);
+    }
+
+    /* ── Encabezado ── */
+    .encabezado {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 2.4rem;
+    }
+
+    .titulo {
+        color: var(--terracota);
+        font-weight: 400;
+        font-size: clamp(2.1rem, 9.6vw, 2.7rem);
+        line-height: 1.2;
+    }
+
+    .separador {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-top: 0.5rem;
+    }
+
+    .chevrones {
+        color: var(--terracota-suave);
+        font-size: 0.85rem;
+        letter-spacing: 0.1em;
+        line-height: 1;
+    }
+
+    .corazon {
+        color: var(--terracota);
+        font-size: 0.85rem;
+        line-height: 1;
+        font-weight: 400;
+    }
+
+    /* ── Línea de tiempo ── */
+    /*
+       El ancho lo fija el renglón más largo, más las dos columnas fijas del
+       icono y el carril (86px). Con los renglones cortados, el más ancho es
+       "Ceremonia Religiosa" (~150px), así que 15.5rem alcanza y sobra.
+
+       Esto es lo que centra el bloque de verdad: el margin: 0 auto ya lo
+       centraba antes, pero con el contenedor ancho la columna del texto
+       quedaba medio vacía en casi todas las filas y el conjunto se leía
+       corrido a la izquierda.
+    */
+    .linea-tiempo {
+        position: relative;
+        width: 100%;
+        max-width: 15.5rem;
+        margin: 0 auto;
+        /*
+           Corrimiento óptico. El margin: 0 auto centra la caja, pero dentro
+           de ella casi todos los renglones son más cortos que el más largo,
+           así que el peso visual queda a la izquierda del centro real. Este
+           1rem lo compensa.
+        */
+        left: 1rem;
+    }
+
+    /*
+       El eje vertical. Va en el centro de la segunda columna de la grilla:
+       3.4rem del icono + la mitad de los 2rem del carril = 4.4rem.
+       El top/bottom lo dejan arrancar y terminar en el primer y último
+       punto, no en el filo del bloque.
+    */
+    .linea-tiempo::before {
+        content: "";
+        position: absolute;
+        left: 4.4rem;
+        top: 1.1rem;
+        bottom: 1.1rem;
+        width: 1px;
+        background: rgba(164, 72, 42, 0.45);
+    }
+
+    .momento {
+        display: grid;
+        grid-template-columns: 3.4rem 2rem 1fr;
+        align-items: start;
+    }
+
+    .momento + .momento {
+        margin-top: 1.6rem;
+    }
+
+    .momento-icono {
+        width: 2.9rem;
+        height: 2.9rem;
+    }
+
+    /* El punto se centra en el carril y se alinea con la hora */
+    .punto {
+        justify-self: center;
+        margin-top: 0.85rem;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--terracota);
+    }
+
+    .momento-texto {
+        text-align: left;
+        padding-left: 0.3rem;
+    }
+
+    .momento-hora {
+        color: var(--tinta);
+        font-size: clamp(1.05rem, 4.8vw, 1.2rem);
+        font-weight: 700;
+        letter-spacing: 0.025em;
+        line-height: 1.3;
+        /* Cifras de caja alta: las de estilo antiguo bailan de altura */
+        font-variant-numeric: lining-nums;
+    }
+
+    .momento-titulo {
+        margin-top: 0.1rem;
+    }
+
+    .momento-nombre {
+        display: block;
+        color: var(--terracota-suave);
+        font-size: clamp(0.98rem, 4.4vw, 1.1rem);
+        line-height: 1.4;
+    }
+</style>
 
 <script>
     import { gsap } from "gsap";
     import { ScrollTrigger } from "gsap/ScrollTrigger";
-    import { animarFranja } from "../scripts/animaciones";
+    import { animarEntrada } from "../scripts/animaciones";
 
     gsap.registerPlugin(ScrollTrigger);
 
@@ -197,8 +378,8 @@ const momentos = [
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-        const franja = document.getElementById("franja-cronograma");
-        if (franja) animarFranja(franja);
+        const encabezado = document.getElementById("encabezado-cronograma");
+        if (encabezado) animarEntrada(encabezado.children, encabezado);
 
         /*
            Cada momento tiene su propio trigger, pero la animación no corre

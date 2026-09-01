@@ -1,0 +1,1150 @@
+---
+// src/pages/admin.astro
+// Panel de administración de invitados. Tema oscuro, tipografía de sistema.
+// No comparte estilos con la invitación: es una herramienta, no papelería.
+---
+<!doctype html>
+<html lang="es" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#070b11" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/png" href="/iconos/Anillos.png" />
+    <title>Panel de invitados · Yan Carlos &amp; Estefany</title>
+
+    <style is:global>
+      /* ═══════════════════════════════════════════════════════════
+         TEMA OSCURO
+         Sin Tailwind aquí: el panel es una herramienta aparte y así
+         no arrastra el CSS de la invitación ni pelea con su paleta.
+         ═══════════════════════════════════════════════════════════ */
+      :root {
+        --fondo:         #070b11;
+        --panel:         #0e141d;
+        --panel-alto:    #141c27;
+        --borde:         #1f2b3a;
+        --borde-suave:   #172231;
+        --texto:         #e3edf5;
+        --texto-tenue:   #7d8fa5;
+        --neon:          #00f5a0;
+        --neon-claro:    #5cffc4;
+        --neon-fondo:    rgba(0, 245, 160, 0.12);
+        --neon-brillo:   rgba(0, 245, 160, 0.35);
+        --peligro:       #ff4d6d;
+        --peligro-fondo: rgba(255, 77, 109, 0.12);
+        --sombra:        0 4px 20px rgba(0, 0, 0, 0.55);
+        --radio:         9px;
+
+        color-scheme: dark;
+      }
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      html, body { height: 100%; }
+
+      body {
+        background: var(--fondo);
+        color: var(--texto);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto,
+                     "Helvetica Neue", Arial, sans-serif;
+        font-size: 15px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      button, input, select { font: inherit; color: inherit; }
+      button { cursor: pointer; background: none; border: none; }
+      .oculto { display: none !important; }
+
+      /* ── Campos ── */
+      .campo {
+        width: 100%;
+        background: var(--fondo);
+        border: 1px solid var(--borde);
+        border-radius: var(--radio);
+        padding: 0.6rem 0.85rem;
+        outline: none;
+        transition: border-color .15s, box-shadow .15s;
+      }
+      .campo:focus {
+        border-color: var(--neon);
+        box-shadow: 0 0 0 3px var(--neon-fondo);
+      }
+      .campo::placeholder { color: #56637a; }
+
+      .etiqueta {
+        display: block;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--texto-tenue);
+        margin-bottom: 0.4rem;
+      }
+
+      /* ── Botones ── */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        border-radius: var(--radio);
+        padding: 0.55rem 1.1rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        white-space: nowrap;
+        transition: background .15s, border-color .15s, opacity .15s;
+      }
+      .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+      .btn-neon {
+        background: var(--neon);
+        color: #04120c;
+        font-weight: 600;
+        box-shadow: 0 0 14px var(--neon-brillo);
+      }
+      .btn-neon:hover:not(:disabled) {
+        background: var(--neon-claro);
+        box-shadow: 0 0 22px var(--neon-brillo);
+      }
+
+      .btn-linea      { border: 1px solid var(--borde); color: var(--texto-tenue); }
+      .btn-linea:hover{ border-color: var(--neon); color: var(--neon); background: var(--neon-fondo); }
+
+      .btn-peligro    { border: 1px solid rgba(255,77,109,.4); color: var(--peligro); }
+      .btn-peligro:hover { background: var(--peligro-fondo); border-color: var(--peligro); }
+
+      .btn-chico { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
+
+      /* ── Tarjetas ── */
+      .tarjeta {
+        background: var(--panel);
+        border: 1px solid var(--borde-suave);
+        border-radius: 14px;
+        box-shadow: var(--sombra);
+      }
+      .tarjeta-cabecera {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--borde-suave);
+      }
+      .tarjeta-titulo {
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--neon);
+      }
+      .tarjeta-cuerpo { padding: 1.25rem; }
+
+      /* ═══ ESTRUCTURA ═══ */
+      .disposicion { display: flex; min-height: 100vh; }
+
+      /* ── Barra lateral ── */
+      .lateral {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 250px;
+        background: var(--panel);
+        border-right: 1px solid var(--borde-suave);
+        display: flex;
+        flex-direction: column;
+        z-index: 40;
+        transform: translateX(-100%);
+        transition: transform .25s ease;
+      }
+      .lateral.abierta { transform: translateX(0); }
+
+      .lateral-marca {
+        padding: 1.25rem;
+        border-bottom: 1px solid var(--borde-suave);
+      }
+      .lateral-marca strong {
+        display: block;
+        font-size: 1rem;
+        letter-spacing: 0.02em;
+      }
+      .lateral-marca span {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--texto-tenue);
+        margin-top: 0.15rem;
+      }
+
+      .lateral-menu { padding: 0.75rem; flex: 1; }
+      .lateral-item {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        width: 100%;
+        padding: 0.65rem 0.8rem;
+        border-radius: var(--radio);
+        color: var(--texto-tenue);
+        font-size: 0.92rem;
+        text-align: left;
+        transition: background .15s, color .15s;
+      }
+      .lateral-item:hover { background: var(--panel-alto); color: var(--texto); }
+      .lateral-item.activo {
+        position: relative;
+        background: var(--neon-fondo);
+        color: var(--neon);
+        font-weight: 500;
+      }
+      .lateral-item.activo::before {
+        content: "";
+        position: absolute;
+        left: 0; top: 20%; bottom: 20%;
+        width: 3px;
+        border-radius: 999px;
+        background: var(--neon);
+        box-shadow: 0 0 10px var(--neon-brillo);
+      }
+      .lateral-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+      .lateral-pie {
+        padding: 0.75rem;
+        border-top: 1px solid var(--borde-suave);
+        font-size: 0.78rem;
+        color: var(--texto-tenue);
+      }
+
+      .velo {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 35;
+      }
+
+      /* ── Zona principal ── */
+      .principal { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+      .superior {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        padding: 0.85rem 1rem;
+        background: rgba(14, 20, 29, 0.92);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--borde-suave);
+      }
+      .superior h1 { font-size: 1rem; font-weight: 600; }
+
+      .icono-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px; height: 38px;
+        border-radius: var(--radio);
+        color: var(--texto-tenue);
+        flex-shrink: 0;
+      }
+      .icono-btn:hover { background: var(--panel-alto); color: var(--texto); }
+      .icono-btn svg { width: 20px; height: 20px; }
+
+      .contenido {
+        padding: 1.25rem 1rem 3rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        max-width: 1100px;
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      /* ── Cajas de resumen ── */
+      .resumen { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.85rem; }
+      .caja-num {
+        background: var(--panel);
+        border: 1px solid var(--borde-suave);
+        border-left: 3px solid var(--neon);
+        border-radius: 14px;
+        padding: 1rem 1.15rem;
+      }
+      .caja-num span {
+        display: block;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--texto-tenue);
+      }
+      .caja-num strong {
+        display: block;
+        font-size: 1.9rem;
+        font-weight: 600;
+        line-height: 1.2;
+        margin-top: 0.2rem;
+      }
+
+      /* ── Interruptor ── */
+      .fila-switch {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.25rem;
+        cursor: pointer;
+      }
+      .switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
+      .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+      .switch i {
+        position: absolute;
+        inset: 0;
+        background: #33404f;
+        border-radius: 999px;
+        transition: background .2s;
+        pointer-events: none;
+      }
+      .switch i::after {
+        content: "";
+        position: absolute;
+        top: 3px; left: 3px;
+        width: 20px; height: 20px;
+        background: #fff;
+        border-radius: 50%;
+        transition: transform .2s;
+      }
+      .switch input:checked + i {
+        background: var(--neon);
+        box-shadow: 0 0 12px var(--neon-brillo);
+      }
+      .switch input:checked + i::after { transform: translateX(20px); }
+
+      /* ── Avisos ── */
+      .aviso {
+        border-radius: 14px;
+        padding: 0.9rem 1.1rem;
+        font-size: 0.9rem;
+        border: 1px solid;
+      }
+      .aviso-atencion {
+        background: var(--neon-fondo);
+        border-color: rgba(0,245,160,.35);
+        color: var(--neon-claro);
+      }
+      .aviso-error {
+        background: var(--peligro-fondo);
+        border-color: rgba(255,77,109,.35);
+        color: var(--peligro);
+      }
+
+      /* ── Formulario de alta ── */
+      .form-alta { display: grid; gap: 0.85rem; }
+
+      /* ── Tabla ── */
+      .tabla { width: 100%; border-collapse: collapse; }
+      .tabla th {
+        text-align: left;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--texto-tenue);
+        font-weight: 600;
+        padding: 0.7rem 1.25rem;
+        border-bottom: 1px solid var(--borde-suave);
+        background: var(--panel-alto);
+      }
+      .tabla td {
+        padding: 0.7rem 1.25rem;
+        border-bottom: 1px solid var(--borde-suave);
+        vertical-align: middle;
+      }
+      /* La columna de acciones no se parte nunca */
+      .tabla td.col-acciones { white-space: nowrap; width: 1%; }
+      .tabla tr:last-child td { border-bottom: none; }
+      .tabla tbody tr:hover { background: var(--panel-alto); }
+
+      .celda-nombre { font-weight: 500; }
+      .celda-link {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.78rem;
+        color: var(--texto-tenue);
+        max-width: 250px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .pastilla {
+        display: inline-block;
+        background: var(--neon-fondo);
+        color: var(--neon);
+        border-radius: 999px;
+        padding: 0.15rem 0.65rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+      }
+      /* En escritorio los botones van en una sola línea. Antes se envolvían
+         en columna y dejaban las filas larguísimas. */
+      .acciones {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 0.4rem;
+        justify-content: flex-end;
+      }
+
+      .vacio { padding: 2.5rem 1.25rem; text-align: center; color: var(--texto-tenue); }
+
+      /* ── La tabla se vuelve tarjetas en pantallas chicas ── */
+      @media (max-width: 767px) {
+        .tabla thead { display: none; }
+        .tabla, .tabla tbody, .tabla tr, .tabla td { display: block; width: 100%; }
+        .tabla tr {
+          border: 1px solid var(--borde-suave);
+          border-radius: 12px;
+          padding: 0.85rem 1rem;
+          margin-bottom: 0.75rem;
+          background: var(--fondo);
+        }
+        .tabla td { border: none; padding: 0.3rem 0; }
+        .tabla td::before {
+          content: attr(data-rotulo);
+          display: block;
+          font-size: 0.68rem;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: var(--texto-tenue);
+          margin-bottom: 0.15rem;
+        }
+        .acciones { flex-wrap: wrap; justify-content: flex-start; margin-top: 0.7rem; }
+        .tabla td.col-acciones { width: auto; white-space: normal; }
+        .celda-link { max-width: 100%; white-space: normal; word-break: break-all; }
+      }
+
+      /* ── Ventanas modales ── */
+      .modal-fondo {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        z-index: 60;
+      }
+      .modal {
+        background: var(--panel);
+        border: 1px solid var(--borde);
+        border-radius: 14px;
+        box-shadow: 0 20px 50px rgba(0,0,0,.6);
+        width: 100%;
+        max-width: 420px;
+      }
+      .modal-cabecera {
+        padding: 1.1rem 1.25rem;
+        border-bottom: 1px solid var(--borde-suave);
+        font-weight: 600;
+      }
+      .modal-cuerpo { padding: 1.25rem; display: grid; gap: 0.85rem; }
+      .modal-pie {
+        padding: 1rem 1.25rem;
+        border-top: 1px solid var(--borde-suave);
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.6rem;
+      }
+
+      /* ── Aviso flotante ── */
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 1.5rem;
+        transform: translateX(-50%);
+        background: var(--panel-alto);
+        border: 1px solid var(--borde);
+        color: var(--texto);
+        border-radius: 999px;
+        padding: 0.6rem 1.25rem;
+        font-size: 0.88rem;
+        box-shadow: var(--sombra);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .25s;
+        z-index: 70;
+      }
+      .toast.visible { opacity: 1; }
+
+      /* ── Login ── */
+      .login-pantalla {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.25rem;
+      }
+      .login-caja { width: 100%; max-width: 370px; }
+      .login-marca { text-align: center; margin-bottom: 1.5rem; }
+      .login-marca strong { display: block; font-size: 1.15rem; }
+      .login-marca span {
+        display: block;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: var(--texto-tenue);
+        margin-top: 0.3rem;
+      }
+      .login-rombo {
+        width: 8px; height: 8px;
+        background: var(--neon);
+        box-shadow: 0 0 14px var(--neon-brillo);
+        transform: rotate(45deg);
+        margin: 0 auto 1rem;
+      }
+
+      /* ═══ ESCRITORIO ═══ */
+      @media (min-width: 1024px) {
+        .lateral { transform: translateX(0); }
+        .principal { margin-left: 250px; }
+        .velo, #btn-menu { display: none; }
+        .contenido { padding: 1.75rem 2rem 3rem; }
+        .resumen { grid-template-columns: repeat(4, 1fr); }
+        .form-alta { grid-template-columns: 1fr 130px auto; align-items: end; }
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <!-- ═══ CARGANDO ═══ -->
+    <div id="pantalla-carga" class="login-pantalla">
+      <div style="text-align: center; max-width: 420px">
+        <p id="carga-texto" style="color: var(--texto-tenue)">Cargando…</p>
+        <div id="carga-error" class="aviso aviso-error oculto" style="text-align: left"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- LOGIN                                                    -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div id="pantalla-login" class="login-pantalla oculto">
+      <div class="login-caja">
+        <div class="login-marca">
+          <div class="login-rombo"></div>
+          <strong>Yan Carlos &amp; Estefany</strong>
+          <span>Panel de invitados</span>
+        </div>
+
+        <form id="form-login" class="tarjeta" style="padding: 1.5rem; display: grid; gap: 1rem;">
+          <div>
+            <label class="etiqueta" for="login-email">Correo</label>
+            <input id="login-email" type="email" class="campo" required autocomplete="username" />
+          </div>
+          <div>
+            <label class="etiqueta" for="login-pass">Contraseña</label>
+            <input id="login-pass" type="password" class="campo" required autocomplete="current-password" />
+          </div>
+          <p id="login-error" class="aviso aviso-error oculto"></p>
+          <button type="submit" id="btn-login" class="btn btn-neon" style="width: 100%">
+            Entrar
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- PANEL                                                    -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div id="pantalla-panel" class="disposicion oculto">
+
+      <div id="velo" class="velo oculto"></div>
+
+      <!-- ── Barra lateral ── -->
+      <aside id="lateral" class="lateral">
+        <div class="lateral-marca">
+          <strong>Yan Carlos &amp; Estefany</strong>
+          <span>Panel de invitados</span>
+        </div>
+
+        <nav class="lateral-menu">
+          <button class="lateral-item activo" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            Invitados
+          </button>
+        </nav>
+
+        <div class="lateral-pie">
+          <div id="sesion-email" style="word-break: break-all"></div>
+          <div id="sesion-rol" style="margin-top: .2rem; color: var(--neon)"></div>
+        </div>
+      </aside>
+
+      <!-- ── Zona principal ── -->
+      <div class="principal">
+
+        <header class="superior">
+          <button id="btn-menu" class="icono-btn" type="button" aria-label="Menú">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M3 12h18M3 18h18" />
+            </svg>
+          </button>
+
+          <h1 style="flex: 1">Invitados</h1>
+
+          <button id="btn-salir" class="btn btn-linea btn-chico" type="button">
+            Salir
+          </button>
+        </header>
+
+        <main class="contenido">
+
+          <!-- Resumen -->
+          <div class="resumen">
+            <div class="caja-num">
+              <span>Invitados</span>
+              <strong id="total-invitados">0</strong>
+            </div>
+            <div class="caja-num">
+              <span>Pases</span>
+              <strong id="total-pases">0</strong>
+            </div>
+          </div>
+
+          <!-- Interruptor del super administrador -->
+          <div id="caja-admin" class="tarjeta oculto">
+            <div class="tarjeta-cuerpo">
+              <label class="fila-switch">
+                <span>
+                  <strong style="display: block; font-weight: 600">Permitir registro de invitados</strong>
+                  <span style="font-size: .87rem; color: var(--texto-tenue)">
+                    Al apagarlo, los novios siguen viendo y compartiendo sus links,
+                    pero no pueden agregar, editar ni borrar.
+                  </span>
+                </span>
+                <span class="switch">
+                  <input id="switch-registro" type="checkbox" />
+                  <i></i>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Aviso de registro cerrado -->
+          <p id="aviso-cerrado" class="aviso aviso-atencion oculto">
+            El registro de invitados está cerrado. Puedes consultar y compartir los links
+            existentes, pero no agregar ni modificar.
+          </p>
+
+          <!-- Alta de invitado -->
+          <section id="caja-form" class="tarjeta">
+            <div class="tarjeta-cabecera">
+              <span class="tarjeta-titulo">Nuevo invitado</span>
+            </div>
+            <div class="tarjeta-cuerpo">
+              <form id="form-invitado" class="form-alta">
+                <div>
+                  <label class="etiqueta" for="in-nombre">Nombre</label>
+                  <input
+                    id="in-nombre" type="text" class="campo" required maxlength="80"
+                    placeholder="Familia Molina Flores"
+                  />
+                </div>
+                <div>
+                  <label class="etiqueta" for="in-pases">Pases</label>
+                  <input id="in-pases" type="number" class="campo" min="1" max="20" value="2" required />
+                </div>
+                <button type="submit" id="btn-guardar" class="btn btn-neon">Agregar</button>
+              </form>
+              <p id="form-error" class="aviso aviso-error oculto" style="margin-top: .85rem"></p>
+            </div>
+          </section>
+
+          <!-- Lista -->
+          <section class="tarjeta">
+            <div class="tarjeta-cabecera">
+              <span class="tarjeta-titulo">Lista de invitados</span>
+              <input id="buscador" type="search" class="campo" placeholder="Buscar…" style="max-width: 230px" />
+            </div>
+
+            <div style="overflow-x: auto">
+              <table class="tabla">
+                <thead>
+                  <tr>
+                    <th>Invitado</th>
+                    <th style="width: 90px">Pases</th>
+                    <th>Link</th>
+                    <th class="col-acciones" style="text-align: right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="lista"></tbody>
+              </table>
+            </div>
+
+            <p id="lista-vacia" class="vacio oculto">Todavía no hay invitados.</p>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- ═══ MODAL EDITAR ═══ -->
+    <div id="modal-editar" class="modal-fondo oculto">
+      <div class="modal">
+        <div class="modal-cabecera">Editar invitado</div>
+        <form id="form-editar">
+          <div class="modal-cuerpo">
+            <div>
+              <label class="etiqueta" for="ed-nombre">Nombre</label>
+              <input id="ed-nombre" type="text" class="campo" required maxlength="80" />
+            </div>
+            <div>
+              <label class="etiqueta" for="ed-pases">Pases</label>
+              <input id="ed-pases" type="number" class="campo" min="1" max="20" required />
+            </div>
+            <p style="font-size: .83rem; color: var(--texto-tenue)">
+              El link no cambia: el invitado verá los datos nuevos con el mismo enlace.
+            </p>
+            <p id="editar-error" class="aviso aviso-error oculto"></p>
+          </div>
+          <div class="modal-pie">
+            <button type="button" class="btn btn-linea" data-cerrar-modal>Cancelar</button>
+            <button type="submit" class="btn btn-neon">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ═══ MODAL BORRAR ═══ -->
+    <div id="modal-borrar" class="modal-fondo oculto">
+      <div class="modal">
+        <div class="modal-cabecera">Borrar invitado</div>
+        <div class="modal-cuerpo">
+          <p>¿Seguro que quieres borrar a <strong id="borrar-nombre"></strong>?</p>
+          <p style="font-size: .87rem; color: var(--texto-tenue)">
+            Su link dejará de funcionar. Esto no se puede deshacer.
+          </p>
+          <p id="borrar-error" class="aviso aviso-error oculto"></p>
+        </div>
+        <div class="modal-pie">
+          <button type="button" class="btn btn-linea" data-cerrar-modal>Cancelar</button>
+          <button type="button" id="btn-borrar-confirmar" class="btn btn-peligro">Borrar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+      import { supabase, configurado, generarCodigo, linkInvitado } from "../lib/supabase";
+
+      // ── Estado ──
+      let invitados = [];
+      let esAdmin = false;
+      let registroAbierto = true;
+      let filtro = "";
+      let enEdicion = null;
+      let enBorrado = null;
+
+      const $ = (id) => document.getElementById(id);
+      const ver = (el, visible) => el.classList.toggle("oculto", !visible);
+
+      // ── Aviso flotante ──
+      let tiempoToast;
+      function avisar(texto) {
+        const t = $("toast");
+        t.textContent = texto;
+        t.classList.add("visible");
+        clearTimeout(tiempoToast);
+        tiempoToast = setTimeout(() => t.classList.remove("visible"), 2400);
+      }
+
+      function mostrarError(id, mensaje) {
+        const el = $(id);
+        el.textContent = mensaje || "";
+        ver(el, Boolean(mensaje));
+      }
+
+      function pantalla(cual) {
+        for (const p of ["pantalla-carga", "pantalla-login", "pantalla-panel"]) {
+          ver($(p), p === cual);
+        }
+      }
+
+      // ═══ BARRA LATERAL (móvil) ═══
+      function menuLateral(abrir) {
+        $("lateral").classList.toggle("abierta", abrir);
+        ver($("velo"), abrir);
+      }
+      $("btn-menu").addEventListener("click", () => menuLateral(true));
+      $("velo").addEventListener("click", () => menuLateral(false));
+
+      // ═══ LOGIN ═══
+      $("form-login").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        mostrarError("login-error", "");
+        $("btn-login").disabled = true;
+
+        const { error } = await supabase.auth.signInWithPassword({
+          email: $("login-email").value.trim(),
+          password: $("login-pass").value,
+        });
+
+        $("btn-login").disabled = false;
+
+        if (error) {
+          mostrarError(
+            "login-error",
+            error.message === "Invalid login credentials"
+              ? "Correo o contraseña incorrectos."
+              : error.message
+          );
+          return;
+        }
+        await entrarAlPanel();
+      });
+
+      $("btn-salir").addEventListener("click", async () => {
+        await supabase.auth.signOut();
+        location.reload();
+      });
+
+      // ═══ CARGA DEL PANEL ═══
+      async function entrarAlPanel() {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          pantalla("pantalla-login");
+          return;
+        }
+
+        $("sesion-email").textContent = session.user.email;
+
+        const [perfil, ajustes] = await Promise.all([
+          supabase.from("perfiles").select("rol").eq("id", session.user.id).maybeSingle(),
+          supabase.from("ajustes").select("registro_abierto").eq("id", 1).maybeSingle(),
+        ]);
+
+        esAdmin = perfil.data?.rol === "admin";
+        registroAbierto = ajustes.data?.registro_abierto ?? true;
+
+        $("sesion-rol").textContent = esAdmin ? "Administrador" : "Novios";
+        ver($("caja-admin"), esAdmin);
+        $("switch-registro").checked = registroAbierto;
+
+        aplicarPermisos();
+        pantalla("pantalla-panel");
+        await cargarInvitados();
+      }
+
+      // El admin siempre puede; los novios solo con el registro abierto
+      const puedeEditar = () => esAdmin || registroAbierto;
+
+      function aplicarPermisos() {
+        const permitido = puedeEditar();
+        ver($("caja-form"), permitido);
+        ver($("aviso-cerrado"), !permitido);
+      }
+
+      // ═══ INTERRUPTOR DEL ADMIN ═══
+      $("switch-registro").addEventListener("change", async (e) => {
+        const valor = e.target.checked;
+        const { error } = await supabase
+          .from("ajustes").update({ registro_abierto: valor }).eq("id", 1);
+
+        if (error) {
+          e.target.checked = !valor;
+          avisar("No se pudo cambiar");
+          return;
+        }
+        registroAbierto = valor;
+        aplicarPermisos();
+        pintarLista();
+        avisar(valor ? "Registro abierto" : "Registro cerrado");
+      });
+
+      // ═══ DATOS ═══
+      async function cargarInvitados() {
+        const { data, error } = await supabase
+          .from("invitados")
+          .select("id, codigo, nombre, pases")
+          .order("creado_en", { ascending: false });
+
+        if (error) {
+          avisar("No se pudo cargar la lista");
+          return;
+        }
+        invitados = data ?? [];
+        pintarLista();
+      }
+
+      function traducirError(error) {
+        if (error.code === "42501" || /row-level security/i.test(error.message)) {
+          return "El registro de invitados está cerrado.";
+        }
+        return error.message;
+      }
+
+      // ── Alta ──
+      $("form-invitado").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        mostrarError("form-error", "");
+
+        const nombre = $("in-nombre").value.trim();
+        const pases = Number($("in-pases").value);
+
+        if (!nombre) return;
+        if (!Number.isInteger(pases) || pases < 1 || pases > 20) {
+          mostrarError("form-error", "Los pases deben ser un número del 1 al 20.");
+          return;
+        }
+
+        $("btn-guardar").disabled = true;
+
+        // El código es aleatorio: si choca con uno existente, se reintenta
+        let guardado = null;
+        for (let intento = 0; intento < 5; intento++) {
+          const { data, error } = await supabase
+            .from("invitados")
+            .insert({ codigo: generarCodigo(), nombre, pases })
+            .select("id, codigo, nombre, pases")
+            .single();
+
+          if (!error) { guardado = data; break; }
+          if (error.code !== "23505") {      // 23505 = código repetido
+            mostrarError("form-error", traducirError(error));
+            break;
+          }
+        }
+
+        $("btn-guardar").disabled = false;
+        if (!guardado) return;
+
+        invitados.unshift(guardado);
+        $("in-nombre").value = "";
+        $("in-pases").value = "2";
+        $("in-nombre").focus();
+        pintarLista();
+        avisar("Invitado agregado");
+      });
+
+      // ── Modales ──
+      for (const btn of document.querySelectorAll("[data-cerrar-modal]")) {
+        btn.addEventListener("click", cerrarModales);
+      }
+      for (const fondo of [$("modal-editar"), $("modal-borrar")]) {
+        fondo.addEventListener("click", (e) => {
+          if (e.target === fondo) cerrarModales();
+        });
+      }
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") cerrarModales();
+      });
+
+      function cerrarModales() {
+        ver($("modal-editar"), false);
+        ver($("modal-borrar"), false);
+        mostrarError("editar-error", "");
+        mostrarError("borrar-error", "");
+        enEdicion = null;
+        enBorrado = null;
+      }
+
+      function abrirEditar(inv) {
+        enEdicion = inv;
+        $("ed-nombre").value = inv.nombre;
+        $("ed-pases").value = String(inv.pases);
+        mostrarError("editar-error", "");
+        ver($("modal-editar"), true);
+        $("ed-nombre").focus();
+      }
+
+      $("form-editar").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!enEdicion) return;
+
+        const nombre = $("ed-nombre").value.trim();
+        const pases = Number($("ed-pases").value);
+
+        if (!nombre || !Number.isInteger(pases) || pases < 1 || pases > 20) {
+          mostrarError("editar-error", "Revisa el nombre y que los pases estén entre 1 y 20.");
+          return;
+        }
+
+        const { error } = await supabase
+          .from("invitados").update({ nombre, pases }).eq("id", enEdicion.id);
+
+        if (error) {
+          mostrarError("editar-error", traducirError(error));
+          return;
+        }
+
+        enEdicion.nombre = nombre;
+        enEdicion.pases = pases;
+        cerrarModales();
+        pintarLista();
+        avisar("Actualizado — el link sigue sirviendo");
+      });
+
+      function abrirBorrar(inv) {
+        enBorrado = inv;
+        $("borrar-nombre").textContent = inv.nombre;
+        mostrarError("borrar-error", "");
+        ver($("modal-borrar"), true);
+      }
+
+      $("btn-borrar-confirmar").addEventListener("click", async () => {
+        if (!enBorrado) return;
+
+        const { error } = await supabase.from("invitados").delete().eq("id", enBorrado.id);
+        if (error) {
+          mostrarError("borrar-error", traducirError(error));
+          return;
+        }
+
+        invitados = invitados.filter((x) => x.id !== enBorrado.id);
+        cerrarModales();
+        pintarLista();
+        avisar("Invitado borrado");
+      });
+
+      // ── Compartir ──
+      async function copiar(texto, aviso = "Mensaje copiado") {
+        try {
+          await navigator.clipboard.writeText(texto);
+        } catch {
+          // Safari y contextos sin permiso de portapapeles
+          const campo = document.createElement("textarea");
+          campo.value = texto;
+          campo.style.position = "fixed";
+          campo.style.opacity = "0";
+          document.body.appendChild(campo);
+          campo.select();
+          document.execCommand("copy");
+          campo.remove();
+        }
+        avisar(aviso);
+      }
+
+      // Mensaje listo para pegar en WhatsApp.
+      // Los *asteriscos* son la negrita de WhatsApp: se ven en negrita al enviarlo.
+      function mensajeInvitacion(inv) {
+        return [
+          "*Con el corazón lleno de amor*",
+          "",
+          "Hemos decidido unir nuestras vidas y dar el paso más importante de nuestra historia.",
+          "Queremos compartir este momento tan especial con las personas que más queremos.",
+          "",
+          "Será un honor contar con tu presencia en nuestro gran día. 🤍",
+          "",
+          "*Haz clic en el enlace para ver nuestra invitación*",
+          "",
+          linkInvitado(inv.codigo),
+          "",
+          "¡Te esperamos para celebrar juntos este hermoso comienzo!",
+        ].join("\n");
+      }
+
+      // ═══ PINTAR LA LISTA ═══
+      function pintarLista() {
+        const cuerpo = $("lista");
+        cuerpo.innerHTML = "";
+
+        const texto = filtro.trim().toLowerCase();
+        const visibles = texto
+          ? invitados.filter((i) => i.nombre.toLowerCase().includes(texto))
+          : invitados;
+
+        $("total-invitados").textContent = String(invitados.length);
+        $("total-pases").textContent = String(invitados.reduce((s, i) => s + i.pases, 0));
+        ver($("lista-vacia"), visibles.length === 0);
+
+        const permitido = puedeEditar();
+
+        for (const inv of visibles) {
+          const link = linkInvitado(inv.codigo);
+          const fila = document.createElement("tr");
+
+          const tdNombre = document.createElement("td");
+          tdNombre.dataset.rotulo = "Invitado";
+          tdNombre.className = "celda-nombre";
+          tdNombre.textContent = inv.nombre;
+
+          const tdPases = document.createElement("td");
+          tdPases.dataset.rotulo = "Pases";
+          const pastilla = document.createElement("span");
+          pastilla.className = "pastilla";
+          pastilla.textContent = String(inv.pases);
+          tdPases.append(pastilla);
+
+          const tdLink = document.createElement("td");
+          tdLink.dataset.rotulo = "Link";
+          tdLink.className = "celda-link";
+          tdLink.textContent = link;
+
+          const tdAcciones = document.createElement("td");
+          tdAcciones.className = "col-acciones";
+          const acciones = document.createElement("div");
+          acciones.className = "acciones";
+
+          const boton = (etiqueta, clase, alPulsar) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.textContent = etiqueta;
+            b.className = `btn btn-chico ${clase}`;
+            b.addEventListener("click", alPulsar);
+            return b;
+          };
+
+          acciones.append(
+            boton("Copiar mensaje", "btn-neon", () => copiar(mensajeInvitacion(inv))),
+            boton("Solo link", "btn-linea", () => copiar(link, "Link copiado"))
+          );
+
+          if (permitido) {
+            acciones.append(
+              boton("Editar", "btn-linea", () => abrirEditar(inv)),
+              boton("Borrar", "btn-peligro", () => abrirBorrar(inv))
+            );
+          }
+
+          tdAcciones.append(acciones);
+          fila.append(tdNombre, tdPases, tdLink, tdAcciones);
+          cuerpo.append(fila);
+        }
+      }
+
+      $("buscador").addEventListener("input", (e) => {
+        filtro = e.target.value;
+        pintarLista();
+      });
+
+      // ═══ ARRANQUE ═══
+      function fallo(titulo, detalle) {
+        $("carga-texto").classList.add("oculto");
+        const caja = $("carga-error");
+        caja.innerHTML =
+          "<strong>" + titulo + "</strong><br><span style='opacity:.85'>" + detalle + "</span>";
+        caja.classList.remove("oculto");
+      }
+
+      (async () => {
+        // Sin variables de entorno no hay nada que hacer: avisar en vez
+        // de dejar la pantalla colgada en "Cargando…"
+        if (!configurado) {
+          fallo(
+            "Falta la configuración de Supabase",
+            "Las variables PUBLIC_SUPABASE_URL y PUBLIC_SUPABASE_KEY no llegaron al build. " +
+            "Agrégalas en Vercel → Settings → Environment Variables y vuelve a desplegar " +
+            "(Deployments → ⋯ → Redeploy)."
+          );
+          return;
+        }
+
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) await entrarAlPanel();
+          else pantalla("pantalla-login");
+        } catch (e) {
+          fallo("No se pudo conectar con la base de datos", String(e?.message || e));
+        }
+      })();
+    </script>
+  </body>
+</html>

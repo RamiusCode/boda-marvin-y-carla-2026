@@ -1,0 +1,238 @@
+---
+// src/components/Dedicatoria2.astro
+// "¡Nos casamos!" — la invitación formal, con un ramo en la esquina de
+// arriba a la izquierda y el mismo ramo girado 180° en la de abajo a la
+// derecha.
+//
+// Sin fondo propio: el papel lo pone el <main> del Layout, fijo y continuo
+// para toda la invitación.
+//
+// fotomano.png (1038x711) ya viene con su marco de papel rasgado y sus
+// flores dentro del PNG, así que va tal cual: no lleva marco de CSS.
+
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const titulo = "¡Nos casamos!";
+
+const bendicion = [
+    "Con la bendición de Dios, de nuestros padres",
+    "y en compañía de nuestros padrinos",
+];
+
+const invitacion =
+    "Tenemos el honor de invitarte a celebrar " +
+    "el inicio de nuestra nueva etapa, " +
+    "donde el amor nos une y la felicidad nos acompaña.";
+
+const cierre = "¡Te esperamos!";
+// ──────────────────────────────────────────────────────────────
+---
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 💍 ¡NOS CASAMOS! · la invitación                             -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--
+   El pb-32 (128px) está calculado contra el -mt-28 (-112px) con que entra
+   el Versículo: quedan 16px netos. Alcanza porque la hoja ya trae su
+   propio padding abajo y encima se desvanece los últimos 70px.
+-->
+<section id="dedicatoria2" class="relative w-full pt-6 pb-32">
+    <!-- El marco declara el container para las unidades cqw de adentro -->
+    <div class="hoja2-marco">
+        <div id="hoja2" class="hoja2">
+            <!-- Ramos en las esquinas opuestas -->
+            <img
+                src="/imagenes/florlateral2.png"
+                alt=""
+                aria-hidden="true"
+                class="ramo ramo-si"
+            />
+            <img
+                src="/imagenes/florlateral2.png"
+                alt=""
+                aria-hidden="true"
+                class="ramo ramo-id"
+            />
+
+            <div class="contenido2">
+                <h2 class="titulo2 font-great-vibes">{titulo}</h2>
+
+                <span class="corazon-sep" aria-hidden="true">&#9829;</span>
+
+                <!-- El PNG ya trae marco y flores: va sin envoltorio -->
+                <img
+                    id="foto-mano"
+                    src="/imagenes/fotomano.png"
+                    alt="Las manos de los novios con el anillo de compromiso, y la patita de Lili encima"
+                    width="1038"
+                    height="711"
+                    class="foto-mano"
+                />
+
+                <div class="bloque-bendicion">
+                    {bendicion.map((l) => <p class="linea">{l}</p>)}
+                </div>
+
+                <span class="corazon-sep" aria-hidden="true">&#9829;</span>
+
+                <p class="invita font-great-vibes">{invitacion}</p>
+
+                <p class="esperamos font-great-vibes">{cierre}</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    #dedicatoria2 {
+        --terracota: #b9563a;
+        --tinta: #7a4a34;
+    }
+
+    .hoja2-marco {
+        width: 100%;
+        container-type: inline-size;
+    }
+
+    .hoja2 {
+        position: relative;
+        width: 100%;
+        padding: 2.4rem 9% 2.2rem;
+    }
+
+    /* ── Los ramos de las esquinas ── */
+    .ramo {
+        position: absolute;
+        width: 40%;
+        height: auto;
+        z-index: 1;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .ramo-si {
+        top: -1.5rem;
+        left: -6%;
+    }
+
+    /* El PNG viene armado para la esquina de arriba a la izquierda: girado
+       180° sirve tal cual para la de abajo a la derecha */
+    .ramo-id {
+        bottom: -1.5rem;
+        right: -6%;
+        transform: rotate(180deg);
+    }
+
+    .contenido2 {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+    }
+
+    /* ── Título ── */
+    .titulo2 {
+        color: var(--terracota);
+        font-weight: 400;
+        font-size: clamp(2.7rem, 14cqw, 3.8rem);
+        line-height: 1.1;
+        margin: 0;
+    }
+
+    .corazon-sep {
+        display: block;
+        color: var(--terracota);
+        font-size: 0.85rem;
+        line-height: 1;
+        margin: 0.5rem 0 0.9rem;
+    }
+
+    /* ── La foto ── */
+    .foto-mano {
+        display: block;
+        width: 100%;
+        height: auto;
+        margin: 0 auto 1.5rem;
+    }
+
+    /* ── Las dos líneas de la bendición ── */
+    .linea {
+        color: var(--tinta);
+        font-family: "Cormorant Garamond", serif;
+        font-size: clamp(1.05rem, 4.9cqw, 1.22rem);
+        line-height: 1.68;
+        margin: 0;
+    }
+
+    .bloque-bendicion {
+        margin-bottom: 0.3rem;
+    }
+
+    /* ── El cuerpo de la invitación, en caligrafía ── */
+    .invita {
+        color: var(--terracota);
+        font-size: clamp(1.35rem, 6.4cqw, 1.6rem);
+        line-height: 1.45;
+        margin: 0 0 1.4rem;
+    }
+
+    .esperamos {
+        color: var(--terracota);
+        font-size: clamp(2rem, 9.5cqw, 2.6rem);
+        line-height: 1.2;
+        margin: 0;
+    }
+</style>
+
+<script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const hoja = document.getElementById("hoja2");
+        if (!hoja) return;
+
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+            return;
+
+        const disparador = {
+            trigger: hoja,
+            start: "top 82%",
+            toggleActions: "play none none reset",
+        };
+
+        const contenido = hoja.querySelector(".contenido2");
+        if (contenido) {
+            gsap.from(Array.from(contenido.children), {
+                opacity: 0,
+                y: 24,
+                duration: 0.85,
+                stagger: 0.13,
+                ease: "power2.out",
+                scrollTrigger: disparador,
+            });
+        }
+
+        // Los ramos entran cada uno desde su esquina. Solo opacidad y
+        // desplazamiento: el de abajo lleva el rotate(180deg) en el CSS y
+        // animarle la escala se lo borraría.
+        gsap.from(".ramo-si", {
+            opacity: 0,
+            xPercent: -18,
+            yPercent: -18,
+            duration: 1.4,
+            ease: "power3.out",
+            scrollTrigger: disparador,
+        });
+
+        gsap.from(".ramo-id", {
+            opacity: 0,
+            xPercent: 18,
+            yPercent: 18,
+            duration: 1.4,
+            delay: 0.2,
+            ease: "power3.out",
+            scrollTrigger: disparador,
+        });
+    });
+</script>

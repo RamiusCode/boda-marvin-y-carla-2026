@@ -1,7 +1,8 @@
 ---
 // src/components/RecepcionSocial.astro
-// Recepción social: mismo diseño que la ceremonia religiosa, con el arco de
-// la fiesta en lugar de la iglesia.
+// Recepción social: mismo bloque terracota que la ceremonia religiosa, con
+// el arco de la fiesta en lugar de la iglesia. Lo que la distingue son los
+// ramos en dos esquinas opuestas.
 // ── DATOS EDITABLES ───────────────────────────────────────────
 const titulo = "Recepción Social";
 const hora = "16:30";
@@ -19,34 +20,55 @@ const dibujo = "/imagenes/recepci%C3%B3n.png";
 ---
 
 <section id="recepcion-social" class="relative w-full overflow-hidden">
-    <!-- Fondo de acuarela -->
+    <!--
+       Filete impreso. Va antes que los ramos en el markup a propósito: sin
+       z-index propio, el orden del documento decide, y así las flores le
+       pasan por encima como en la papelería de verdad.
+    -->
+    <span class="filete" aria-hidden="true"></span>
+
+    <!--
+       Ramos en dos esquinas opuestas: el overflow-hidden de la sección los
+       corta contra el filo, que es lo que los deja entrando en cuadro en
+       vez de flotando sueltos.
+    -->
     <img
-        src="/imagenes/foto3.png"
+        src="/imagenes/flores2.png"
         alt=""
-        width="935"
-        height="1629"
         aria-hidden="true"
-        class="absolute inset-0 h-full w-full object-cover"
+        class="ramo ramo-si"
+    />
+    <img
+        src="/imagenes/flores2.png"
+        alt=""
+        aria-hidden="true"
+        class="ramo ramo-id"
     />
 
     <div
         id="bloque-recepcion"
         class="relative flex flex-col items-center px-7 py-16 text-center"
     >
-        <h2 class="font-dancing titulo-recepcion">{titulo}</h2>
+        <h2 class="font-great-vibes titulo-recepcion">{titulo}</h2>
 
         <p class="hora-recepcion">
             <!-- El reloj se pinta con máscara, no con filtros -->
             <span
-                class="icono icono-terracota reloj-recepcion"
+                class="icono icono-crema reloj-recepcion"
                 style="--ic:url('/imagenes/hora.png')"
                 aria-hidden="true"></span>
             <span class="font-cormorant hora-texto">{hora}</span>
         </p>
 
+        <span class="separador" aria-hidden="true">
+            <i class="raya"></i>
+            <b class="corazon">&#9829;</b>
+            <i class="raya"></i>
+        </span>
+
         <!-- El dibujo también va con máscara: el trazo negro quedaría duro -->
         <span
-            class="icono icono-terracota dibujo-recepcion"
+            class="icono icono-crema dibujo-recepcion"
             style={`--ic:url('${dibujo}')`}
             aria-hidden="true"></span>
 
@@ -75,9 +97,50 @@ const dibujo = "/imagenes/recepci%C3%B3n.png";
 </section>
 
 <style>
+    /* Terracota liso, el mismo tono que la ceremonia religiosa */
+    #recepcion-social {
+        background: #b45733;
+    }
+
+    /* Filete fino, como el impreso de la invitación */
+    .filete {
+        position: absolute;
+        inset: 14px;
+        border: 1px solid rgba(253, 244, 236, 0.32);
+        pointer-events: none;
+    }
+
+    /*
+       ── Ramos de las esquinas ──
+       En dos esquinas opuestas y no en las cuatro: sobre un bloque de color
+       liso, dos alcanzan para dar el detalle sin cargar el cuadro.
+       z-index 0 los deja detrás del texto, que va en .relative.
+    */
+    .ramo {
+        position: absolute;
+        width: 32%;
+        height: auto;
+        z-index: 0;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    /* Bien corridos a los filos, como en el resto de las secciones */
+    .ramo-si {
+        top: 0;
+        left: -13%;
+        transform: scaleY(-1) rotate(4deg);
+    }
+
+    .ramo-id {
+        bottom: 0;
+        right: -13%;
+        transform: scaleX(-1) rotate(4deg);
+    }
+
     .titulo-recepcion {
-        color: #a4482a;
-        font-size: clamp(1.9rem, 8.6vw, 2.4rem);
+        color: #fdf6ee;
+        font-size: clamp(2.1rem, 9.6vw, 2.7rem);
         line-height: 1.25;
     }
 
@@ -87,13 +150,35 @@ const dibujo = "/imagenes/recepci%C3%B3n.png";
         justify-content: center;
         gap: 0.45rem;
         margin-top: 0.5rem;
-        color: #8e3a1e;
+        color: #fbeee2;
     }
 
     .reloj-recepcion {
         width: 1.5rem;
         height: 1.5rem;
         flex: none;
+    }
+
+    /* Rayita · corazón · rayita, el mismo remate del resto de la invitación */
+    .separador {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1.1rem;
+    }
+
+    .raya {
+        display: block;
+        width: 2.2rem;
+        height: 1px;
+        background: rgba(253, 244, 236, 0.55);
+    }
+
+    .corazon {
+        color: #fbeee2;
+        font-size: 0.7rem;
+        line-height: 1;
+        font-weight: 400;
     }
 
     .hora-texto {
@@ -113,7 +198,7 @@ const dibujo = "/imagenes/recepci%C3%B3n.png";
     }
 
     .nombre-salon {
-        color: #7a3418;
+        color: #fdf6ee;
         font-size: clamp(1.25rem, 5.8vw, 1.55rem);
         font-weight: 600;
         letter-spacing: 0.06em;
@@ -125,7 +210,7 @@ const dibujo = "/imagenes/recepci%C3%B3n.png";
     }
 
     .direccion-salon {
-        color: #a05a3c;
+        color: #f6e2d3;
         font-size: clamp(1.15rem, 5.3vw, 1.4rem);
         line-height: 1.55;
         margin-top: 0.9rem;

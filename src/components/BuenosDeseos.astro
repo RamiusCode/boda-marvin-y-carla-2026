@@ -1,0 +1,1362 @@
+---
+// src/components/BuenosDeseos.astro
+// Muro de buenos deseos: los invitados dejan un mensaje y se ve en la
+// invitación de todos.
+//
+// ── CÓMO ESTÁ ARMADO ─────────────────────────────────────────
+// Dos niveles, para que la sección mida lo mismo con 3 deseos o con 300:
+//
+//   1. Carrusel horizontal con los últimos 10, deslizable con el dedo.
+//      La altura queda fija; el resto no entra al DOM.
+//   2. Modal con el muro completo y los textos enteros. Lo abren tanto
+//      "Ver todos" como el "Ver más" de una tarjeta —que además deja el
+//      scroll parado en ese deseo—. Se arma al abrir y se destruye al
+//      cerrar, así 100 deseos no pesan en la carga inicial.
+//
+// El "Ver más" no expande la tarjeta en el lugar a propósito: eso empujaba
+// todo lo de abajo y el invitado perdía dónde estaba leyendo.
+//
+// ── DATOS ────────────────────────────────────────────────────
+// Toda la lectura y escritura pasa por leerDeseos() y guardarDeseo(), al
+// final del script. Hoy trabajan contra un endpoint genérico; para pasar a
+// Supabase se cambian esas dos funciones y nada más.
+// ─────────────────────────────────────────────────────────────
+
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const titulo = "Buenos Deseos";
+const textoBoton = "ESCRIBE UN DESEO";
+
+// Cuántos se ven en el carrusel. El botón "Ver todos" aparece recién
+// cuando hay más que esto.
+const VISIBLES = 10;
+
+// URL del servicio. Vacío = modo muestra, con los deseos de ejemplo.
+const ENDPOINT = "";
+
+const deseosEjemplo = [
+    {
+        nombre: "Tefi y Adri",
+        mensaje:
+            "Que sean muy felices en esta nueva etapa de su vida y recuerden " +
+            "que son un equipo, las adversidades solo son un reto que lo " +
+            "pueden afrontar juntos.",
+    },
+    {
+        nombre: "Carol Valdez",
+        mensaje:
+            "1 Corintios 13:4-7. El amor es sufrido, es benigno; el amor no " +
+            "tiene envidia, no es jactancioso, no se envanece; no hace nada " +
+            "indebido, no busca lo suyo, no se irrita, no guarda rencor.",
+    },
+    {
+        nombre: "Familia Zegarra",
+        mensaje:
+            "Les deseamos una vida llena de amor, salud y paseos con Lu. " +
+            "¡Que este día sea el primero de muchos!",
+    },
+    {
+        nombre: "Los Llanos",
+        mensaje:
+            "Que nunca les falte la risa en la mesa ni las ganas de " +
+            "abrazarse. Los queremos muchísimo.",
+    },
+    {
+        nombre: "Ana y Diego",
+        mensaje:
+            "Gracias por dejarnos ser parte de este día. Que el amor que " +
+            "hoy los une los siga sorprendiendo toda la vida.",
+    },
+];
+---
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 💌 BUENOS DESEOS · el muro de mensajes                       -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section
+    id="buenos-deseos"
+    class="relative w-full overflow-hidden py-16"
+    data-endpoint={ENDPOINT}
+    data-visibles={String(VISIBLES)}
+    data-ejemplos={JSON.stringify(deseosEjemplo)}
+>
+    <!--
+       Filete impreso. Va antes que los ramos en el markup a propósito: sin
+       z-index propio, el orden del documento decide, y así las flores le
+       pasan por encima como en la papelería de verdad.
+    -->
+    <span class="filete" aria-hidden="true"></span>
+
+    <!-- Ramos en diagonal, como en las demás secciones -->
+    <img
+        src="/imagenes/flores2.png"
+        alt=""
+        aria-hidden="true"
+        class="ramo ramo-si"
+    />
+    <img
+        src="/imagenes/flores2.png"
+        alt=""
+        aria-hidden="true"
+        class="ramo ramo-id"
+    />
+
+    <div class="relative flex flex-col items-center text-center">
+        <div id="encabezado-deseos" class="encabezado">
+            <h2 class="titulo font-great-vibes">{titulo}</h2>
+
+            <span class="separador" aria-hidden="true">
+                <span class="chevrones font-cormorant">&#187;&#187;&#187;</span>
+                <b class="corazon">&#9829;</b>
+                <span class="chevrones font-cormorant">&#171;&#171;&#171;</span>
+            </span>
+        </div>
+
+        <!--
+           El carril se pinta desde el script. Va con tabindex y rol de
+           lista para que también se pueda recorrer con el teclado, no solo
+           deslizando.
+        -->
+        <div
+            id="carrusel-deseos"
+            class="carrusel"
+            tabindex="0"
+            role="list"
+            aria-label="Buenos deseos de los invitados"
+        >
+        </div>
+
+        <!-- Puntitos + el acceso al muro completo -->
+        <div class="pie-carrusel">
+            <div id="puntos-deseos" class="puntos" aria-hidden="true"></div>
+            <button
+                id="ver-todos"
+                type="button"
+                class="ver-todos font-cormorant"
+                hidden></button>
+        </div>
+
+        <p id="aviso-deseos" class="aviso font-cormorant" hidden></p>
+
+        <button id="abrir-deseo" type="button" class="boton-deseo">
+            <svg viewBox="0 0 24 24" aria-hidden="true" class="lapiz">
+                <path
+                    d="M4 20h4L20 8a2.8 2.8 0 0 0-4-4L4 16v4z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linejoin="round"></path>
+                <path
+                    d="m14.5 5.5 4 4"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"></path>
+            </svg>
+            <span class="boton-texto font-cormorant">{textoBoton}</span>
+        </button>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 📜 MODAL · el muro completo                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="modal-muro" class="modal" hidden>
+    <div class="modal-velo" data-cerrar-muro></div>
+
+    <div
+        class="modal-caja"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="titulo-modal-muro"
+    >
+        <button
+            type="button"
+            class="modal-cerrar"
+            data-cerrar-muro
+            aria-label="Cerrar"
+        >
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path
+                    d="M6 6l12 12M18 6L6 18"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round"></path>
+            </svg>
+        </button>
+
+        <div class="modal-hoja">
+            <h3 id="titulo-modal-muro" class="modal-titulo font-great-vibes">
+                {titulo}
+            </h3>
+            <div id="lista-muro" class="lista-muro"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- ✍️ MODAL · dejar un deseo                                   -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="modal-deseo" class="modal" hidden>
+    <div class="modal-velo" data-cerrar-deseo></div>
+
+    <div
+        class="modal-caja"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="titulo-modal-deseo"
+    >
+        <button
+            type="button"
+            class="modal-cerrar"
+            data-cerrar-deseo
+            aria-label="Cerrar"
+        >
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path
+                    d="M6 6l12 12M18 6L6 18"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round"></path>
+            </svg>
+        </button>
+
+        <form id="form-deseo" class="modal-hoja" novalidate>
+            <h3 id="titulo-modal-deseo" class="modal-titulo font-great-vibes">
+                Dejanos tu deseo
+            </h3>
+
+            <label class="campo">
+                <span class="etiqueta font-cormorant">Tu nombre</span>
+                <input
+                    id="deseo-nombre"
+                    name="nombre"
+                    type="text"
+                    maxlength="40"
+                    required
+                    autocomplete="name"
+                    class="font-cormorant"
+                />
+            </label>
+
+            <label class="campo">
+                <span class="etiqueta font-cormorant">Tu mensaje</span>
+                <textarea
+                    id="deseo-mensaje"
+                    name="mensaje"
+                    rows="5"
+                    maxlength="400"
+                    required
+                    class="font-cormorant"></textarea>
+                <span id="contador-deseo" class="contador font-cormorant"
+                    >0 / 400</span
+                >
+            </label>
+
+            {/*
+               Trampa para robots: es invisible y ninguna persona la
+               completa. Si viene con algo, se descarta el envío sin avisar.
+            */}
+            <input
+                type="text"
+                name="apodo"
+                id="deseo-apodo"
+                tabindex="-1"
+                autocomplete="off"
+                aria-hidden="true"
+                class="trampa"
+            />
+
+            <p id="error-deseo" class="error font-cormorant" hidden></p>
+
+            <button
+                id="enviar-deseo"
+                type="submit"
+                class="boton-deseo boton-enviar"
+            >
+                <span class="boton-texto font-cormorant">Enviar mi deseo</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<style>
+    #buenos-deseos,
+    .modal {
+        --terracota: #a4482a;
+        --terracota-suave: #b06a4c;
+        --tinta: #7a3418;
+        --crema: #fdf4ec;
+    }
+
+    /* Filete fino, como el impreso de la invitación */
+    .filete {
+        position: absolute;
+        inset: 14px;
+        border: 1px solid rgba(164, 72, 42, 0.3);
+        pointer-events: none;
+    }
+
+    /* ── Ramos de las esquinas ── */
+    .ramo {
+        position: absolute;
+        width: 30%;
+        height: auto;
+        z-index: 0;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .ramo-si {
+        top: 0;
+        left: -13%;
+        transform: scaleY(-1) rotate(4deg);
+    }
+
+    .ramo-id {
+        bottom: 0;
+        right: -13%;
+        transform: scaleX(-1) rotate(4deg);
+    }
+
+    /* ── Encabezado ── */
+    .encabezado {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0 1.5rem;
+    }
+
+    .titulo {
+        color: var(--terracota);
+        font-weight: 400;
+        font-size: clamp(2.1rem, 9.6vw, 2.7rem);
+        line-height: 1.2;
+    }
+
+    .separador {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-top: 0.4rem;
+    }
+
+    .chevrones {
+        color: var(--terracota-suave);
+        font-size: 0.85rem;
+        letter-spacing: 0.1em;
+        line-height: 1;
+    }
+
+    .corazon {
+        color: var(--terracota);
+        font-size: 0.85rem;
+        line-height: 1;
+        font-weight: 400;
+    }
+
+    /* ═══════════════════════════════════════════════════════ */
+    /* CARRUSEL                                                */
+    /* ═══════════════════════════════════════════════════════ */
+    /*
+       El carril se desplaza solo, y el invitado puede arrastrarlo con el
+       dedo cuando quiera: es scroll nativo, así que el gesto ya funciona.
+
+       Sin scroll-snap a propósito. El movimiento automático avanza de a
+       fracciones de píxel por cuadro, y un snap obligatorio lo estaría
+       devolviendo a la tarjeta más cercana todo el tiempo: las dos cosas
+       pelean y el carrusel queda temblando en el lugar.
+
+       align-items: stretch iguala la altura de las tarjetas de la fila.
+    */
+    .carrusel {
+        display: flex;
+        align-items: stretch;
+        gap: 0.8rem;
+        width: 100%;
+        margin-top: 1.9rem;
+        padding: 1.3rem 1.5rem 0.4rem;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .carrusel::-webkit-scrollbar {
+        display: none;
+    }
+
+    .carrusel:focus-visible {
+        outline: 2px solid var(--terracota);
+        outline-offset: -4px;
+    }
+
+    /* ── Pie del carrusel ── */
+    .pie-carrusel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.7rem;
+        margin-top: 0.9rem;
+    }
+
+    .puntos {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    /* Discreto a propósito: el botón protagonista es el de escribir */
+    .ver-todos {
+        border: none;
+        background: none;
+        color: var(--terracota-suave);
+        font-size: clamp(0.86rem, 3.9vw, 0.96rem);
+        font-style: italic;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        cursor: pointer;
+    }
+
+    .ver-todos[hidden] {
+        display: none;
+    }
+
+    .aviso {
+        color: var(--terracota-suave);
+        font-size: clamp(0.88rem, 4vw, 1rem);
+        font-style: italic;
+        line-height: 1.5;
+        margin-top: 1rem;
+        padding: 0 1.5rem;
+        max-width: 22rem;
+    }
+
+    .aviso[hidden] {
+        display: none;
+    }
+
+    /* ── El botón grande ── */
+    .boton-deseo {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.7rem;
+        margin-top: 1.6rem;
+        padding: 0.85rem 1.7rem;
+        border: none;
+        border-radius: 6px;
+        background: linear-gradient(180deg, #dfa985 0%, #cf8f68 100%);
+        color: #5e2a12;
+        cursor: pointer;
+        box-shadow: 0 6px 16px rgba(120, 58, 32, 0.22);
+        transition:
+            transform 0.25s ease,
+            box-shadow 0.25s ease;
+    }
+
+    .boton-deseo:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 11px 22px rgba(120, 58, 32, 0.28);
+    }
+
+    .boton-deseo:active {
+        transform: translateY(0) scale(0.98);
+    }
+
+    .boton-deseo:disabled {
+        opacity: 0.6;
+        cursor: default;
+        transform: none;
+    }
+
+    .boton-texto {
+        font-size: clamp(1rem, 4.6vw, 1.15rem);
+        font-weight: 600;
+        letter-spacing: 0.08em;
+    }
+
+    .lapiz {
+        width: 1.4rem;
+        height: 1.4rem;
+        flex: none;
+    }
+
+    /* ═══════════════════════════════════════════════════════ */
+    /* MODALES                                                 */
+    /* ═══════════════════════════════════════════════════════ */
+    .modal {
+        position: fixed;
+        inset: 0;
+        z-index: 9998;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.2rem 0.9rem;
+    }
+
+    /* Explícito: si no, el display:flex de arriba le gana al atributo */
+    .modal[hidden] {
+        display: none;
+    }
+
+    .modal-velo {
+        position: absolute;
+        inset: 0;
+        background: rgba(74, 30, 16, 0.62);
+        backdrop-filter: blur(3px);
+    }
+
+    .modal-caja {
+        position: relative;
+        width: 100%;
+        max-width: 24rem;
+        max-height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-cerrar {
+        position: absolute;
+        top: -0.9rem;
+        right: -0.3rem;
+        z-index: 3;
+        width: 2.1rem;
+        height: 2.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        border-radius: 50%;
+        background: #fff6ee;
+        color: var(--terracota);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(60, 24, 12, 0.35);
+    }
+
+    /*
+       min-height: 0 es obligatorio: dentro de una columna flex un hijo no
+       se encoge por debajo de su contenido salvo que se lo pidas, y sin eso
+       la lista larga desborda la pantalla en vez de scrollear acá adentro.
+    */
+    .modal-hoja {
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 2rem 1.5rem 1.8rem;
+        border-radius: 8px;
+        background: linear-gradient(160deg, #fdf6ee 0%, #f7e9dc 100%);
+        box-shadow: 0 24px 60px rgba(60, 24, 12, 0.45);
+        text-align: center;
+    }
+
+    .modal-titulo {
+        color: var(--terracota);
+        font-size: clamp(1.9rem, 8.6vw, 2.3rem);
+        line-height: 1.2;
+        margin-bottom: 1.2rem;
+    }
+
+    /* ── La lista del muro completo ── */
+    .lista-muro {
+        display: flex;
+        flex-direction: column;
+        gap: 1.3rem;
+    }
+
+    /* ── Formulario ── */
+    .campo {
+        display: block;
+        text-align: left;
+        margin-bottom: 1rem;
+    }
+
+    .etiqueta {
+        display: block;
+        color: var(--terracota-suave);
+        font-size: 0.92rem;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.3rem;
+    }
+
+    .campo :global(input),
+    .campo :global(textarea) {
+        width: 100%;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid rgba(164, 72, 42, 0.35);
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.7);
+        color: var(--tinta);
+        font-size: 1rem;
+        line-height: 1.5;
+        resize: vertical;
+    }
+
+    .campo :global(input:focus),
+    .campo :global(textarea:focus) {
+        outline: 2px solid var(--terracota);
+        outline-offset: 1px;
+    }
+
+    .contador {
+        display: block;
+        color: var(--terracota-suave);
+        font-size: 0.8rem;
+        text-align: right;
+        margin-top: 0.2rem;
+    }
+
+    /*
+       La trampa antispam: fuera de pantalla, nunca oculta con display:none
+       —hay bots que ignoran los campos ocultos y así igual la completan—
+    */
+    .trampa {
+        position: absolute;
+        left: -9999px;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+    }
+
+    .error {
+        color: #a1301b;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        margin-bottom: 0.7rem;
+    }
+
+    .error[hidden] {
+        display: none;
+    }
+
+    .boton-enviar {
+        width: 100%;
+        margin-top: 0.4rem;
+    }
+</style>
+
+<!--
+   ═══════════════════════════════════════════════════════════
+   ESTILOS DE LO QUE CREA EL SCRIPT
+   ═══════════════════════════════════════════════════════════
+   Astro scopea el <style> de arriba agregándole un atributo propio a cada
+   elemento del template. Los que arma el JavaScript con createElement no lo
+   llevan, así que ninguna de esas reglas les llegaba: las tarjetas salían
+   sin borde, sin medallón y sin el flex-basis, y por eso se apretaban tres
+   en una fila.
+
+   Por eso este bloque va global. No se escapa a ningún otro componente
+   porque cada regla cuelga de #buenos-deseos o #modal-muro, que son ids
+   únicos de la página.
+-->
+<style is:global>
+    /*
+       72% y no 100%: el sobrante deja asomar la tarjeta siguiente, y ese
+       asomo es lo que le avisa al invitado que hay más al costado. Sin eso
+       mucha gente no descubre que se desliza.
+    */
+    #buenos-deseos .tarjeta {
+        position: relative;
+        flex: 0 0 72%;
+        max-width: 17rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1.9rem 0.95rem 1rem;
+        border: 1px solid rgba(164, 72, 42, 0.35);
+        border-radius: 14px;
+        background: rgba(255, 250, 244, 0.72);
+    }
+
+    /* Con una sola no hay nada que deslizar: se centra y listo */
+    #buenos-deseos .carrusel:has(> .tarjeta:only-child) {
+        justify-content: center;
+    }
+
+    /* El medallón monta sobre el filo de arriba de la tarjeta */
+    #buenos-deseos .medallon {
+        position: absolute;
+        top: -1.15rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.3rem;
+        height: 2.3rem;
+        border-radius: 50%;
+        background: #a4482a;
+    }
+
+    #buenos-deseos .sobre-icono {
+        width: 1.15rem;
+        height: 1.15rem;
+        fill: none;
+        stroke: #fdf4ec;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    #buenos-deseos .de {
+        color: #b06a4c;
+        font-size: clamp(0.85rem, 3.9vw, 0.95rem);
+        line-height: 1.3;
+    }
+
+    #buenos-deseos .nombre {
+        color: #a4482a;
+        font-size: clamp(0.95rem, 4.3vw, 1.08rem);
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        line-height: 1.3;
+        margin-top: 0.1rem;
+    }
+
+    /*
+       Recortado a cinco renglones. line-clamp necesita display:-webkit-box
+       aunque el resto sea flex: es la única forma de cortar por cantidad de
+       líneas y no por altura fija, que partiría letras al medio.
+    */
+    #buenos-deseos .mensaje {
+        color: #7a3418;
+        font-size: clamp(0.88rem, 4vw, 0.98rem);
+        line-height: 1.55;
+        margin-top: 0.7rem;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 5;
+        overflow: hidden;
+    }
+
+    #buenos-deseos .ver-mas {
+        margin-top: auto;
+        padding: 0.3rem 0.95rem;
+        border: none;
+        border-radius: 999px;
+        background: #a4482a;
+        color: #fdf4ec;
+        font-size: clamp(0.74rem, 3.4vw, 0.84rem);
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+
+    #buenos-deseos .ver-mas:hover {
+        transform: scale(1.05);
+    }
+
+    /* Cuando el texto entra entero, el botón no aporta nada */
+    #buenos-deseos .ver-mas[hidden] {
+        display: none;
+    }
+
+    #buenos-deseos .punto {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(164, 72, 42, 0.28);
+        transition:
+            background 0.25s ease,
+            transform 0.25s ease;
+    }
+
+    #buenos-deseos .punto.activo {
+        background: #a4482a;
+        transform: scale(1.35);
+    }
+
+    #modal-muro .item-muro {
+        padding-bottom: 1.3rem;
+        border-bottom: 1px solid rgba(164, 72, 42, 0.2);
+    }
+
+    #modal-muro .item-muro:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    /* Resalta el deseo al que se entró desde "Ver más" */
+    #modal-muro .item-muro.destacado {
+        background: rgba(164, 72, 42, 0.07);
+        border-radius: 8px;
+        padding: 0.8rem 0.7rem 1.1rem;
+    }
+
+    #modal-muro .item-nombre {
+        color: #a4482a;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        line-height: 1.3;
+    }
+
+    /* Acá el texto va entero: el modal es donde se viene a leer */
+    #modal-muro .item-mensaje {
+        color: #7a3418;
+        font-size: 1rem;
+        line-height: 1.6;
+        margin-top: 0.35rem;
+    }
+</style>
+
+<script>
+    import { animarEntrada } from "../scripts/animaciones";
+
+    type Deseo = { nombre: string; mensaje: string };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const seccion = document.getElementById("buenos-deseos");
+        const carrusel = document.getElementById("carrusel-deseos");
+        const puntos = document.getElementById("puntos-deseos");
+        const verTodos = document.getElementById(
+            "ver-todos",
+        ) as HTMLButtonElement | null;
+        const aviso = document.getElementById("aviso-deseos");
+        const abrir = document.getElementById("abrir-deseo");
+        const modalMuro = document.getElementById("modal-muro");
+        const listaMuro = document.getElementById("lista-muro");
+        const modalDeseo = document.getElementById("modal-deseo");
+        const form = document.getElementById(
+            "form-deseo",
+        ) as HTMLFormElement | null;
+
+        if (
+            !seccion ||
+            !carrusel ||
+            !puntos ||
+            !verTodos ||
+            !aviso ||
+            !abrir ||
+            !modalMuro ||
+            !listaMuro ||
+            !modalDeseo ||
+            !form
+        ) {
+            return;
+        }
+
+        const endpoint = seccion.dataset.endpoint?.trim() ?? "";
+        const conectado = endpoint.length > 0;
+        const VISIBLES = Number(seccion.dataset.visibles) || 10;
+
+        let deseos: Deseo[] = [];
+        try {
+            deseos = JSON.parse(seccion.dataset.ejemplos ?? "[]");
+        } catch {
+            deseos = [];
+        }
+
+        const encabezado = document.getElementById("encabezado-deseos");
+        if (encabezado) animarEntrada(encabezado.children, encabezado);
+
+        // ═══════════════════════════════════════════════════════
+        // TARJETAS
+        // ═══════════════════════════════════════════════════════
+
+        /*
+           El sobrecito del medallón, dibujado a trazo fino. Va en SVG y no
+           con una imagen enmascarada porque a 18px una silueta rellena se
+           empasta: la línea se mantiene nítida a cualquier tamaño.
+
+           Se arma con createElementNS y no con innerHTML porque el SVG
+           tiene su propio espacio de nombres: creado como HTML común, el
+           navegador lo trata como etiquetas desconocidas y no lo dibuja.
+        */
+        function crearSobre() {
+            const NS = "http://www.w3.org/2000/svg";
+            const svg = document.createElementNS(NS, "svg");
+            svg.setAttribute("viewBox", "0 0 24 24");
+            svg.setAttribute("class", "sobre-icono");
+
+            const cuerpo = document.createElementNS(NS, "rect");
+            cuerpo.setAttribute("x", "2.8");
+            cuerpo.setAttribute("y", "6");
+            cuerpo.setAttribute("width", "18.4");
+            cuerpo.setAttribute("height", "12.4");
+            cuerpo.setAttribute("rx", "2");
+
+            const solapa = document.createElementNS(NS, "path");
+            solapa.setAttribute("d", "M3.7 7 12 13.3 20.3 7");
+
+            svg.append(cuerpo, solapa);
+            return svg;
+        }
+
+        /*
+           Todo lo que se muestra acá es texto escrito por invitados, así
+           que se arma con textContent y nunca con innerHTML: concatenar
+           HTML sería dejar que alguien escriba etiquetas en su "deseo".
+        */
+        function crearTarjeta(deseo: Deseo, indice: number) {
+            const tarjeta = document.createElement("article");
+            tarjeta.className = "tarjeta";
+            tarjeta.setAttribute("role", "listitem");
+
+            const medallon = document.createElement("span");
+            medallon.className = "medallon";
+            medallon.setAttribute("aria-hidden", "true");
+            medallon.appendChild(crearSobre());
+
+            const de = document.createElement("p");
+            de.className = "de font-cormorant";
+            de.textContent = "De:";
+
+            const nombre = document.createElement("p");
+            nombre.className = "nombre font-cormorant";
+            nombre.textContent = deseo.nombre;
+
+            const mensaje = document.createElement("p");
+            mensaje.className = "mensaje font-cormorant";
+            mensaje.textContent = deseo.mensaje;
+
+            const verMas = document.createElement("button");
+            verMas.type = "button";
+            verMas.className = "ver-mas font-cormorant";
+            verMas.textContent = "♥ Ver más ♥";
+            // Abre el muro completo parado en este deseo, en vez de
+            // expandir la tarjeta y empujar todo lo de abajo.
+            verMas.addEventListener("click", () => abrirMuro(indice));
+
+            tarjeta.append(medallon, de, nombre, mensaje, verMas);
+            return tarjeta;
+        }
+
+        // El botón sobra si el texto entra entero: se compara el alto real
+        // contra el visible, ya recortado por line-clamp.
+        function ajustarVerMas(tarjeta: Element) {
+            const mensaje = tarjeta.querySelector<HTMLElement>(".mensaje");
+            const boton = tarjeta.querySelector<HTMLButtonElement>(".ver-mas");
+            if (!mensaje || !boton) return;
+            boton.hidden = mensaje.scrollHeight <= mensaje.clientHeight + 1;
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // CARRUSEL
+        // ═══════════════════════════════════════════════════════
+        let observador: IntersectionObserver | null = null;
+
+        function pintarPuntos(cantidad: number) {
+            // Con una sola tarjeta no hay nada que indicar
+            puntos.replaceChildren();
+            if (cantidad < 2) return;
+
+            for (let i = 0; i < cantidad; i++) {
+                const punto = document.createElement("span");
+                punto.className = i === 0 ? "punto activo" : "punto";
+                puntos.appendChild(punto);
+            }
+        }
+
+        /*
+           Los puntitos se siguen con IntersectionObserver y no leyendo
+           scrollLeft: así no hay que hacer cuentas con anchos ni gaps, y
+           acierta solo aunque cambie el tamaño de las tarjetas.
+        */
+        function seguirPuntos(originales: number) {
+            observador?.disconnect();
+            const tarjetas = Array.from(carrusel.children);
+            if (tarjetas.length < 2) return;
+
+            observador = new IntersectionObserver(
+                (entradas) => {
+                    entradas.forEach((entrada) => {
+                        if (!entrada.isIntersecting) return;
+                        // El carril tiene la tanda repetida: el módulo
+                        // hace que la copia encienda el mismo punto que su
+                        // original.
+                        const i =
+                            tarjetas.indexOf(entrada.target) % originales;
+                        puntos.querySelectorAll(".punto").forEach((p, j) => {
+                            p.classList.toggle("activo", j === i);
+                        });
+                    });
+                },
+                { root: carrusel, threshold: 0.6 },
+            );
+
+            tarjetas.forEach((t) => observador?.observe(t));
+        }
+
+        function pintarCarrusel() {
+            const visibles = deseos.slice(0, VISIBLES);
+
+            /*
+               La tanda se pinta dos veces seguidas. Es lo que permite que
+               el desplazamiento no tenga fin: cuando el scroll pasa la
+               mitad se le resta esa mitad, y como lo que hay a partir de
+               ahí es idéntico, el salto no se ve. Sin el duplicado habría
+               que rebobinar hasta el principio y se notaría el tirón.
+
+               La segunda tanda va aria-hidden: para un lector de pantalla
+               son los mismos deseos repetidos.
+            */
+            const tarjetas = visibles.map((d, i) => crearTarjeta(d, i));
+            const copias = visibles.map((d, i) => {
+                const copia = crearTarjeta(d, i);
+                copia.setAttribute("aria-hidden", "true");
+                copia.removeAttribute("role");
+                return copia;
+            });
+
+            carrusel.replaceChildren(...tarjetas, ...copias);
+            Array.from(carrusel.children).forEach(ajustarVerMas);
+
+            pintarPuntos(visibles.length);
+            seguirPuntos(visibles.length);
+            arrancarAuto();
+
+            // "Ver todos" recién tiene sentido cuando hay más de los que se
+            // están viendo
+            const sobran = deseos.length > VISIBLES;
+            verTodos.hidden = !sobran;
+            if (sobran) {
+                verTodos.textContent = `Ver todos los deseos (${deseos.length})`;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // DESPLAZAMIENTO AUTOMÁTICO
+        // ═══════════════════════════════════════════════════════
+        /*
+           Avanza solo, despacio, hacia la izquierda. Se frena apenas el
+           invitado toca el carril y vuelve a arrancar cuando lo suelta y
+           pasa un momento sin tocarlo.
+
+           Va con requestAnimationFrame y no con scrollBy({behavior:
+           "smooth"}) porque eso último es un solo tirón con aceleración y
+           frenada: se vería un vaivén, no un desplazamiento parejo.
+        */
+        const VELOCIDAD = 22; // px por segundo
+        const ESPERA = 2500; // cuánto queda quieto después de tocarlo
+
+        const quietito = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+        ).matches;
+
+        let cuadro = 0;
+        let pausado = false;
+        let reloj = 0;
+        let ultimo = 0;
+
+        /*
+           La posición se lleva acá y no leyendo scrollLeft. El navegador
+           cuantiza el scroll a píxeles físicos: si se hace
+           `scrollLeft += 0.35`, al volver a leerlo devuelve 0, el cuadro
+           siguiente suma sobre 0 otra vez y el carril no se mueve nunca.
+           Con el acumulador propio las fracciones se juntan hasta llegar a
+           un píxel entero y ahí sí avanza.
+        */
+        let posicion = 0;
+
+        /*
+           El avance va por tiempo transcurrido y no por cuadro: en una
+           pantalla de 120 Hz, "tantos px por cuadro" correría al doble de
+           velocidad que en una de 60.
+        */
+        function pasoAuto(ahora: number) {
+            cuadro = requestAnimationFrame(pasoAuto);
+
+            const delta = ultimo ? (ahora - ultimo) / 1000 : 0;
+            ultimo = ahora;
+
+            if (pausado) return;
+
+            // Si no hay desborde no hay nada que desplazar
+            const mitad = carrusel.scrollWidth / 2;
+            if (mitad <= carrusel.clientWidth) return;
+
+            posicion += VELOCIDAD * delta;
+
+            // El salto invisible: a partir de la mitad se repite lo mismo
+            if (posicion >= mitad) posicion -= mitad;
+
+            carrusel.scrollLeft = posicion;
+        }
+
+        function arrancarAuto() {
+            if (quietito) return;
+            cancelAnimationFrame(cuadro);
+            // Sin esto el primer delta sería enorme y pegaría un salto
+            ultimo = 0;
+            posicion = carrusel.scrollLeft;
+            cuadro = requestAnimationFrame(pasoAuto);
+        }
+
+        function pausar() {
+            pausado = true;
+            clearTimeout(reloj);
+        }
+
+        function reanudar() {
+            clearTimeout(reloj);
+            reloj = window.setTimeout(() => {
+                // El invitado dejó el carril en otro lado: se retoma desde
+                // ahí, no desde donde había quedado el automático.
+                posicion = carrusel.scrollLeft;
+                ultimo = 0;
+                pausado = false;
+            }, ESPERA);
+        }
+
+        // Táctil y mouse: se frena mientras arrastra y sigue al soltar
+        ["pointerdown", "touchstart"].forEach((evento) => {
+            carrusel.addEventListener(evento, pausar, { passive: true });
+        });
+        ["pointerup", "pointercancel", "touchend", "touchcancel"].forEach(
+            (evento) => {
+                carrusel.addEventListener(evento, reanudar, { passive: true });
+            },
+        );
+
+        // Rueda del mouse y trackpad: no hay "soltar", así que se reanuda
+        // por inactividad
+        carrusel.addEventListener(
+            "wheel",
+            () => {
+                pausar();
+                reanudar();
+            },
+            { passive: true },
+        );
+
+        // Con el teclado o el mouse encima tampoco se mueve solo: molesta
+        // para leer
+        carrusel.addEventListener("focusin", pausar);
+        carrusel.addEventListener("focusout", reanudar);
+        carrusel.addEventListener("mouseenter", pausar);
+        carrusel.addEventListener("mouseleave", reanudar);
+
+        // Fuera de pantalla no tiene sentido gastar cuadros
+        const vigia = new IntersectionObserver(
+            ([entrada]) => {
+                if (entrada.isIntersecting) arrancarAuto();
+                else cancelAnimationFrame(cuadro);
+            },
+            { threshold: 0 },
+        );
+        vigia.observe(carrusel);
+
+        // ═══════════════════════════════════════════════════════
+        // MODAL DEL MURO
+        // ═══════════════════════════════════════════════════════
+        function bloquearFondo(bloquear: boolean) {
+            document.body.style.overflow = bloquear ? "hidden" : "";
+        }
+
+        /*
+           La lista se arma al abrir y se vacía al cerrar: con 100 deseos,
+           tenerlos siempre en el DOM encarece la carga inicial para algo
+           que la mayoría no va a abrir.
+        */
+        function abrirMuro(destacar?: number) {
+            listaMuro.replaceChildren(
+                ...deseos.map((deseo, i) => {
+                    const item = document.createElement("article");
+                    item.className =
+                        i === destacar ? "item-muro destacado" : "item-muro";
+
+                    const nombre = document.createElement("p");
+                    nombre.className = "item-nombre font-cormorant";
+                    nombre.textContent = deseo.nombre;
+
+                    const mensaje = document.createElement("p");
+                    mensaje.className = "item-mensaje font-cormorant";
+                    mensaje.textContent = deseo.mensaje;
+
+                    item.append(nombre, mensaje);
+                    return item;
+                }),
+            );
+
+            modalMuro.hidden = false;
+            bloquearFondo(true);
+            // Detrás del velo no se ve: mover el carril sería gastar cuadros
+            pausar();
+
+            const hoja = modalMuro.querySelector<HTMLElement>(".modal-hoja");
+            if (hoja) hoja.scrollTop = 0;
+
+            if (destacar !== undefined) {
+                const item = listaMuro.children[destacar];
+                item?.scrollIntoView({ block: "center" });
+            }
+
+            modalMuro
+                .querySelector<HTMLButtonElement>(".modal-cerrar")
+                ?.focus();
+        }
+
+        function cerrarMuro() {
+            modalMuro.hidden = true;
+            bloquearFondo(false);
+            listaMuro.replaceChildren();
+            reanudar();
+        }
+
+        verTodos.addEventListener("click", () => abrirMuro());
+        modalMuro.querySelectorAll("[data-cerrar-muro]").forEach((el) => {
+            el.addEventListener("click", cerrarMuro);
+        });
+
+        // ═══════════════════════════════════════════════════════
+        // MODAL DEL FORMULARIO
+        // ═══════════════════════════════════════════════════════
+        const error = document.getElementById("error-deseo");
+        const enviar = document.getElementById(
+            "enviar-deseo",
+        ) as HTMLButtonElement | null;
+        const campoNombre = document.getElementById(
+            "deseo-nombre",
+        ) as HTMLInputElement | null;
+        const campoMensaje = document.getElementById(
+            "deseo-mensaje",
+        ) as HTMLTextAreaElement | null;
+        const campoTrampa = document.getElementById(
+            "deseo-apodo",
+        ) as HTMLInputElement | null;
+        const contador = document.getElementById("contador-deseo");
+
+        campoMensaje?.addEventListener("input", () => {
+            if (contador) {
+                contador.textContent = `${campoMensaje.value.length} / 400`;
+            }
+        });
+
+        function mostrarError(texto: string) {
+            if (!error) return;
+            error.textContent = texto;
+            error.hidden = false;
+        }
+
+        function abrirFormulario() {
+            modalDeseo.hidden = false;
+            bloquearFondo(true);
+            pausar();
+            if (error) error.hidden = true;
+            campoNombre?.focus();
+        }
+
+        function cerrarFormulario() {
+            modalDeseo.hidden = true;
+            bloquearFondo(false);
+            abrir?.focus();
+            reanudar();
+        }
+
+        abrir.addEventListener("click", abrirFormulario);
+        modalDeseo.querySelectorAll("[data-cerrar-deseo]").forEach((el) => {
+            el.addEventListener("click", cerrarFormulario);
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key !== "Escape") return;
+            if (!modalDeseo.hidden) cerrarFormulario();
+            else if (!modalMuro.hidden) cerrarMuro();
+        });
+
+        // ═══════════════════════════════════════════════════════
+        // DATOS
+        // Las dos únicas funciones que hay que tocar para pasar a Supabase.
+        // ═══════════════════════════════════════════════════════
+        async function leerDeseos(): Promise<Deseo[] | null> {
+            if (!conectado) return null;
+            try {
+                const res = await fetch(endpoint, { method: "GET" });
+                if (!res.ok) throw new Error(String(res.status));
+                const datos = (await res.json()) as Deseo[];
+                return Array.isArray(datos) ? datos : null;
+            } catch {
+                // Si el servicio no responde quedan los de ejemplo: la
+                // invitación nunca muestra un hueco ni un error crudo.
+                return null;
+            }
+        }
+
+        async function guardarDeseo(deseo: Deseo): Promise<boolean> {
+            if (!conectado) return false;
+            try {
+                /*
+                   text/plain y no application/json a propósito: con JSON el
+                   navegador manda un preflight OPTIONS que Apps Script no
+                   contesta, y el envío falla por CORS. Del otro lado se
+                   parsea igual con JSON.parse.
+                */
+                const res = await fetch(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(deseo),
+                });
+                return res.ok;
+            } catch {
+                return false;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // ENVÍO
+        // ═══════════════════════════════════════════════════════
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            if (error) error.hidden = true;
+
+            // La trampa completada = bot. Se corta sin decir por qué.
+            if (campoTrampa && campoTrampa.value.trim() !== "") return;
+
+            const nombre = campoNombre?.value.trim() ?? "";
+            const mensaje = campoMensaje?.value.trim() ?? "";
+
+            if (nombre.length < 2) {
+                mostrarError("Escribinos tu nombre, así sabemos de quién es.");
+                return;
+            }
+            if (mensaje.length < 5) {
+                mostrarError("El mensaje quedó muy cortito.");
+                return;
+            }
+            if (!conectado) {
+                mostrarError(
+                    "El muro todavía no está conectado. Avisale a los novios.",
+                );
+                return;
+            }
+
+            if (enviar) enviar.disabled = true;
+
+            const guardado = await guardarDeseo({ nombre, mensaje });
+
+            if (enviar) enviar.disabled = false;
+
+            if (!guardado) {
+                mostrarError("No pudimos enviarlo. Probá de nuevo en un rato.");
+                return;
+            }
+
+            // Se agrega en el acto en vez de releer: el servicio puede tardar
+            // unos segundos en devolverlo y la espera se siente.
+            deseos.unshift({ nombre, mensaje });
+            pintarCarrusel();
+
+            form.reset();
+            if (contador) contador.textContent = "0 / 400";
+            cerrarFormulario();
+
+            aviso.textContent = "¡Gracias! Tu deseo ya está en el muro.";
+            aviso.hidden = false;
+        });
+
+        // ═══════════════════════════════════════════════════════
+        // ARRANQUE
+        // ═══════════════════════════════════════════════════════
+        pintarCarrusel();
+
+        leerDeseos().then((datos) => {
+            if (datos && datos.length > 0) {
+                deseos = datos;
+                pintarCarrusel();
+            }
+        });
+    });
+</script>

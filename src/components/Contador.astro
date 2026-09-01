@@ -1,7 +1,12 @@
 ---
 // src/components/Contador.astro
-// Cuenta regresiva "Falta poco" en cuatro casillas traslúcidas. Va dentro
-// del panel de la foto, en Fecha.astro.
+// Cuenta regresiva "Falta poco": cuatro casillas cuadradas de línea fina,
+// cada una con su ícono encajado en el corte del borde de arriba, puntos
+// entre medio y una guarda de hojas al pie.
+//
+// Va dentro del panel del mapa, en Fecha.astro: por eso está en terracota
+// sobre claro y no en crema sobre foto.
+
 // ── DATOS EDITABLES ───────────────────────────────────────────
 const titulo = "Falta poco";
 // Fecha y hora de la boda
@@ -9,87 +14,263 @@ const fechaBoda = "2027-01-09T14:00:00";
 // ──────────────────────────────────────────────────────────────
 
 const casillas = [
-    { id: "dias", rotulo: "Días" },
-    { id: "horas", rotulo: "Hs." },
-    { id: "minutos", rotulo: "Min." },
-    { id: "segundos", rotulo: "Seg." },
+    { id: "dias", rotulo: "Días", icono: "calendario" },
+    { id: "horas", rotulo: "Hs.", icono: "reloj" },
+    { id: "minutos", rotulo: "Min.", icono: "reloj-arena" },
+    { id: "segundos", rotulo: "Seg.", icono: "corazon" },
 ];
 ---
 
-<div id="contador" class="w-full flex flex-col items-center" data-fecha={fechaBoda}>
-    <p class="font-verandah titulo-contador">{titulo}</p>
+<div
+    id="contador"
+    class="w-full flex flex-col items-center"
+    data-fecha={fechaBoda}
+>
+    <p class="rotulo-titulo font-great-vibes">{titulo}</p>
 
     <div class="casillas-contador">
         {
-            casillas.map((casilla) => (
-                <div class="casilla">
-                    {/*
-                       Número y rótulo en serif, no en caligrafía: son datos
-                       que cambian cada segundo y tienen que leerse de golpe.
-                    */}
-                    <span id={casilla.id} class="font-cormorant numero-contador">
-                        00
-                    </span>
-                    <span class="font-cormorant rotulo-contador">
-                        {casilla.rotulo}
-                    </span>
-                </div>
+            casillas.map((casilla, i) => (
+                <>
+                    <div class="casilla">
+                        {/*
+                           El ícono va en el hueco que deja el borde de
+                           arriba: por eso el borde se dibuja en dos tramos
+                           con ::before y ::after, y no como border-top.
+                        */}
+                        <span class="icono-casilla" aria-hidden="true">
+                            {casilla.icono === "calendario" && (
+                                <svg viewBox="0 0 24 24">
+                                    <rect
+                                        x="3"
+                                        y="5"
+                                        width="18"
+                                        height="16"
+                                        rx="2"
+                                    />
+                                    <path d="M3 10.5h18M8 3v4M16 3v4" />
+                                    <circle class="lleno" cx="8" cy="15" r="1" />
+                                    <circle
+                                        class="lleno"
+                                        cx="12"
+                                        cy="15"
+                                        r="1"
+                                    />
+                                    <circle
+                                        class="lleno"
+                                        cx="16"
+                                        cy="15"
+                                        r="1"
+                                    />
+                                </svg>
+                            )}
+                            {casilla.icono === "reloj" && (
+                                <svg viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="9" />
+                                    <path d="M12 6.8V12l3.6 2.1" />
+                                </svg>
+                            )}
+                            {casilla.icono === "reloj-arena" && (
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M6 3h12M6 21h12" />
+                                    <path d="M7.5 3v3.6c0 2.1 4.5 3.6 4.5 5.4s-4.5 3.3-4.5 5.4V21" />
+                                    <path d="M16.5 3v3.6c0 2.1-4.5 3.6-4.5 5.4s4.5 3.3 4.5 5.4V21" />
+                                </svg>
+                            )}
+                            {casilla.icono === "corazon" && (
+                                <svg viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="9" />
+                                    <path
+                                        class="lleno"
+                                        d="M12 17.2 7.9 13a2.7 2.7 0 0 1 0-3.8 2.7 2.7 0 0 1 3.8 0l.3.3.3-.3a2.7 2.7 0 0 1 3.8 0 2.7 2.7 0 0 1 0 3.8L12 17.2z"
+                                    />
+                                </svg>
+                            )}
+                        </span>
+
+                        {/*
+                           Número y rótulo en serif, no en caligrafía: son
+                           datos que cambian cada segundo y tienen que
+                           leerse de golpe.
+                        */}
+                        <span
+                            id={casilla.id}
+                            class="font-cormorant numero-contador"
+                        >
+                            00
+                        </span>
+                        <span class="font-cormorant rotulo-contador">
+                            {casilla.rotulo}
+                        </span>
+                    </div>
+
+                    {i < casillas.length - 1 && (
+                        <span class="punto" aria-hidden="true">
+                            ·
+                        </span>
+                    )}
+                </>
             ))
         }
     </div>
+
+    <!-- Guarda de cierre: dos ramas apuntando a un corazón -->
+    <svg class="guarda" viewBox="0 0 200 22" aria-hidden="true">
+        <g class="trazo">
+            <path d="M26 11h48M68 6.5 74 11l-6 4.5" />
+            <path d="M38 11c-3.4-2.6-7-2.6-9.8-.9M50 11c-3.4-2.6-7-2.6-9.8-.9M62 11c-3.4-2.6-7-2.6-9.8-.9" />
+            <path d="M174 11h-48M132 6.5 126 11l6 4.5" />
+            <path d="M162 11c3.4-2.6 7-2.6 9.8-.9M150 11c3.4-2.6 7-2.6 9.8-.9M138 11c3.4-2.6 7-2.6 9.8-.9" />
+        </g>
+        <path
+            class="lleno"
+            d="M100 19.5 92.6 12a4.9 4.9 0 0 1 0-7 4.9 4.9 0 0 1 6.9 0l.5.5.5-.5a4.9 4.9 0 0 1 6.9 0 4.9 4.9 0 0 1 0 7L100 19.5z"
+        ></path>
+    </svg>
 </div>
 
 <style>
-    .titulo-contador {
-        color: #fbeee2;
-        font-size: clamp(1.4rem, 6.4vw, 1.75rem);
+    #contador {
+        --terracota: #b9563a;
+        --tinta: #7a4a34;
+        --linea: rgba(185, 86, 58, 0.45);
+    }
+
+    .rotulo-titulo {
+        color: var(--terracota);
+        font-size: clamp(1.35rem, 6.4cqw, 1.6rem);
         line-height: 1.2;
-        margin-bottom: 0.6rem;
-        text-shadow: 0 4px 12px rgba(70, 28, 16, 0.5);
+        margin: 0 0 0.8rem;
     }
 
     .casillas-contador {
         display: flex;
+        align-items: center;
         justify-content: center;
-        gap: 0.5rem;
+        gap: 0.2rem;
         width: 100%;
-        max-width: 324px;
+        max-width: 19rem;
     }
 
-    /* min-width 0: sin esto el rótulo más largo ensancha su casilla y las
-       cuatro dejan de medir igual. */
+    /*
+       min-width 0: sin esto el rótulo más largo ensancha su casilla y las
+       cuatro dejan de medir igual.
+    */
     .casilla {
+        position: relative;
         flex: 1;
         min-width: 0;
-        /* Cuadradas y vacías: por dentro se ve la foto, como en el diseño */
         aspect-ratio: 1 / 1;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 0.1rem;
+        gap: 0.05rem;
         padding: 0.2rem;
-        border: 1px solid rgba(251, 238, 226, 0.85);
-        background: transparent;
+        border: 1px solid var(--linea);
+        /* El borde de arriba se dibuja abajo, en dos tramos */
+        border-top: none;
+        border-radius: 3px;
+    }
+
+    /*
+       Los dos tramos del borde superior. El hueco del medio es donde entra
+       el ícono: así la línea queda cortada de verdad y no tapada por un
+       parche de color, que sobre el papel del mapa se notaría.
+    */
+    .casilla::before,
+    .casilla::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        width: 30%;
+        height: 1px;
+        background: var(--linea);
+    }
+
+    .casilla::before {
+        left: 0;
+    }
+
+    .casilla::after {
+        right: 0;
+    }
+
+    /* El ícono monta sobre la línea, centrado en el corte */
+    .icono-casilla {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translate(-50%, -52%);
+        width: 1.15rem;
+        height: 1.15rem;
+        color: var(--terracota);
+    }
+
+    .icono-casilla :global(svg) {
+        width: 100%;
+        height: 100%;
+        display: block;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    /* Los rellenos (puntitos del almanaque, corazón) no llevan trazo */
+    .icono-casilla :global(.lleno) {
+        fill: currentColor;
+        stroke: none;
     }
 
     .numero-contador {
-        color: #fdf6ee;
-        font-size: clamp(1.5rem, 7vw, 1.85rem);
+        color: var(--terracota);
+        font-size: clamp(1.45rem, 6.8cqw, 1.75rem);
         font-weight: 600;
-        line-height: 1.1;
+        line-height: 1.05;
         /* Cifras de caja alta: las de estilo antiguo bailan de altura */
         font-variant-numeric: lining-nums;
-        text-shadow: 0 2px 8px rgba(70, 28, 16, 0.5);
     }
 
     .rotulo-contador {
-        color: #fbeee2;
-        font-size: clamp(0.78rem, 3.7vw, 0.92rem);
-        letter-spacing: 0.04em;
+        color: var(--tinta);
+        font-size: clamp(0.72rem, 3.4cqw, 0.85rem);
+        letter-spacing: 0.02em;
         line-height: 1.2;
         white-space: nowrap;
-        text-shadow: 0 2px 6px rgba(70, 28, 16, 0.45);
+    }
+
+    /* El punto entre casillas */
+    .punto {
+        flex: none;
+        color: var(--terracota);
+        font-size: 1rem;
+        line-height: 1;
+        opacity: 0.8;
+    }
+
+    /* ── Guarda del pie ── */
+    .guarda {
+        width: 100%;
+        max-width: 15rem;
+        height: auto;
+        margin-top: 0.9rem;
+        color: var(--terracota);
+    }
+
+    .guarda .trazo :global(path) {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.1;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        opacity: 0.75;
+    }
+
+    .guarda .lleno {
+        fill: currentColor;
+        stroke: none;
     }
 </style>
 

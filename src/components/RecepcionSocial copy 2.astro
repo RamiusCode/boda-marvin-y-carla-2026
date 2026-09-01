@@ -1,0 +1,173 @@
+---
+// src/components/RecepcionSocial.astro
+// Recepción social: mismo diseño que la ceremonia religiosa, con el arco de
+// la fiesta en lugar de la iglesia.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const titulo = "Recepción Social";
+const hora = "16:30";
+const salon = ["SALÓN DE EVENTOS", "“ROBLES”"];
+const direccion = [
+    "Calle Cañada Strongest #1822",
+    "( A media cuadra de la Plaza del Estudiante )",
+];
+const mapa = "https://maps.app.goo.gl/optHBhjQMEwJr1Mx7";
+const textoBoton = "Ver mapa";
+// El archivo tiene tilde en el nombre: va escapado para que la URL no
+// dependa de cómo codifique cada servidor.
+const dibujo = "/imagenes/recepci%C3%B3n.png";
+// ──────────────────────────────────────────────────────────────
+---
+
+<section id="recepcion-social" class="relative w-full overflow-hidden">
+    <!-- Fondo de acuarela -->
+    <img
+        src="/imagenes/foto3.png"
+        alt=""
+        width="935"
+        height="1629"
+        aria-hidden="true"
+        class="absolute inset-0 h-full w-full object-cover"
+    />
+
+    <div
+        id="bloque-recepcion"
+        class="relative flex flex-col items-center px-7 py-16 text-center"
+    >
+        <h2 class="font-dancing titulo-recepcion">{titulo}</h2>
+
+        <p class="hora-recepcion">
+            <!-- El reloj se pinta con máscara, no con filtros -->
+            <span
+                class="icono icono-terracota reloj-recepcion"
+                style="--ic:url('/imagenes/hora.png')"
+                aria-hidden="true"></span>
+            <span class="font-cormorant hora-texto">{hora}</span>
+        </p>
+
+        <!-- El dibujo también va con máscara: el trazo negro quedaría duro -->
+        <span
+            class="icono icono-terracota dibujo-recepcion"
+            style={`--ic:url('${dibujo}')`}
+            aria-hidden="true"></span>
+
+        <h3 class="font-cormorant nombre-salon">
+            {salon.map((linea) => <span class="block">{linea}</span>)}
+        </h3>
+
+        <p class="font-cormorant direccion-salon">
+            {direccion.map((linea) => <span class="block">{linea}</span>)}
+        </p>
+
+        <a
+            href={mapa}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="font-cormorant boton-mapa"
+        >
+            <svg viewBox="0 0 24 24" aria-hidden="true" class="pin-mapa">
+                <path
+                    d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"
+                    fill="currentColor"></path>
+            </svg>
+            {textoBoton}
+        </a>
+    </div>
+</section>
+
+<style>
+    .titulo-recepcion {
+        color: #a4482a;
+        font-size: clamp(1.9rem, 8.6vw, 2.4rem);
+        line-height: 1.25;
+    }
+
+    .hora-recepcion {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        margin-top: 0.5rem;
+        color: #8e3a1e;
+    }
+
+    .reloj-recepcion {
+        width: 1.5rem;
+        height: 1.5rem;
+        flex: none;
+    }
+
+    .hora-texto {
+        font-size: clamp(1.4rem, 6.4vw, 1.75rem);
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        /* Cifras de caja alta: las de estilo antiguo bailan de altura */
+        font-variant-numeric: lining-nums;
+    }
+
+    .dibujo-recepcion {
+        width: 37%;
+        max-width: 148px;
+        /* La proporción del dibujo es 449x517 */
+        aspect-ratio: 449 / 517;
+        margin-top: 1.2rem;
+    }
+
+    .nombre-salon {
+        color: #7a3418;
+        font-size: clamp(1.25rem, 5.8vw, 1.55rem);
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        /* text-indent compensa el hueco que el tracking deja después de la
+           última letra; sin esto el renglón se ve corrido a la izquierda */
+        text-indent: 0.06em;
+        line-height: 1.4;
+        margin-top: 1.4rem;
+    }
+
+    .direccion-salon {
+        color: #a05a3c;
+        font-size: clamp(1.15rem, 5.3vw, 1.4rem);
+        line-height: 1.55;
+        margin-top: 0.9rem;
+    }
+
+    /*
+       El botón del modelo: fondo claro, texto oscuro y forma de hoja: en
+       punta arriba a la izquierda y abajo a la derecha, redondeado en las
+       otras dos esquinas.
+    */
+    .boton-mapa {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        margin-top: 1.8rem;
+        padding: 0.7rem 1.8rem;
+        border-radius: 2px 24px 2px 24px;
+        background: #e6c4ad;
+        color: #7a3418;
+        font-size: clamp(1rem, 4.6vw, 1.2rem);
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        box-shadow: 0 5px 14px rgba(90, 40, 22, 0.16);
+        transition: transform 0.3s ease;
+    }
+
+    .boton-mapa:hover {
+        transform: scale(1.04);
+    }
+
+    .pin-mapa {
+        width: 1.15em;
+        height: 1.15em;
+        flex: none;
+    }
+</style>
+
+<script>
+    import { animarEntrada } from "../scripts/animaciones";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const bloque = document.getElementById("bloque-recepcion");
+        if (bloque) animarEntrada(bloque.children, bloque);
+    });
+</script>

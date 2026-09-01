@@ -1,0 +1,587 @@
+---
+// src/components/Cronograma.astro
+// Cronograma sobre el papel de acuarela: título, y debajo la línea de
+// tiempo en una sola columna — el icono a la izquierda, el punto sobre el
+// eje y la hora con su momento a la derecha.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const titulo = "Cronograma";
+
+// Los iconos salen de /public/imagenes. recepción.png lleva tilde en el
+// nombre: va escapado para que la URL no dependa de cómo lo codifique cada
+// servidor.
+const momentos = [
+    { hora: "14:00", nombre: ["Ceremonia Religiosa"], icono: "anillos.png" },
+    {
+        hora: "16:30",
+        nombre: ["Ceremonia Civil en", "el Salón"],
+        icono: "ceremoniacivil.png",
+    },
+    { hora: "17:00", nombre: ["Brindis"], icono: "brindis.png" },
+    { hora: "17:30", nombre: ["Vals de Novios"], icono: "vals.png" },
+    {
+        hora: "18:00",
+        nombre: ["Recepción Social"],
+        icono: "recepci%C3%B3n.png",
+    },
+    { hora: "19:00", nombre: ["Cena"], icono: "cena.png" },
+    {
+        hora: "21:00",
+        // Cortado en tres y no en dos: este era el renglón más largo y era
+        // el que estiraba el ancho de toda la línea de tiempo.
+        nombre: ["Corte de Torta", "y Lanzamiento", "de Bouquet"],
+        icono: "torta.png",
+    },
+    { hora: "00:00", nombre: ["Despedida"], icono: "despedida.png" },
+];
+// ──────────────────────────────────────────────────────────────
+---
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 🕰️ CRONOGRAMA · los momentos del día                        -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="cronograma" class="relative w-full overflow-hidden">
+    <!-- Fondo de acuarela -->
+    <img
+        src="/imagenes/foto3.png"
+        alt=""
+        width="935"
+        height="1629"
+        aria-hidden="true"
+        class="absolute inset-0 h-full w-full object-cover"
+    />
+
+    <!--
+       Filete impreso. Va antes que los ramos en el markup a propósito: sin
+       z-index propio, el orden del documento decide, y así las flores le
+       pasan por encima como en la papelería de verdad.
+    -->
+    <span class="filete" aria-hidden="true"></span>
+
+    <!--
+       Acá van los cuatro ramos y no dos: la sección es larga, y con solo
+       dos esquinas el tramo del medio queda desnudo.
+    -->
+    <img
+        src="/imagenes/flores2.png"
+        alt=""
+        aria-hidden="true"
+        class="ramo ramo-si"
+    />
+    <img
+        src="/imagenes/flores2.png"
+        alt=""
+        aria-hidden="true"
+        class="ramo ramo-sd"
+    />
+    <img
+        src="/imagenes/flores2.png"
+        alt=""
+        aria-hidden="true"
+        class="ramo ramo-ii"
+    />
+    <img
+        src="/imagenes/flores2.png"
+        alt=""
+        aria-hidden="true"
+        class="ramo ramo-id"
+    />
+
+    <div class="relative px-6 py-16">
+        <div id="encabezado-cronograma" class="encabezado">
+            <h2 class="titulo font-great-vibes">{titulo}</h2>
+
+            <span class="separador" aria-hidden="true">
+                <span class="chevrones font-cormorant">&#187;&#187;&#187;</span>
+                <b class="corazon">&#9829;</b>
+                <span class="chevrones font-cormorant">&#171;&#171;&#171;</span>
+            </span>
+        </div>
+
+        <div id="linea-tiempo" class="linea-tiempo">
+            {
+                momentos.map((momento) => (
+                    // data-lado lo lee el script para saber de qué costado
+                    // entra el icono. Acá la columna es una sola, así que
+                    // todos vienen desde la izquierda.
+                    <div class="momento" data-lado="izq">
+                        <span
+                            class="momento-icono icono icono-terracota"
+                            style={`--ic: url('/imagenes/${momento.icono}')`}
+                            aria-hidden="true"
+                        />
+
+                        {/* Punto sobre el eje vertical */}
+                        <span class="momento-marca punto" />
+
+                        <div class="momento-texto">
+                            <p class="momento-hora font-cormorant">
+                                {momento.hora}
+                            </p>
+                            <h3 class="momento-titulo font-cormorant">
+                                {momento.nombre.map((linea) => (
+                                    <span class="momento-nombre">{linea}</span>
+                                ))}
+                            </h3>
+                        </div>
+                    </div>
+                ))
+            }
+        </div>
+    </div>
+</section>
+
+<style>
+    #cronograma {
+        --terracota: #a4482a;
+        --terracota-suave: #b06a4c;
+        --tinta: #7a3418;
+    }
+
+    /* Filete fino, como el impreso de la invitación */
+    .filete {
+        position: absolute;
+        inset: 14px;
+        border: 1px solid rgba(164, 72, 42, 0.3);
+        pointer-events: none;
+    }
+
+    /* ── Ramos de las esquinas ── */
+    .ramo {
+        position: absolute;
+        width: 30%;
+        height: auto;
+        z-index: 0;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .ramo-si {
+        top: 0;
+        left: -13%;
+        transform: scaleY(-1) rotate(4deg);
+    }
+
+    .ramo-sd {
+        top: 0;
+        right: -13%;
+        transform: scaleX(-1) scaleY(-1) rotate(4deg);
+    }
+
+    .ramo-ii {
+        bottom: 0;
+        left: -13%;
+        transform: rotate(4deg);
+    }
+
+    .ramo-id {
+        bottom: 0;
+        right: -13%;
+        transform: scaleX(-1) rotate(4deg);
+    }
+
+    /* ── Encabezado ── */
+    .encabezado {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 2.4rem;
+    }
+
+    .titulo {
+        color: var(--terracota);
+        font-weight: 400;
+        font-size: clamp(2.1rem, 9.6vw, 2.7rem);
+        line-height: 1.2;
+    }
+
+    .separador {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-top: 0.5rem;
+    }
+
+    .chevrones {
+        color: var(--terracota-suave);
+        font-size: 0.85rem;
+        letter-spacing: 0.1em;
+        line-height: 1;
+    }
+
+    .corazon {
+        color: var(--terracota);
+        font-size: 0.85rem;
+        line-height: 1;
+        font-weight: 400;
+    }
+
+    /* ── Línea de tiempo ── */
+    /*
+       El ancho lo fija el renglón más largo, más las dos columnas fijas del
+       icono y el carril (86px). Con los renglones cortados, el más ancho es
+       "Ceremonia Religiosa" (~150px), así que 15.5rem alcanza y sobra.
+
+       Esto es lo que centra el bloque de verdad: el margin: 0 auto ya lo
+       centraba antes, pero con el contenedor ancho la columna del texto
+       quedaba medio vacía en casi todas las filas y el conjunto se leía
+       corrido a la izquierda.
+    */
+    .linea-tiempo {
+        position: relative;
+        width: 100%;
+        max-width: 15.5rem;
+        margin: 0 auto;
+        /*
+           Corrimiento óptico. El margin: 0 auto centra la caja, pero dentro
+           de ella casi todos los renglones son más cortos que el más largo,
+           así que el peso visual queda a la izquierda del centro real. Este
+           1rem lo compensa.
+        */
+        left: 1rem;
+    }
+
+    /*
+       El eje vertical. Va en el centro de la segunda columna de la grilla:
+       3.4rem del icono + la mitad de los 2rem del carril = 4.4rem.
+       El top/bottom lo dejan arrancar y terminar en el primer y último
+       punto, no en el filo del bloque.
+    */
+    .linea-tiempo::before {
+        content: "";
+        position: absolute;
+        left: 4.4rem;
+        top: 1.1rem;
+        bottom: 1.1rem;
+        width: 1px;
+        background: rgba(164, 72, 42, 0.45);
+    }
+
+    .momento {
+        display: grid;
+        grid-template-columns: 3.4rem 2rem 1fr;
+        align-items: start;
+    }
+
+    .momento + .momento {
+        margin-top: 1.6rem;
+    }
+
+    .momento-icono {
+        width: 2.9rem;
+        height: 2.9rem;
+    }
+
+    /* El punto se centra en el carril y se alinea con la hora */
+    .punto {
+        justify-self: center;
+        margin-top: 0.85rem;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--terracota);
+    }
+
+    .momento-texto {
+        text-align: left;
+        padding-left: 0.3rem;
+    }
+
+    .momento-hora {
+        color: var(--tinta);
+        font-size: clamp(1.05rem, 4.8vw, 1.2rem);
+        font-weight: 700;
+        letter-spacing: 0.025em;
+        line-height: 1.3;
+        /* Cifras de caja alta: las de estilo antiguo bailan de altura */
+        font-variant-numeric: lining-nums;
+    }
+
+    .momento-titulo {
+        margin-top: 0.1rem;
+    }
+
+    .momento-nombre {
+        display: block;
+        color: var(--terracota-suave);
+        font-size: clamp(0.98rem, 4.4vw, 1.1rem);
+        line-height: 1.4;
+    }
+</style>
+
+<script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+    import { animarEntrada } from "../scripts/animaciones";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Mismo arranque que el helper compartido, para que el cronograma entre
+    // con el mismo timing que el resto de la invitación.
+    const ARRANQUE = "top 92%";
+
+    const menosMovimiento = () =>
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    /*
+       Cola de reproducción: los momentos entran siempre en orden y nunca
+       arrancan todos juntos. Cada uno, al entrar en pantalla, se anota acá.
+
+       El siguiente no espera a que el anterior termine: larga cuando el
+       anterior va por la cuarta parte. Se solapan bastante, así la línea
+       baja como una sola cosa en vez de ir momento por momento, y la
+       secuencia completa acompaña el scroll del invitado.
+    */
+    const RELEVO = 0.25; // en qué punto del anterior arranca el siguiente
+
+    let cola: Promise<void> = Promise.resolve();
+
+    /*
+       Una timeline no puede estar anotada dos veces. Como la animación se
+       rehace cada vez que se baja sobre el cronograma, sin esto subir y
+       bajar varias veces iría amontonando turnos y la cola quedaría
+       corriendo sola un buen rato después.
+    */
+    const enEspera = new Set<gsap.core.Timeline>();
+
+    // Todas las timelines del cronograma, para poder devolverlas juntas al
+    // principio cuando el invitado sube por encima de la sección.
+    const entradas: gsap.core.Timeline[] = [];
+
+    /*
+       Número de pasada. Cambiar la variable `cola` no alcanza para cancelar
+       los turnos que ya estaban encadenados: esos .then() siguen existiendo
+       y, cuando les toca, igual reproducen su momento. Por eso cada turno se
+       lleva anotada la pasada en la que se pidió y se descarta si ya no es
+       la vigente. Sin esto, después de subir y bajar quedaban dos secuencias
+       corriendo a la vez —la nueva desde el primer momento y la vieja
+       terminando los de abajo— y se veían momentos ya armados mientras
+       arriba recién empezaba.
+    */
+    let pasada = 0;
+
+    function encolar(entrada: gsap.core.Timeline) {
+        if (enEspera.has(entrada)) return;
+        enEspera.add(entrada);
+
+        const suPasada = pasada;
+
+        cola = cola.then(
+            () =>
+                new Promise<void>((libre) => {
+                    if (suPasada !== pasada) {
+                        libre();
+                        return;
+                    }
+
+                    enEspera.delete(entrada);
+                    entrada.restart();
+                    gsap.delayedCall(entrada.duration() * RELEVO, libre);
+                }),
+        );
+    }
+
+    /*
+       Reset de toda la sección, no de a un momento.
+
+       Antes cada momento se reseteaba solo al salir por arriba, y ahí estaba
+       el problema: si el invitado frenaba a mitad del cronograma y subía,
+       los de arriba volvían a cero pero los de abajo —que nunca salieron de
+       pantalla— se quedaban a medio animar. Al bajar de nuevo arrancaban dos
+       secuencias desfasadas: una desde el primero y otra desde donde había
+       quedado.
+
+       Ahora se vacía la cola y vuelven todos a cero de una sola vez, así la
+       línea siempre se rearma entera y en orden.
+    */
+    function reiniciarCronograma() {
+        // Primero se invalida la pasada: cualquier turno que todavía estaba
+        // en la cadena vieja se va a descartar solo al llegarle el momento.
+        pasada += 1;
+        enEspera.clear();
+        cola = Promise.resolve();
+        entradas.forEach((entrada) => entrada.pause(0));
+    }
+
+    /*
+       Un momento se anota una sola vez por pasada. Si ya corrió —o está
+       corriendo— vuelve a entrar en pantalla sin animarse: sólo se rehace
+       después de un reiniciarCronograma(), que es el que lo devuelve a cero.
+       Sin esto, subir un poco y volver a bajar repetía momentos sueltos y
+       era justamente lo que descolocaba la secuencia.
+    */
+    function anotar(entrada: gsap.core.Timeline) {
+        if (entrada.progress() > 0) return;
+        encolar(entrada);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const encabezado = document.getElementById("encabezado-cronograma");
+        if (encabezado) animarEntrada(encabezado.children, encabezado);
+
+        /*
+           Cada momento tiene su propio trigger, pero la animación no corre
+           ahí: se encola. Así entran siempre en orden y encabalgados a la
+           cuarta parte del anterior, nunca todos juntos.
+
+           Dentro de cada momento las piezas entran encadenadas y cada una
+           con su propio gesto, para que la línea de tiempo se arme sola
+           delante del invitado en vez de aparecer de golpe:
+
+             · el punto y el tramo abren sobre la línea central,
+             · el icono llega desde su lado y asienta con un rebote mínimo,
+             · el nombre lo sigue renglón por renglón,
+             · la hora cierra soltando las letras desde separadas.
+
+           El encadenado va lento a propósito (~1,7s de punta a punta). El
+           único que rebota es el icono, y apenas: el texto frena parejo con
+           sine.out, que rebotando se lee barato.
+
+           El punto y el tramo no se desplazan: son parte de la línea, sólo
+           aparecen, si no se despegarían del eje.
+        */
+        document.querySelectorAll<HTMLElement>(".momento").forEach((momento) => {
+            const marcas =
+                momento.querySelectorAll<HTMLElement>(".momento-marca");
+            const icono = momento.querySelector<HTMLElement>(".momento-icono");
+            const nombre =
+                momento.querySelectorAll<HTMLElement>(".momento-nombre");
+            const hora = momento.querySelector<HTMLElement>(".momento-hora");
+
+            const piezas = [...marcas, icono, ...nombre, hora].filter(
+                (pieza): pieza is HTMLElement => pieza !== null,
+            );
+            if (piezas.length === 0) return;
+
+            // Arranca pausada: la dispara la cola, no el trigger.
+            const entrada = gsap.timeline({ paused: true });
+
+            // Quien pidió menos movimiento recibe el mismo orden, pero sólo
+            // como aparición: nada se desplaza ni rebota.
+            if (menosMovimiento()) {
+                entrada.fromTo(
+                    piezas,
+                    { opacity: 0 },
+                    {
+                        opacity: 1,
+                        duration: 0.45,
+                        stagger: 0.08,
+                        ease: "power1.out",
+                    },
+                );
+                entradas.push(entrada);
+                ScrollTrigger.create({
+                    trigger: momento,
+                    start: ARRANQUE,
+                    onEnter: () => anotar(entrada),
+                });
+                return;
+            }
+
+            const desde = momento.dataset.lado === "der" ? 1 : -1;
+
+            if (marcas.length > 0) {
+                entrada.fromTo(
+                    marcas,
+                    { opacity: 0, filter: "blur(4px)" },
+                    {
+                        opacity: 1,
+                        filter: "blur(0px)",
+                        duration: 0.9,
+                        ease: "sine.out",
+                    },
+                    0,
+                );
+            }
+
+            if (icono) {
+                entrada.fromTo(
+                    icono,
+                    {
+                        opacity: 0,
+                        x: desde * 28,
+                        scale: 0.82,
+                        filter: "blur(4px)",
+                    },
+                    {
+                        opacity: 1,
+                        x: 0,
+                        scale: 1,
+                        filter: "blur(0px)",
+                        duration: 1.15,
+                        // Rebote apenas insinuado: pasa de largo un pelo y
+                        // vuelve. Antes se sentía brusco porque venía de muy
+                        // lejos (x 44, escala 0.55); con el recorrido corto
+                        // de ahora el mismo gesto queda delicado.
+                        ease: "back.out(1.2)",
+                    },
+                    0,
+                );
+            }
+
+            if (nombre.length > 0) {
+                entrada.fromTo(
+                    nombre,
+                    { opacity: 0, x: desde * 15, filter: "blur(3px)" },
+                    {
+                        opacity: 1,
+                        x: 0,
+                        filter: "blur(0px)",
+                        duration: 0.95,
+                        stagger: 0.16,
+                        ease: "sine.out",
+                    },
+                    0.3,
+                );
+            }
+
+            if (hora) {
+                // Las letras arrancan muy abiertas y se cierran hasta su
+                // interletrado real: el remate elegante de cada momento.
+                entrada.fromTo(
+                    hora,
+                    {
+                        opacity: 0,
+                        y: 4,
+                        letterSpacing: "0.2em",
+                        filter: "blur(3px)",
+                    },
+                    {
+                        opacity: 1,
+                        y: 0,
+                        letterSpacing: "0.025em",
+                        filter: "blur(0px)",
+                        duration: 1.05,
+                        ease: "sine.out",
+                        // El interletrado queda fijado inline por el tween;
+                        // se limpia para que mande de nuevo la clase.
+                        clearProps: "letterSpacing",
+                    },
+                    0.62,
+                );
+            }
+
+            entradas.push(entrada);
+            ScrollTrigger.create({
+                trigger: momento,
+                start: ARRANQUE,
+                onEnter: () => anotar(entrada),
+            });
+        });
+
+        /*
+           El reset vive acá, en la sección entera, y no en cada momento: al
+           subir por encima del cronograma vuelven todos a cero juntos, así
+           la próxima bajada rearma la línea completa desde el primero. Al
+           volver desde abajo no se toca nada, para no interrumpir a quien
+           está subiendo.
+        */
+        const lineaTiempo = document.getElementById("linea-tiempo");
+        if (lineaTiempo) {
+            ScrollTrigger.create({
+                trigger: lineaTiempo,
+                start: ARRANQUE,
+                onLeaveBack: reiniciarCronograma,
+            });
+        }
+    });
+</script>

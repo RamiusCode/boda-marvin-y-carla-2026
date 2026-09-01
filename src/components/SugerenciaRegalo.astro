@@ -16,19 +16,36 @@ const texto = [
 const rotuloQr = "TRANSFERENCIA QR";
 // Imagen del QR: dejala en public/imagenes/. Si se deja vacío, la caja
 // aparece igual pero con el recuadro punteado en lugar del código.
-const qr = "/imagenes/qr.jpeg";
+const qr = "/imagenes/qr.png";
+const cuenta = "Cuenta N° 3441510-000-001";
+const titular = "Carla Andrea Salinas Zegarra";
+
+// El archivo está guardado con el nombre trastocado ("perrtio", no
+// "perrito"): se referencia tal cual para no romper el enlace.
+const foto = "/imagenes/perrtio3.png";
 // ──────────────────────────────────────────────────────────────
 ---
 
 <section id="regalo" class="relative w-full overflow-hidden px-7 py-16">
-    <!-- Fondo de acuarela -->
+    <!--
+       Filete impreso. Va antes que los ramos en el markup a propósito: sin
+       z-index propio, el orden del documento decide, y así las flores le
+       pasan por encima como en la papelería de verdad.
+    -->
+    <span class="filete" aria-hidden="true"></span>
+
+    <!-- Ramos en diagonal, como en las demás secciones -->
     <img
-        src="/imagenes/foto3.png"
+        src="/imagenes/flores2.png"
         alt=""
-        width="935"
-        height="1629"
         aria-hidden="true"
-        class="absolute inset-0 h-full w-full object-cover"
+        class="ramo ramo-si"
+    />
+    <img
+        src="/imagenes/flores2.png"
+        alt=""
+        aria-hidden="true"
+        class="ramo ramo-id"
     />
 
     <div
@@ -56,11 +73,20 @@ const qr = "/imagenes/qr.jpeg";
             </g>
         </svg>
 
-        <h2 class="font-dancing titulo-regalo">{titulo}</h2>
+        <h2 class="font-great-vibes titulo-regalo">{titulo}</h2>
 
         <p class="font-cormorant texto-regalo">
             {texto.map((linea) => <span class="block">{linea}</span>)}
         </p>
+
+        <!-- El PNG ya trae su marco de papel rasgado y sus flores -->
+        <img
+            src={foto}
+            alt="Lu, la perrita de los novios, en un yate al atardecer"
+            width="799"
+            height="579"
+            class="foto-regalo"
+        />
 
         <!-- Caja del QR -->
         <div class="caja-qr">
@@ -78,23 +104,69 @@ const qr = "/imagenes/qr.jpeg";
                     <span class="hueco-qr" aria-hidden="true" />
                 )
             }
+
+            <span class="linea-qr linea-cuenta" aria-hidden="true"></span>
+
+            <p class="font-cormorant cuenta-regalo">{cuenta}</p>
+            <p class="font-cormorant titular-regalo">{titular}</p>
         </div>
 
     </div>
 </section>
 
 <style>
+    /* Filete fino, como el impreso de la invitación */
+    .filete {
+        position: absolute;
+        inset: 14px;
+        border: 1px solid rgba(164, 72, 42, 0.3);
+        pointer-events: none;
+    }
+
+    /* ── Ramos de las esquinas ── */
+    .ramo {
+        position: absolute;
+        width: 30%;
+        height: auto;
+        z-index: 0;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .ramo-si {
+        top: 0;
+        left: -13%;
+        transform: scaleY(-1) rotate(4deg);
+    }
+
+    .ramo-id {
+        bottom: 0;
+        right: -13%;
+        transform: scaleX(-1) rotate(4deg);
+    }
+
     .icono-regalo {
         width: 58px;
         height: 56px;
         color: #a4482a;
     }
 
+    /* Great Vibes tiene el ojo más chico que Dancing Script: sube de 7.6vw
+       a 9.6vw para quedar del mismo cuerpo que los otros títulos */
     .titulo-regalo {
         color: #a4482a;
-        font-size: clamp(1.7rem, 7.6vw, 2.1rem);
-        line-height: 1.3;
+        font-size: clamp(2.1rem, 9.6vw, 2.7rem);
+        line-height: 1.25;
         margin-top: 0.8rem;
+    }
+
+    /* El PNG ya trae marco y flores: va sin envoltorio */
+    .foto-regalo {
+        display: block;
+        width: 100%;
+        max-width: 21rem;
+        height: auto;
+        margin: 1.6rem auto 0;
     }
 
     .texto-regalo {
@@ -137,6 +209,27 @@ const qr = "/imagenes/qr.jpeg";
         margin: 0 auto;
         border-radius: 10px;
         background: #ffffff;
+    }
+
+    /* La segunda línea separa el QR de los datos de la cuenta */
+    .linea-cuenta {
+        margin: 1.2rem 0.4rem 1rem;
+    }
+
+    .cuenta-regalo {
+        color: #a05a3c;
+        font-size: clamp(1.02rem, 4.6vw, 1.18rem);
+        line-height: 1.4;
+        /* Cifras de caja alta: las de estilo antiguo bailan de altura */
+        font-variant-numeric: lining-nums;
+    }
+
+    .titular-regalo {
+        color: #7a3418;
+        font-size: clamp(1.08rem, 4.9vw, 1.25rem);
+        font-weight: 600;
+        line-height: 1.4;
+        margin-top: 0.25rem;
     }
 
     /* Marca el lugar del QR mientras no esté cargada la imagen */

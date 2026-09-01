@@ -356,20 +356,34 @@ const { invitado = "Adriana Candia" } = Astro.props;
             const capaBlanca = document.getElementById("capa-blanca");
 
             // ── Suelta el scroll y deja la invitación arrancada en el
-            //    arco de NombresFlores, su primera sección.
+            //    sobre de NombresFlores, su primera sección.
             const abrirInvitacion = () => {
                 document.body.classList.remove("portada-activa");
                 document.body.style.overflow = "auto";
 
                 // Salto seco, no suave: la portada todavía se está
-                // desvaneciendo encima y el arco tiene que estar ya en su
+                // desvaneciendo encima y el sobre tiene que estar ya en su
                 // lugar cuando termina de irse.
-                const destino = document.getElementById("arco-novios");
+                const destino = document.getElementById("sobre-novios");
                 if (destino) {
                     destino.scrollIntoView({ block: "start" });
                 } else {
                     window.scrollTo({ top: 0 });
                 }
+
+                /*
+                   El aviso para que NombresFlores recién ahora arranque su
+                   entrada. Sin esto su ScrollTrigger se dispararía en la
+                   carga —la sección está arriba de todo, o sea "a la
+                   vista", aunque la portada la esté tapando— y el invitado
+                   se encontraría el sobre ya armado.
+
+                   La bandera es para el caso de que su script corra
+                   después de este: entonces no llega a escuchar el evento
+                   y necesita poder preguntar si ya se abrió.
+                */
+                (window as any).portadaAbierta = true;
+                window.dispatchEvent(new Event("portada-abierta"));
             };
 
             // ── Click en el sello: música + salida de la portada ─────

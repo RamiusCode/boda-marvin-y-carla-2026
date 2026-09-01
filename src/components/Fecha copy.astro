@@ -1,0 +1,266 @@
+---
+// src/components/Fecha.astro
+// Panel de la fecha sobre la foto: la imagen se muestra entera (el alto sale
+// de su propia proporción, no se recorta) y encima van el anuncio, el día
+// con la hora, el almanaque del mes y, abajo, la cuenta regresiva.
+import Contador from "./Contador.astro";
+
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const anuncio = "¡ Nos Casamos !";
+const anio = 2027;
+const mes = 1; // 1 = enero
+const dia = 9;
+const hora = "14:00 hrs";
+const foto = "/imagenes/foto2.webp";
+// ──────────────────────────────────────────────────────────────
+
+const DIAS_SEMANA = ["D", "L", "M", "M", "J", "V", "S"];
+const NOMBRES_DIA = [
+    "Domingo",
+    "Lunes",
+    "Martes",
+    "Miércoles",
+    "Jueves",
+    "Viernes",
+    "Sábado",
+];
+const NOMBRES_MES = [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre",
+];
+
+// El almanaque se arma solo con la fecha de arriba: cambiando día, mes y año
+// se reacomodan la grilla y la marca del día.
+const fechaBoda = new Date(anio, mes - 1, dia);
+const diaSemana = NOMBRES_DIA[fechaBoda.getDay()];
+const nombreMes = NOMBRES_MES[mes - 1];
+
+const arranque = new Date(anio, mes - 1, 1).getDay(); // huecos antes del 1
+const diasDelMes = new Date(anio, mes, 0).getDate();
+
+const celdas: (number | null)[] = [
+    ...Array(arranque).fill(null),
+    ...Array.from({ length: diasDelMes }, (_, i) => i + 1),
+];
+while (celdas.length % 7 !== 0) celdas.push(null);
+
+const semanas = Array.from({ length: celdas.length / 7 }, (_, i) =>
+    celdas.slice(i * 7, i * 7 + 7),
+);
+---
+
+<section id="fecha-boda" class="relative w-full">
+    <!--
+       La foto va en el flujo, no de fondo: así la sección mide exactamente
+       lo que mide la imagen y se ve completa, sin recortes.
+    -->
+    <img
+        src={foto}
+        alt=""
+        width="818"
+        height="1894"
+        aria-hidden="true"
+        class="block w-full h-auto"
+    />
+
+    <!-- Velo terracota: la foto entra en la paleta y el texto se lee -->
+    <div class="absolute inset-0 velo-fecha"></div>
+
+    <div
+        id="fecha-contenido"
+        class="absolute inset-0 flex flex-col items-center px-6 pt-[17rem] pb-10 text-center"
+    >
+        <h2 class="font-verandah anuncio-fecha">{anuncio}</h2>
+
+        <!--
+           Las palabras van en Verandah, como el anuncio. Solo la cifra se
+           dibuja en Adelia: Verandah Reverie es de uso personal y en lugar de
+           los dígitos estampa una marca de agua. Va al 0.92em para que el
+           número quede del mismo cuerpo que las letras de al lado.
+        -->
+        <p class="font-verandah dia-fecha">
+            {diaSemana} <span class="font-adelia numero-dia">{dia}</span> de {nombreMes}
+        </p>
+
+        <p class="hora-fecha">
+            <!-- El reloj se pinta de crema con máscara, no con filtros -->
+            <span
+                class="icono icono-crema reloj-fecha"
+                style="--ic:url(&#39;/imagenes/hora.png&#39;)"
+                aria-hidden="true"></span>
+            <span class="font-cormorant hora-texto">{hora}</span>
+        </p>
+
+        <!-- Almanaque del mes con el día marcado -->
+        <div class="almanaque">
+            <div class="fila-semana encabezado-almanaque">
+                {
+                    DIAS_SEMANA.map((letra) => (
+                        <span class="celda-almanaque">{letra}</span>
+                    ))
+                }
+            </div>
+
+            {
+                semanas.map((semana) => (
+                    <div class="fila-semana">
+                        {semana.map((numero) => (
+                            <span
+                                class:list={[
+                                    "celda-almanaque",
+                                    numero === dia && "dia-marcado",
+                                ]}
+                            >
+                                {numero ?? ""}
+                            </span>
+                        ))}
+                    </div>
+                ))
+            }
+        </div>
+
+        <!-- La cuenta regresiva cierra el panel, pegada abajo -->
+        <div class="mt-auto w-full">
+            <Contador />
+        </div>
+    </div>
+</section>
+
+<style>
+    .velo-fecha {
+        background:
+            linear-gradient(
+                to bottom,
+                rgba(78, 33, 19, 0.5) 0%,
+                rgba(88, 38, 22, 0.3) 40%,
+                rgba(78, 33, 19, 0.5) 100%
+            ),
+            rgba(176, 84, 52, 0.12);
+    }
+
+    .anuncio-fecha {
+        color: #fdf6ee;
+        font-size: clamp(2.05rem, 9.6vw, 2.65rem);
+        line-height: 1.2;
+        text-shadow:
+            0 1px 0 rgba(255, 255, 255, 0.2),
+            0 6px 16px rgba(70, 28, 16, 0.55);
+    }
+
+    .dia-fecha,
+    .hora-fecha {
+        color: #fbf0e6;
+        line-height: 1.45;
+        text-shadow: 0 4px 12px rgba(70, 28, 16, 0.5);
+    }
+
+    .dia-fecha {
+        font-size: clamp(1.8rem, 8.2vw, 2.3rem);
+    }
+
+    .numero-dia {
+        font-size: 0.92em;
+    }
+
+    .dia-fecha {
+        margin-top: 1.5rem;
+    }
+
+    .hora-fecha {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+        margin-top: 1rem;
+    }
+
+    /* La hora va en serif y no en caligrafía: se lee de un golpe */
+    .hora-texto {
+        font-size: clamp(1.75rem, 7.8vw, 2.2rem);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        /* Cifras de caja alta: las de estilo antiguo bailan de altura */
+        font-variant-numeric: lining-nums;
+    }
+
+    .reloj-fecha {
+        width: 2rem;
+        height: 2rem;
+        flex: none;
+        filter: drop-shadow(0 3px 6px rgba(70, 28, 16, 0.45));
+    }
+
+    /* ── Almanaque ──────────────────────────────────────────── */
+    .almanaque {
+        width: 100%;
+        max-width: 252px;
+        margin-top: 1.1rem;
+        padding: 0.5rem 0.55rem 0.6rem;
+        border-radius: 8px;
+        background: rgba(58, 24, 14, 0.38);
+        box-shadow: 0 8px 20px rgba(70, 28, 16, 0.28);
+    }
+
+    .fila-semana {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+    }
+
+    .celda-almanaque {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 24px;
+        font-size: 0.78rem;
+        color: #fbeee2;
+    }
+
+    .encabezado-almanaque .celda-almanaque {
+        font-weight: 600;
+        color: #ffffff;
+    }
+
+    /* El día del casamiento, redondeado y en negativo */
+    .dia-marcado {
+        /* z-index 0 arma contexto propio: el círculo queda dentro de la celda
+           y no se va detrás del fondo del almanaque */
+        position: relative;
+        z-index: 0;
+        color: #7c3418;
+        font-weight: 700;
+    }
+
+    .dia-marcado::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 22px;
+        height: 22px;
+        margin: -11px 0 0 -11px;
+        border-radius: 9999px;
+        background: #fbeee2;
+        z-index: -1;
+    }
+</style>
+
+<script>
+    import { animarEntrada } from "../scripts/animaciones";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const bloque = document.getElementById("fecha-contenido");
+        if (!bloque) return;
+
+        animarEntrada(bloque.children, bloque);
+    });
+</script>

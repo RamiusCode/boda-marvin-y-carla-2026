@@ -1,0 +1,891 @@
+---
+// src/components/Dedicatoria.astro
+// La carta de Lili. La sección de la página es corta a propósito: solo el
+// saludo, el retrato y un botón. La carta entera vive dentro de un modal,
+// así la invitación no se hace larguísima y el texto gana su momento.
+//
+// La sección va sin fondo propio: el papel lo pone el <main> del Layout,
+// fijo y continuo para toda la invitación. El único fondo que queda acá es
+// el de la carta dentro del modal (fondo2.png), porque ahí la hoja flota
+// sobre el velo oscuro y sin él el texto quedaría ilegible.
+
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const saludo = "Hola";
+const perrita = "Lili";
+const novio = "Marvin";
+
+// Lo que se ve en la página, antes de abrir la carta
+const gancho = "Soy Lili, la perrita consentida de mi mamá humana,";
+const ganchoDestacado = "y tengo algo lindo que contarte.";
+const textoBoton = "Ábreme mi carta";
+
+// La carta completa, dentro del modal
+const bloques = [
+    {
+        texto: "Soy Lili, la perrita consentida de mi mamá humana, y hoy quiero darte la ",
+        destacado: "bienvenida a un día muy especial.",
+    },
+    {
+        texto:
+            "Hace mucho tiempo, mamá humana y yo éramos solo dos. " +
+            "Compartíamos nuestras rutinas, nuestras tardes, " +
+            "nuestros juegos y un amor inmenso que nos hacía felices.",
+    },
+    {
+        texto: "Pero en un momento determinado, apareció alguien muy especial en nuestras vidas: ",
+        destacado: "Marvin.",
+    },
+];
+
+const razones = [
+    {
+        n: "1",
+        texto:
+            "Aceptar a mi mamá humana tal como es, con su carácter fuerte, " +
+            "sus días buenos y los no tan buenos. La ayudó a ser más tranquila, " +
+            "más feliz y a creer que el amor verdadero sí existe.",
+    },
+    {
+        n: "2",
+        texto:
+            "Quererme a mí, y eso es lo más importante para mí, mamá humana. " +
+            "Con su amor y paciencia, me hizo sentir parte de su vida, " +
+            "de su corazón y de su familia.",
+    },
+];
+
+const cierre =
+    "Te invitamos a celebrar con nosotros el inicio de esta nueva etapa, " +
+    "donde el amor nos une y la felicidad nos acompaña.";
+// ──────────────────────────────────────────────────────────────
+---
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 🐾 DEDICATORIA · el saludo de Lili y el botón a su carta     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--
+   Sin padding abajo: la hoja ya se desvanece sus últimos 70px con la
+   máscara, y ese degradado es el aire hacia la Foto que sigue. Sumarle
+   padding encima abría un hueco blanco de más.
+-->
+<section id="dedicatoria" class="relative w-full pt-10 pb-0">
+    <!--
+       El marco es el que declara el container: si el container-type
+       estuviera en la hoja, sus propias unidades cqw resolverían contra el
+       viewport en vez de contra ella misma. Los dos miden lo mismo.
+    -->
+    <div class="hoja-marco">
+        <article id="hoja-dedicatoria" class="hoja">
+            <!--
+               Flores montadas sobre el filo de arriba: se salen de la hoja
+               y pisan la unión con la sección anterior, para que el corte
+               del fondo no se lea como una línea recta.
+            -->
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor-borde flor-alto-izq"
+            />
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor-borde flor-alto-der"
+            />
+
+            <!-- Flores al pie, detrás del texto -->
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor-borde flor-pie-izq"
+            />
+            <img
+                src="/imagenes/flores2.png"
+                alt=""
+                aria-hidden="true"
+                class="flor-borde flor-pie-der"
+            />
+
+            <div class="contenido">
+                <h2 class="titulo font-great-vibes">{saludo}</h2>
+
+                <!-- El retrato ya viene con las flores incluidas en el PNG -->
+                <img
+                    id="retrato-lili"
+                    src="/imagenes/perrito2.png"
+                    alt="Lili, la perrita de los novios, rodeada de flores"
+                    class="retrato"
+                />
+
+                <p class="parrafo">
+                    {gancho}
+                    <span class="destacado font-great-vibes"
+                        >{ganchoDestacado}</span
+                    >
+                </p>
+
+                <!-- ── El botón que abre la carta ── -->
+                <div class="zona-boton">
+                    <!-- Chevrons que apuntan al botón, flotando despacio -->
+                    <span class="flechas" aria-hidden="true">
+                        <i class="flecha"></i>
+                        <i class="flecha"></i>
+                    </span>
+
+                    <button
+                        id="abrir-carta"
+                        type="button"
+                        class="boton-carta"
+                        aria-haspopup="dialog"
+                        aria-expanded="false"
+                        aria-controls="carta-modal"
+                    >
+                        <span
+                            class="boton-patita patita-izq icono icono-crema"
+                            style="--ic:url('/imagenes/patita.png')"
+                            aria-hidden="true"></span>
+                        <span class="boton-texto font-great-vibes"
+                            >{textoBoton}</span
+                        >
+                        <span
+                            class="boton-patita patita-der icono icono-crema"
+                            style="--ic:url('/imagenes/patita.png')"
+                            aria-hidden="true"></span>
+                    </button>
+                </div>
+            </div>
+        </article>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 💌 MODAL · la carta completa                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="carta-modal" class="modal" hidden>
+    <div class="modal-velo" data-cerrar-carta></div>
+
+    <div
+        class="modal-caja"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="carta-titulo"
+    >
+        <button
+            type="button"
+            class="modal-cerrar"
+            data-cerrar-carta
+            aria-label="Cerrar la carta"
+        >
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path
+                    d="M6 6l12 12M18 6L6 18"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round"></path>
+            </svg>
+        </button>
+
+        <div class="modal-marco">
+            <div class="modal-hoja">
+                <img
+                    src="/imagenes/flores2.png"
+                    alt=""
+                    aria-hidden="true"
+                    class="flor-borde flor-alto-izq"
+                />
+                <img
+                    src="/imagenes/flores2.png"
+                    alt=""
+                    aria-hidden="true"
+                    class="flor-borde flor-alto-der"
+                />
+                <img
+                    src="/imagenes/flores2.png"
+                    alt=""
+                    aria-hidden="true"
+                    class="flor-borde flor-pie-izq"
+                />
+                <img
+                    src="/imagenes/flores2.png"
+                    alt=""
+                    aria-hidden="true"
+                    class="flor-borde flor-pie-der"
+                />
+
+                <div class="contenido">
+                    <h2 id="carta-titulo" class="titulo font-great-vibes">
+                        {saludo}
+                    </h2>
+
+                    {
+                        bloques.map((b) => (
+                            <p class="parrafo">
+                                {b.texto}
+                                {b.destacado && (
+                                    <span class="destacado font-great-vibes">
+                                        {b.destacado}
+                                    </span>
+                                )}
+                            </p>
+                        ))
+                    }
+
+                    <p class="parrafo parrafo-corto">
+                        Y todo cambió para mejor.
+                        <span class="corazon">&#9829;</span>
+                    </p>
+
+                    <h3 class="subtitulo font-great-vibes">
+                        {novio} hizo dos cosas muy importantes:
+                    </h3>
+
+                    <div class="tarjetas">
+                        {
+                            razones.map((r) => (
+                                <div class="tarjeta">
+                                    <span class="numero">{r.n}</span>
+                                    <p class="tarjeta-texto">{r.texto}</p>
+                                </div>
+                            ))
+                        }
+                    </div>
+
+                    <p class="parrafo">
+                        Hoy, mamá humana y yo queremos decirte que ya no estamos
+                        solas.
+                    </p>
+
+                    <p class="destacado destacado-bloque font-great-vibes">
+                        Ahora somos tres, y nuestro hogar está lleno de amor,
+                        respeto, risas y muchos paseos juntos.
+                    </p>
+
+                    <p class="parrafo">{cierre}</p>
+
+                    <p class="firma">
+                        Con amor, <span class="firma-nombre font-great-vibes"
+                            >{perrita}</span
+                        >
+                        <span class="patita">&#128062;</span>
+                    </p>
+
+                    <p class="nota font-great-vibes">
+                        Siempre juntos,<br />por siempre familia.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ── Paleta, compartida por la sección y el modal ── */
+    #dedicatoria,
+    #carta-modal {
+        --terracota: #b9563a;
+        --terracota-claro: #cd7a56;
+        --tinta: #7a4a34;
+    }
+
+    /*
+       Sin max-width ni margin: la hoja va a sangre, de filo a filo de la
+       columna. El ancho ya lo limita el <main> del Layout en 430px.
+    */
+    .hoja-marco {
+        width: 100%;
+        container-type: inline-size;
+    }
+
+    /*
+       El padding lateral del 11% no es decorativo: el aguado de acuarela
+       de fondo2 ocupa ~9.6% del ancho de cada lado, así que sin él el
+       texto caería encima del terracota.
+    */
+    .hoja,
+    .modal-hoja {
+        position: relative;
+        width: 100%;
+        padding: 3rem 11% 3.4rem;
+    }
+
+    /*
+       La sección va sin fondo propio: el papel lo pone el <main> del
+       Layout, fijo y continuo para toda la invitación.
+
+       El de la carta sí se queda: dentro del modal la hoja flota sobre el
+       velo oscuro, y sin fondo el texto quedaría ilegible. Va sin máscara
+       porque ahí la hoja es la pieza y tiene que verse entera.
+    */
+    .modal-hoja::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background-image: url("/imagenes/fondo2.png");
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    /* El texto va por encima del fondo y de las flores */
+    .contenido {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+    }
+
+    /* ── Flores de los filos ── */
+    .flor-borde {
+        position: absolute;
+        width: 29%;
+        height: auto;
+        z-index: 1;
+        opacity: 0.95;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    /*
+       Las de arriba son las de abajo espejadas en vertical (scaleY(-1)),
+       y salen 2.4rem por encima del filo para pisar la unión. Ese voladizo
+       entra dentro del pt-10 de la sección, así que no empuja nada.
+    */
+    .flor-alto-izq {
+        top: -2.4rem;
+        left: -3%;
+        transform: scaleY(-1) rotate(4deg);
+    }
+
+    .flor-alto-der {
+        top: -2.4rem;
+        right: -3%;
+        transform: scaleX(-1) scaleY(-1) rotate(4deg);
+    }
+
+    .flor-pie-izq {
+        bottom: 0;
+        left: -2%;
+        transform: rotate(4deg);
+    }
+
+    .flor-pie-der {
+        bottom: 0;
+        right: -2%;
+        transform: scaleX(-1) rotate(4deg);
+    }
+
+    /* Dentro del modal las de arriba no vuelan: recortarían el scroll */
+    .modal-hoja .flor-alto-izq,
+    .modal-hoja .flor-alto-der {
+        top: 0;
+    }
+
+    /* ── Título ── */
+    .titulo {
+        color: var(--terracota);
+        font-weight: 400;
+        font-size: clamp(3.8rem, 19cqw, 5.2rem);
+        line-height: 1;
+        margin-bottom: 0.2rem;
+    }
+
+    /* ── Retrato ── */
+    .retrato {
+        display: block;
+        width: 100%;
+        max-width: 21rem;
+        height: auto;
+        margin: 0 auto 1.4rem;
+    }
+
+    /* ── Cuerpo del texto ── */
+    .parrafo {
+        color: var(--tinta);
+        font-family: "Cormorant Garamond", serif;
+        font-size: clamp(1.05rem, 4.9cqw, 1.22rem);
+        line-height: 1.68;
+        margin: 0 0 1.1rem;
+    }
+
+    .parrafo-corto {
+        margin-bottom: 1.5rem;
+    }
+
+    /* Las frases en caligrafía, un punto más grandes que el cuerpo */
+    .destacado {
+        color: var(--terracota);
+        font-size: 1.3em;
+        line-height: 1.35;
+    }
+
+    .destacado-bloque {
+        display: block;
+        font-size: clamp(1.35rem, 6.4cqw, 1.6rem);
+        line-height: 1.45;
+        margin: 0 0 1.4rem;
+    }
+
+    .corazon,
+    .patita {
+        color: var(--terracota);
+        font-size: 0.9em;
+    }
+
+    /* ── Subtítulo antes de las tarjetas ── */
+    .subtitulo {
+        color: var(--terracota);
+        font-weight: 400;
+        font-size: clamp(1.45rem, 6.9cqw, 1.8rem);
+        line-height: 1.4;
+        margin: 0.2rem 0 1.1rem;
+    }
+
+    /* ── Las dos tarjetas, lado a lado ── */
+    .tarjetas {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.7rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .tarjeta {
+        background: rgba(255, 249, 242, 0.72);
+        border: 1px solid rgba(185, 86, 58, 0.22);
+        border-radius: 0.5rem;
+        padding: 1.7rem 0.8rem 1rem;
+        position: relative;
+    }
+
+    /* El número va montado sobre el filo de arriba de la tarjeta */
+    .numero {
+        position: absolute;
+        top: -0.85rem;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 1.7rem;
+        height: 1.7rem;
+        border-radius: 50%;
+        background: var(--terracota);
+        color: #fff6ee;
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1rem;
+        line-height: 1.7rem;
+        text-align: center;
+    }
+
+    .tarjeta-texto {
+        color: var(--tinta);
+        font-family: "Cormorant Garamond", serif;
+        font-size: clamp(0.88rem, 4cqw, 1rem);
+        line-height: 1.55;
+        margin: 0;
+    }
+
+    /* ── Firma ── */
+    .firma {
+        color: var(--tinta);
+        font-family: "Cormorant Garamond", serif;
+        font-size: clamp(1.05rem, 4.9cqw, 1.22rem);
+        margin: 1.8rem 0 0;
+    }
+
+    .firma-nombre {
+        color: var(--terracota);
+        font-size: 2.6em;
+        line-height: 1;
+        vertical-align: -0.18em;
+        margin: 0 0.15em;
+    }
+
+    /* ── Nota final, corrida a la derecha como en el modelo ── */
+    .nota {
+        color: var(--terracota-claro);
+        font-size: clamp(1.1rem, 5.2cqw, 1.3rem);
+        line-height: 1.35;
+        text-align: right;
+        margin: 1.2rem 0 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════════ */
+    /* BOTÓN QUE ABRE LA CARTA                                     */
+    /* ═══════════════════════════════════════════════════════════ */
+    /* Pegado al párrafo de arriba, como continuación de lo que dice Lili */
+    .zona-boton {
+        margin-top: 0.4rem;
+    }
+
+    /*
+       Los chevrons van dibujados con bordes y no con un SVG: así el grosor
+       del trazo se controla al pixel y quedan finos, de invitación y no de
+       cartel. El de arriba va más tenue, para que se lea como estela.
+    */
+    .flechas {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.16rem;
+        margin-bottom: 0.75rem;
+        animation: flotar 2.4s ease-in-out infinite;
+    }
+
+    .flecha {
+        display: block;
+        width: 0.58rem;
+        height: 0.58rem;
+        border-right: 1.5px solid var(--terracota-claro);
+        border-bottom: 1.5px solid var(--terracota-claro);
+        transform: rotate(45deg);
+    }
+
+    .flecha:first-child {
+        opacity: 0.5;
+    }
+
+    @keyframes flotar {
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(5px);
+        }
+    }
+
+    .boton-carta {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.8rem 1.9rem;
+        border: 1px solid rgba(255, 246, 238, 0.5);
+        border-radius: 999px;
+        background: linear-gradient(180deg, #c4603f 0%, #a94a30 100%);
+        color: #fff6ee;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(150, 60, 35, 0.34);
+        transition:
+            transform 0.25s ease,
+            box-shadow 0.25s ease;
+    }
+
+    .boton-texto {
+        font-size: clamp(1.3rem, 6.2cqw, 1.55rem);
+        line-height: 1.15;
+        /* La caligrafía se apoya bajo la línea base: esto la recentra */
+        padding-bottom: 0.12em;
+    }
+
+    /*
+       La patita se pinta con la máscara de .icono (global.css): el PNG es
+       una silueta negra y así sale en crema sobre el terracota, en vez de
+       quedar un manchón oscuro. La inclinación le saca la rigidez.
+    */
+    .boton-patita {
+        width: 1.2rem;
+        height: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .patita-izq {
+        transform: rotate(-20deg);
+    }
+
+    /* La derecha va espejada para que el par quede simétrico */
+    .patita-der {
+        transform: scaleX(-1) rotate(-20deg);
+    }
+
+    .boton-carta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 13px 26px rgba(150, 60, 35, 0.42);
+    }
+
+    .boton-carta:active {
+        transform: translateY(0) scale(0.98);
+    }
+
+    .boton-carta:focus-visible {
+        outline: 2px solid var(--terracota);
+        outline-offset: 4px;
+    }
+
+    /*
+       Un aro que late despacio alrededor del botón, para que el ojo lo
+       encuentre sin que llegue a ser un parpadeo molesto.
+    */
+    .boton-carta::after {
+        content: "";
+        position: absolute;
+        inset: -3px;
+        border-radius: 999px;
+        border: 1px solid rgba(185, 86, 58, 0.55);
+        animation: halo 2.8s ease-out infinite;
+        pointer-events: none;
+    }
+
+    @keyframes halo {
+        0% {
+            transform: scale(1);
+            opacity: 0.75;
+        }
+        70% {
+            transform: scale(1.14);
+            opacity: 0;
+        }
+        100% {
+            transform: scale(1.14);
+            opacity: 0;
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════════ */
+    /* MODAL                                                       */
+    /* ═══════════════════════════════════════════════════════════ */
+    .modal {
+        position: fixed;
+        inset: 0;
+        z-index: 9998;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.2rem 0.8rem;
+    }
+
+    /* Explícito: si no, el display:flex de arriba le gana al atributo */
+    .modal[hidden] {
+        display: none;
+    }
+
+    .modal-velo {
+        position: absolute;
+        inset: 0;
+        background: rgba(74, 30, 16, 0.62);
+        backdrop-filter: blur(3px);
+    }
+
+    .modal-caja {
+        position: relative;
+        width: 100%;
+        max-width: 26rem;
+        max-height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /*
+       El marco declara el container para las unidades cqw de adentro.
+       min-height: 0 es obligatorio: dentro de una columna flex, un hijo no
+       se encoge por debajo de su contenido salvo que se lo pidas, y sin eso
+       la carta larga desborda la pantalla en vez de scrollear acá adentro.
+    */
+    .modal-marco {
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        border-radius: 0.4rem;
+        box-shadow: 0 24px 60px rgba(60, 24, 12, 0.45);
+        container-type: inline-size;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .modal-cerrar {
+        position: absolute;
+        top: -0.9rem;
+        right: -0.3rem;
+        z-index: 3;
+        width: 2.1rem;
+        height: 2.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        border-radius: 50%;
+        background: #fff6ee;
+        color: var(--terracota);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(60, 24, 12, 0.35);
+        transition: transform 0.2s ease;
+    }
+
+    .modal-cerrar:hover {
+        transform: scale(1.08);
+    }
+
+    .modal-cerrar:focus-visible {
+        outline: 2px solid #fff6ee;
+        outline-offset: 3px;
+    }
+
+    /* En pantallas muy angostas las tarjetas se apilan */
+    @media (max-width: 340px) {
+        .tarjetas {
+            grid-template-columns: 1fr;
+            gap: 1.2rem;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .boton-carta::after,
+        .flechas {
+            animation: none;
+        }
+    }
+</style>
+
+<script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const hoja = document.getElementById("hoja-dedicatoria");
+        const modal = document.getElementById("carta-modal");
+        const abrir = document.getElementById("abrir-carta");
+        if (!hoja || !modal || !abrir) return;
+
+        const sinMovimiento = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+        ).matches;
+
+        const caja = modal.querySelector(".modal-caja") as HTMLElement | null;
+        const velo = modal.querySelector(".modal-velo") as HTMLElement | null;
+        const marco = modal.querySelector(".modal-marco") as HTMLElement | null;
+        const cerrarBtn = modal.querySelector(
+            ".modal-cerrar",
+        ) as HTMLButtonElement | null;
+
+        // ═══ ENTRADA DE LA SECCIÓN ═══
+        /*
+           Las dos partes van en una sola línea de tiempo pausada, en vez de
+           dos tweens con su propio scrollTrigger. Así se pueden largar
+           juntas desde el botón de la portada, igual que NombresFlores:
+           el invitado entra y las dos primeras secciones se arman a la vez.
+        */
+        if (!sinMovimiento) {
+            const entrada = gsap.timeline({ paused: true });
+
+            entrada.fromTo(
+                hoja,
+                { opacity: 0, y: 30 },
+                { opacity: 1, y: 0, duration: 1.1, ease: "power2.out" },
+            );
+
+            const contenido = hoja.querySelector(".contenido");
+            if (contenido) {
+                entrada.from(
+                    Array.from(contenido.children),
+                    {
+                        opacity: 0,
+                        y: 22,
+                        duration: 0.8,
+                        stagger: 0.11,
+                        ease: "power2.out",
+                    },
+                    0.25,
+                );
+            }
+
+            function arrancar() {
+                /*
+                   La portada tenía el scroll bloqueado y ocupaba la
+                   pantalla, así que las medidas que ScrollTrigger calculó
+                   en la carga ya no valen. El refresh las rehace antes de
+                   reproducir.
+                */
+                ScrollTrigger.refresh();
+                entrada.restart();
+            }
+
+            const portada = document.getElementById("portada-section");
+
+            if ((window as any).portadaAbierta) {
+                // Su script corrió antes que este y ya avisó
+                arrancar();
+            } else if (portada) {
+                window.addEventListener("portada-abierta", arrancar, {
+                    once: true,
+                });
+            } else {
+                // Sin portada: entra con el scroll, como las demás secciones
+                ScrollTrigger.create({
+                    trigger: hoja,
+                    start: "top 82%",
+                    onEnter: () => entrada.restart(),
+                    onLeaveBack: () => entrada.pause(0),
+                });
+            }
+        }
+
+        // ═══ ABRIR / CERRAR EL MODAL ═══
+        let scrollGuardado = 0;
+
+        function abrirCarta() {
+            scrollGuardado = window.scrollY;
+            modal.hidden = false;
+            abrir.setAttribute("aria-expanded", "true");
+            // Con la página bloqueada el scroll del modal no la arrastra
+            document.body.style.overflow = "hidden";
+            if (marco) marco.scrollTop = 0;
+
+            if (sinMovimiento) {
+                cerrarBtn?.focus();
+                return;
+            }
+
+            gsap.fromTo(velo, { opacity: 0 }, { opacity: 1, duration: 0.35 });
+            gsap.fromTo(
+                caja,
+                { opacity: 0, y: 26, scale: 0.97 },
+                {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    duration: 0.55,
+                    ease: "power3.out",
+                    onComplete: () => cerrarBtn?.focus(),
+                },
+            );
+        }
+
+        function cerrarCarta() {
+            abrir.setAttribute("aria-expanded", "false");
+            document.body.style.overflow = "";
+            window.scrollTo({ top: scrollGuardado });
+
+            const ocultar = () => {
+                modal.hidden = true;
+                abrir.focus();
+            };
+
+            if (sinMovimiento) {
+                ocultar();
+                return;
+            }
+
+            gsap.to(velo, { opacity: 0, duration: 0.28 });
+            gsap.to(caja, {
+                opacity: 0,
+                y: 18,
+                scale: 0.98,
+                duration: 0.28,
+                ease: "power2.in",
+                onComplete: ocultar,
+            });
+        }
+
+        abrir.addEventListener("click", abrirCarta);
+
+        // El velo y la X comparten el mismo data-atributo
+        modal.querySelectorAll("[data-cerrar-carta]").forEach((el) => {
+            el.addEventListener("click", cerrarCarta);
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && !modal.hidden) cerrarCarta();
+        });
+    });
+</script>
