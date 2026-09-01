@@ -1034,15 +1034,15 @@
         // Las comillas dobles dentro de un campo se escapan duplicándolas
         const celda = (v) => '"' + String(v == null ? "" : v).split('"').join('""') + '"';
 
-        const cabecera = ["Invitado", "Pases", "Asistencia", "Confirmó el", "Link"];
+        /*
+           Solo nombre y pases. El link no sirve en una planilla -no se
+           puede tocar desde Excel- y la columna de asistencia sobra:
+           si se exporta con el filtro en "Confirmaron", todas las filas
+           dicen lo mismo.
+        */
+        const cabecera = ["Invitado", "Pases"];
         const cuerpo = filas.map((i) =>
-          [
-            celda(i.nombre),
-            celda(i.pases),
-            celda(i.confirmado ? "Confirmó" : "Sin responder"),
-            celda(i.confirmado_en ? new Date(i.confirmado_en).toLocaleString("es-BO") : ""),
-            celda(linkInvitado(i.codigo)),
-          ].join(";")
+          [celda(i.nombre), celda(i.pases)].join(";")
         );
 
         /*

@@ -75,6 +75,7 @@ const deseosEjemplo = [
     id="buenos-deseos"
     class="relative w-full overflow-hidden py-16"
     data-visibles={String(VISIBLES)}
+    data-texto-boton={textoBoton}
     data-ejemplos={JSON.stringify(deseosEjemplo)}
 >
     <!--
@@ -976,6 +977,27 @@ const deseosEjemplo = [
             tarjetas.forEach((t) => observador?.observe(t));
         }
 
+        /*
+           El deseo que ya dejó este invitado, si dejó alguno. Sirve para
+           que el botón diga "Editar mi deseo" y el formulario abra con lo
+           que había escrito, en vez de que lo tenga que reescribir.
+        */
+        function deseoPropio(): Deseo | undefined {
+            const codigo = (window as any).invitadoActual?.codigo;
+            if (!codigo) return undefined;
+            return deseos.find((d: any) => d.codigo === codigo);
+        }
+
+        function acomodarBoton() {
+            const propio = deseoPropio();
+            const texto = abrir.querySelector(".boton-texto");
+            if (texto) {
+                texto.textContent = propio
+                    ? "EDITAR MI DESEO"
+                    : seccion.dataset.textoBoton ?? "ESCRIBE UN DESEO";
+            }
+        }
+
         function pintarCarrusel() {
             const visibles = deseos.slice(0, VISIBLES);
 
@@ -1006,6 +1028,8 @@ const deseosEjemplo = [
 
             // "Ver todos" recién tiene sentido cuando hay más de los que se
             // están viendo
+            acomodarBoton();
+
             const sobran = deseos.length > VISIBLES;
             verTodos.hidden = !sobran;
             if (sobran) {
@@ -1245,8 +1269,18 @@ const deseosEjemplo = [
                que el invitado ya haya escrito si cierra y vuelve a abrir.
             */
             const invitado = (window as any).invitadoActual;
-            if (campoNombre && !campoNombre.value.trim() && invitado?.nombre) {
-                campoNombre.value = invitado.nombre;
+            const propio = deseoPropio();
+
+            if (campoNombre && !campoNombre.value.trim()) {
+                campoNombre.value = propio?.nombre ?? invitado?.nombre ?? "";
+            }
+
+            // Ya dejó uno: se abre con su texto para que lo retoque
+            if (campoMensaje && !campoMensaje.value.trim() && propio) {
+                campoMensaje.value = propio.mensaje;
+                if (contador) {
+                    contador.textContent = propio.mensaje.length + " / 400";
+                }
             }
 
             // Con el nombre puesto, lo que falta es el mensaje
@@ -1285,7 +1319,7 @@ const deseosEjemplo = [
 
                 const { data, error } = await supabase
                     .from("deseos")
-                    .select("nombre, mensaje")
+                    .select("nombre, mensaje, codigo")
                     .order("creado_en", { ascending: false });
 
                 if (error || !data) return null;
@@ -1297,6 +1331,14 @@ const deseosEjemplo = [
             }
         }
 
+        /*
+           Va por función y no con un insert suelto. Eso es lo que permite
+           que el segundo deseo del mismo invitado REEMPLACE al primero en
+           vez de sumarse: si no, uno solo podría llenar el muro.
+
+           Y de paso el invitado ya no tiene permiso de escritura directo
+           sobre la tabla, así que tampoco puede tocar el deseo de otro.
+        */
         async function guardarDeseo(deseo: Deseo): Promise<boolean> {
             try {
                 const { supabase, configurado } = await import(
@@ -1304,7 +1346,12 @@ const deseosEjemplo = [
                 );
                 if (!configurado || !supabase) return false;
 
-                const { error } = await supabase.from("deseos").insert(deseo);
+                const { error } = await supabase.rpc("guardar_deseo", {
+                    codigo_invitado:
+                        (window as any).invitadoActual?.codigo ?? null,
+                    nombre_deseo: deseo.nombre,
+                    mensaje_deseo: deseo.mensaje,
+                });
                 return !error;
             } catch {
                 return false;
@@ -1334,6 +1381,7 @@ const deseosEjemplo = [
             }
             if (enviar) enviar.disabled = true;
 
+            const eraEdicion = Boolean(deseoPropio());
             const guardado = await guardarDeseo({ nombre, mensaje });
 
             if (enviar) enviar.disabled = false;
@@ -1345,14 +1393,24 @@ const deseosEjemplo = [
 
             // Se agrega en el acto en vez de releer: el servicio puede tardar
             // unos segundos en devolverlo y la espera se siente.
-            deseos.unshift({ nombre, mensaje });
+            /*
+               Se refleja el reemplazo en la lista local igual que lo hizo
+               la base: si ya tenía uno, se saca y se vuelve a poner
+               adelante, para que no aparezca duplicado hasta la próxima
+               recarga.
+            */
+            const codigo = (window as any).invitadoActual?.codigo;
+            if (codigo) deseos = deseos.filter((d: any) => d.codigo !== codigo);
+            deseos.unshift({ nombre, mensaje, codigo } as any);
             pintarCarrusel();
 
             form.reset();
             if (contador) contador.textContent = "0 / 400";
             cerrarFormulario();
 
-            aviso.textContent = "¡Gracias! Tu deseo ya está en el muro.";
+            aviso.textContent = eraEdicion
+                ? "Listo, actualizamos tu deseo."
+                : "¡Gracias! Tu deseo ya está en el muro.";
             aviso.hidden = false;
         });
 
