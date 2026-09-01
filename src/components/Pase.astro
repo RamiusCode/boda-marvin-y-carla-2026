@@ -90,6 +90,63 @@ const palabraPases = pases === 1 ? "pase" : "pases";
     </div>
 </section>
 
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- ✅ MODAL · confirmar asistencia                             -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--
+   El paso intermedio existe por dos razones:
+
+   1. Un toque sin querer dejaba al invitado anotado sin vuelta atrás.
+   2. Muestra con qué nombre va a quedar registrado. Si alguien reenvió el
+      link, esa persona ve que dice "María Valdés" y se da cuenta antes de
+      anotarse en el lugar de otro.
+-->
+<div id="modal-asistencia" class="modal-pase" hidden>
+    <div class="modal-pase-velo" data-cerrar-asistencia></div>
+
+    <div
+        class="modal-pase-caja"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="titulo-modal-asistencia"
+    >
+        <h3
+            id="titulo-modal-asistencia"
+            class="font-great-vibes modal-pase-titulo"
+        >
+            ¿Confirmás tu asistencia?
+        </h3>
+
+        <p class="font-cormorant modal-pase-texto">Vas a confirmar como</p>
+
+        <p class="font-verandah nombre-invitado modal-pase-nombre">
+            {invitado}
+        </p>
+
+        <p class="font-cormorant modal-pase-pases">
+            <span class="numero-pases">{pases}</span>
+            <span class="palabra-pases">{palabraPases}</span>
+        </p>
+
+        <div class="modal-pase-botones">
+            <button
+                type="button"
+                class="font-cormorant boton-cancelar"
+                data-cerrar-asistencia
+            >
+                Cancelar
+            </button>
+            <button
+                id="btn-confirmar-si"
+                type="button"
+                class="font-cormorant boton-confirmar"
+            >
+                Sí, confirmo
+            </button>
+        </div>
+    </div>
+</div>
+
 <style>
     .tarjeta-pase {
         position: relative;
@@ -219,6 +276,100 @@ const palabraPases = pases === 1 ? "pase" : "pases";
         color: #fdf1e6;
         font-size: 0.85rem;
     }
+
+    /* ═══ MODAL DE CONFIRMACIÓN ═══ */
+    .modal-pase {
+        position: fixed;
+        inset: 0;
+        z-index: 9998;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.2rem;
+    }
+
+    /* Explícito: si no, el display:flex de arriba le gana al atributo */
+    .modal-pase[hidden] {
+        display: none;
+    }
+
+    .modal-pase-velo {
+        position: absolute;
+        inset: 0;
+        background: rgba(74, 30, 16, 0.62);
+        backdrop-filter: blur(3px);
+    }
+
+    .modal-pase-caja {
+        position: relative;
+        width: 100%;
+        max-width: 21rem;
+        padding: 2rem 1.6rem 1.7rem;
+        border-radius: 10px;
+        background: linear-gradient(160deg, #fdf6ee 0%, #f7e9dc 100%);
+        box-shadow: 0 24px 60px rgba(60, 24, 12, 0.45);
+        text-align: center;
+    }
+
+    .modal-pase-titulo {
+        color: #a4482a;
+        font-size: clamp(1.8rem, 8.2vw, 2.2rem);
+        line-height: 1.2;
+    }
+
+    .modal-pase-texto {
+        color: #a05a3c;
+        font-size: clamp(0.95rem, 4.3vw, 1.05rem);
+        margin-top: 0.9rem;
+    }
+
+    /* El nombre es lo que el invitado tiene que reconocer: va grande */
+    .modal-pase-nombre {
+        color: #7a3418;
+        font-size: clamp(1.7rem, 8vw, 2.1rem);
+        line-height: 1.25;
+        margin-top: 0.2rem;
+    }
+
+    .modal-pase-pases {
+        color: #a05a3c;
+        font-size: clamp(0.95rem, 4.3vw, 1.05rem);
+        font-variant-numeric: lining-nums;
+        margin-top: 0.1rem;
+    }
+
+    .modal-pase-botones {
+        display: flex;
+        gap: 0.7rem;
+        margin-top: 1.6rem;
+    }
+
+    /*
+       Los dos botones miden igual, pero el de cancelar va en línea y el de
+       confirmar en macizo: la acción principal se distingue sin que la otra
+       quede escondida.
+    */
+    .modal-pase-botones .boton-confirmar,
+    .boton-cancelar {
+        flex: 1;
+        margin-top: 0;
+        padding: 0.7rem 0.5rem;
+        border-radius: 10px;
+        font-size: clamp(0.95rem, 4.3vw, 1.1rem);
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .boton-cancelar {
+        border: 1px solid #c2764f;
+        background: transparent;
+        color: #a05a3c;
+        font-family: inherit;
+    }
+
+    .boton-cancelar:hover {
+        background: rgba(180, 87, 51, 0.08);
+    }
 </style>
 
 <script>
@@ -269,13 +420,43 @@ const palabraPases = pases === 1 ? "pase" : "pases";
             );
         }
 
-        btnConfirmar.addEventListener("click", async () => {
+        // ═══ EL PASO INTERMEDIO ═══
+        const modal = document.getElementById("modal-asistencia");
+        const btnSi = document.getElementById(
+            "btn-confirmar-si",
+        ) as HTMLButtonElement | null;
+
+        function abrirModal() {
+            if (!modal) return;
+            modal.hidden = false;
+            document.body.style.overflow = "hidden";
+            btnSi?.focus();
+        }
+
+        function cerrarModal() {
+            if (!modal) return;
+            modal.hidden = true;
+            document.body.style.overflow = "";
+        }
+
+        modal?.querySelectorAll("[data-cerrar-asistencia]").forEach((el) => {
+            el.addEventListener("click", cerrarModal);
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && modal && !modal.hidden) cerrarModal();
+        });
+
+        // El boton grande ya no confirma: abre el modal
+        btnConfirmar.addEventListener("click", abrirModal);
+
+        btnSi?.addEventListener("click", async () => {
             const invitado = (window as any).invitadoActual;
             if (!invitado?.codigo) return;
 
+            btnSi.disabled = true;
+            btnSi.textContent = "Confirmando…";
             btnConfirmar.disabled = true;
-            btnConfirmar.textContent = "Confirmando…";
-
             try {
                 const { supabase, configurado } = await import(
                     "../lib/supabase"
@@ -289,6 +470,7 @@ const palabraPases = pases === 1 ? "pase" : "pases";
                 if (error || !data || !data.length) throw error;
 
                 invitado.confirmado = true;
+                cerrarModal();
                 mostrar("confirmado");
             } catch {
                 /*
@@ -296,6 +478,9 @@ const palabraPases = pases === 1 ? "pase" : "pases";
                    el mismo texto: el invitado puede reintentar sin quedarse
                    sin saber qué pasó.
                 */
+                cerrarModal();
+                btnSi.disabled = false;
+                btnSi.textContent = "Sí, confirmo";
                 btnConfirmar.disabled = false;
                 btnConfirmar.textContent = textoOriginal;
                 if (textoConfirmado) {

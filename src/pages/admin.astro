@@ -380,6 +380,33 @@
         font-size: 0.82rem;
         font-weight: 600;
       }
+      /* ── Barra de herramientas de la lista ── */
+      .herramientas-lista {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+      }
+      .filtros {
+        display: flex;
+        gap: 0.35rem;
+      }
+      /* El filtro activo se marca en neon, como el item del menu */
+      .filtros .activo {
+        border-color: var(--neon);
+        color: var(--neon);
+        background: var(--neon-fondo);
+      }
+      @media (max-width: 620px) {
+        .herramientas-lista {
+          width: 100%;
+        }
+        .herramientas-lista .campo,
+        #btn-exportar {
+          flex: 1;
+        }
+      }
+
       /* ── Lista de buenos deseos ── */
       .lista-deseos {
         display: grid;
@@ -727,7 +754,23 @@
           <section id="caja-lista" class="tarjeta">
             <div class="tarjeta-cabecera">
               <span class="tarjeta-titulo">Lista de invitados</span>
-              <input id="buscador" type="search" class="campo" placeholder="Buscar…" style="max-width: 230px" />
+              <div class="herramientas-lista">
+                <!--
+                   Un filtro y no una lista aparte de confirmados: seria la
+                   misma gente en dos lugares. Y "Sin responder" es lo que
+                   el cliente mas va a usar cuando falten dos semanas: le
+                   dice a quien tiene que llamar.
+                -->
+                <div class="filtros" role="group" aria-label="Filtrar lista">
+                  <button type="button" class="btn btn-chico btn-linea activo" data-filtro="todos">Todos</button>
+                  <button type="button" class="btn btn-chico btn-linea" data-filtro="si">Confirmaron</button>
+                  <button type="button" class="btn btn-chico btn-linea" data-filtro="no">Sin responder</button>
+                </div>
+                <input id="buscador" type="search" class="campo" placeholder="Buscar…" style="max-width: 200px" />
+                <button id="btn-exportar" type="button" class="btn btn-chico btn-neon">
+                  Descargar Excel
+                </button>
+              </div>
             </div>
 
             <div style="overflow-x: auto">
@@ -950,6 +993,108 @@
       document.querySelectorAll(".lateral-item").forEach((b) => {
         b.addEventListener("click", () => cambiarVista(b.dataset.vista));
       });
+
+      // ═══ FILTRO DE ASISTENCIA ═══
+      let filtroAsistencia = "todos";
+
+      document.querySelectorAll("[data-filtro]").forEach((b) => {
+        b.addEventListener("click", () => {
+          filtroAsistencia = b.dataset.filtro;
+          document.querySelectorAll("[data-filtro]").forEach((otro) => {
+            otro.classList.toggle("activo", otro === b);
+          });
+          pintarLista();
+        });
+      });
+
+      // ═══ DESCARGAR LA LISTA ═══
+      /*
+         Se baja un CSV y no un PDF: Excel lo abre directo con doble clic, y
+         además el cliente puede ordenar y filtrar. Un PDF se lee pero no se
+         trabaja, y encima obligaría a sumar una librería de 200 KB al panel.
+
+         Se exporta LO QUE SE ESTÁ VIENDO: si el filtro está en
+         "Confirmaron", baja solo esos.
+      */
+      function descargarLista() {
+        const texto = ($("buscador").value || "").trim().toLowerCase();
+        const filas = invitados
+          .filter((i) => (texto ? i.nombre.toLowerCase().includes(texto) : true))
+          .filter((i) =>
+            filtroAsistencia === "si" ? i.confirmado
+            : filtroAsistencia === "no" ? !i.confirmado
+            : true
+          );
+
+        if (filas.length === 0) {
+          avisar("No hay nada para descargar");
+          return;
+        }
+
+        // Las comillas dobles dentro de un campo se escapan duplicándolas
+        const celda = (v) => '"' + String(v == null ? "" : v).split('"').join('""') + '"';
+
+        const cabecera = ["Invitado", "Pases", "Asistencia", "Confirmó el", "Link"];
+        const cuerpo = filas.map((i) =>
+          [
+            celda(i.nombre),
+            celda(i.pases),
+            celda(i.confirmado ? "Confirmó" : "Sin responder"),
+            celda(i.confirmado_en ? new Date(i.confirmado_en).toLocaleString("es-BO") : ""),
+            celda(linkInvitado(i.codigo)),
+          ].join(";")
+        );
+
+        /*
+           Punto y coma y no coma: el Excel en español usa ; como separador,
+           y con coma mete todo en una sola columna.
+
+           El ﻿ del principio le avisa a Excel que el archivo es UTF-8;
+           sin eso los acentos y las eñes salen rotos.
+        */
+        const csv = "﻿" + [cabecera.map(celda).join(";")].concat(cuerpo).join("\r\n");
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const sufijo =
+          filtroAsistencia === "si" ? "-confirmados"
+          : filtroAsistencia === "no" ? "-sin-responder"
+          : "";
+        a.href = url;
+        a.download = "invitados-marvin-carla" + sufijo + ".csv";
+        a.click();
+        URL.revokeObjectURL(url);
+
+        avisar("Descargados " + filas.length + " invitados");
+      }
+
+      $("btn-exportar").addEventListener("click", descargarLista);
+
+      // ═══ CORREGIR UNA CONFIRMACIÓN ═══
+      /*
+         El modal de la invitación evita el toque sin querer, pero los
+         planes cambian: alguien confirma en octubre y en enero no puede.
+         Que lo corrija el cliente desde acá es más natural que poner un
+         "ya no voy" en la invitación.
+      */
+      async function desmarcar(inv) {
+        if (!confirm("¿Marcar a " + inv.nombre + " como sin responder?")) return;
+
+        const { error } = await supabase
+          .from("invitados")
+          .update({ confirmado: false, confirmado_en: null })
+          .eq("id", inv.id);
+
+        if (error) {
+          avisar("No se pudo actualizar");
+          return;
+        }
+        inv.confirmado = false;
+        inv.confirmado_en = null;
+        pintarLista();
+        avisar("Marcado como sin responder");
+      }
 
       // ═══ BUENOS DESEOS ═══
       let deseos = [];
@@ -1250,9 +1395,13 @@
         cuerpo.innerHTML = "";
 
         const texto = filtro.trim().toLowerCase();
-        const visibles = texto
-          ? invitados.filter((i) => i.nombre.toLowerCase().includes(texto))
-          : invitados;
+        const visibles = invitados
+          .filter((i) => (texto ? i.nombre.toLowerCase().includes(texto) : true))
+          .filter((i) =>
+            filtroAsistencia === "si" ? i.confirmado
+            : filtroAsistencia === "no" ? !i.confirmado
+            : true
+          );
 
         $("total-invitados").textContent = String(invitados.length);
         $("total-pases").textContent = String(invitados.reduce((s, i) => s + i.pases, 0));
@@ -1322,6 +1471,14 @@
             boton("Copiar mensaje", "btn-neon", () => copiar(mensajeInvitacion(inv))),
             boton("Solo link", "btn-linea", () => copiar(link, "Link copiado"))
           );
+
+          // Solo aparece si ya confirmo: no tiene sentido desmarcar a
+          // alguien que nunca respondio.
+          if (permitido && inv.confirmado) {
+            acciones.append(
+              boton("Desmarcar", "btn-linea", () => desmarcar(inv))
+            );
+          }
 
           if (permitido) {
             acciones.append(
