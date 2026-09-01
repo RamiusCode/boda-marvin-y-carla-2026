@@ -12,6 +12,7 @@ const aviso = [
     "olvides confirmar tu asistencia.",
 ];
 const textoBoton = "Confirmar Asistencia";
+const yaConfirmado = "¡Gracias! Ya confirmaste tu asistencia.";
 
 // WhatsApp de los novios (código de país + número, sin + ni espacios).
 const whatsapp = "59163001482";
@@ -54,7 +55,31 @@ const palabraPases = pases === 1 ? "pase" : "pases";
             {aviso.map((linea) => <span class="block">{linea}</span>)}
         </p>
 
+        <!--
+           Dos caminos, y el script decide cuál mostrar:
+
+           · Con link personalizado → el botón confirma en un toque, sin
+             escribir nada: la invitación ya sabe quién es.
+           · Sin link (la invitación general que se comparte en un grupo)
+             → se queda el enlace a WhatsApp, porque ahí no hay a quién
+             marcar en la lista.
+        -->
+        <button
+            id="btn-confirmar"
+            type="button"
+            class="font-cormorant boton-confirmar"
+            hidden
+        >
+            {textoBoton}
+        </button>
+
+        <p id="ya-confirmado" class="font-cormorant confirmado-aviso" hidden>
+            <span class="tilde" aria-hidden="true">&#10003;</span>
+            <span id="texto-confirmado">{yaConfirmado}</span>
+        </p>
+
         <a
+            id="btn-whatsapp"
             href={enlace}
             target="_blank"
             rel="noopener noreferrer"
@@ -148,6 +173,52 @@ const palabraPases = pases === 1 ? "pase" : "pases";
     .boton-confirmar:hover {
         transform: scale(1.04);
     }
+
+    /* El botón es un <button>, no un <a>: hay que igualar lo que el
+       navegador le pone de fábrica */
+    button.boton-confirmar {
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+    }
+
+    button.boton-confirmar:disabled {
+        opacity: 0.65;
+        cursor: default;
+        transform: none;
+    }
+
+    .boton-confirmar[hidden],
+    .confirmado-aviso[hidden] {
+        display: none;
+    }
+
+    /* El acuse de recibo, en lugar del botón */
+    .confirmado-aviso {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1.6rem;
+        padding: 0.7rem 1.5rem;
+        border: 1px solid #b45733;
+        border-radius: 10px;
+        color: #7a3418;
+        font-size: clamp(1rem, 4.5vw, 1.15rem);
+        line-height: 1.4;
+    }
+
+    .tilde {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.4rem;
+        height: 1.4rem;
+        flex: none;
+        border-radius: 50%;
+        background: #b45733;
+        color: #fdf1e6;
+        font-size: 0.85rem;
+    }
 </style>
 
 <script>
@@ -156,5 +227,87 @@ const palabraPases = pases === 1 ? "pase" : "pases";
     document.addEventListener("DOMContentLoaded", () => {
         const bloque = document.getElementById("bloque-pase");
         if (bloque) animarEntrada(bloque.children, bloque);
+
+        const btnConfirmar = document.getElementById(
+            "btn-confirmar",
+        ) as HTMLButtonElement | null;
+        const btnWhatsapp = document.getElementById("btn-whatsapp");
+        const yaConfirmado = document.getElementById("ya-confirmado");
+        const textoConfirmado = document.getElementById("texto-confirmado");
+        if (!btnConfirmar || !btnWhatsapp || !yaConfirmado) return;
+
+        const textoOriginal = btnConfirmar.textContent ?? "";
+        const textoGracias = textoConfirmado?.textContent ?? "";
+
+        function mostrar(cual: "boton" | "confirmado" | "whatsapp") {
+            btnConfirmar!.hidden = cual !== "boton";
+            yaConfirmado!.hidden = cual !== "confirmado";
+            btnWhatsapp!.hidden = cual !== "whatsapp";
+        }
+
+        /*
+           Invitacion.astro hace una sola consulta para toda la invitación y
+           avisa con este evento. La bandera cubre el caso de que ese script
+           haya terminado antes que este y el evento ya haya pasado.
+        */
+        function acomodar(invitado: any) {
+            if (!invitado || !invitado.codigo) {
+                // Invitación general: no hay a quién marcar en la lista
+                mostrar("whatsapp");
+                return;
+            }
+            mostrar(invitado.confirmado ? "confirmado" : "boton");
+        }
+
+        if ((window as any).invitadoActual !== undefined) {
+            acomodar((window as any).invitadoActual);
+        } else {
+            window.addEventListener(
+                "invitado-listo",
+                (e) => acomodar((e as CustomEvent).detail),
+                { once: true },
+            );
+        }
+
+        btnConfirmar.addEventListener("click", async () => {
+            const invitado = (window as any).invitadoActual;
+            if (!invitado?.codigo) return;
+
+            btnConfirmar.disabled = true;
+            btnConfirmar.textContent = "Confirmando…";
+
+            try {
+                const { supabase, configurado } = await import(
+                    "../lib/supabase"
+                );
+                if (!configurado || !supabase) throw new Error("sin config");
+
+                const { data, error } = await supabase.rpc(
+                    "confirmar_asistencia",
+                    { codigo_buscado: invitado.codigo },
+                );
+                if (error || !data || !data.length) throw error;
+
+                invitado.confirmado = true;
+                mostrar("confirmado");
+            } catch {
+                /*
+                   Si falla, se devuelve el botón como estaba y se avisa en
+                   el mismo texto: el invitado puede reintentar sin quedarse
+                   sin saber qué pasó.
+                */
+                btnConfirmar.disabled = false;
+                btnConfirmar.textContent = textoOriginal;
+                if (textoConfirmado) {
+                    textoConfirmado.textContent =
+                        "No pudimos guardarlo. Probá de nuevo en un rato.";
+                    yaConfirmado.hidden = false;
+                    window.setTimeout(() => {
+                        yaConfirmado.hidden = true;
+                        textoConfirmado.textContent = textoGracias;
+                    }, 4000);
+                }
+            }
+        });
     });
 </script>

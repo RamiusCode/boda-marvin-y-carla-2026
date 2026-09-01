@@ -100,13 +100,33 @@ import BotonMusica from "./BotonMusica.astro";
         }
     }
 
+    /*
+       El dato del invitado lo necesitan también el Pase —para saber si
+       mostrar el botón de confirmar o el "ya confirmaste"— y los Buenos
+       Deseos, para firmar el mensaje con su nombre.
+
+       Se avisa con un evento en vez de que cada sección haga su propia
+       consulta: una sola ida a la base para toda la invitación. La bandera
+       es para las secciones cuyo script corra después de este y no lleguen
+       a escuchar el evento.
+    */
+    function avisar(datos: unknown) {
+        (window as any).invitadoActual = datos;
+        window.dispatchEvent(
+            new CustomEvent("invitado-listo", { detail: datos }),
+        );
+    }
+
     import("../lib/supabase")
         .then(({ supabase, configurado, codigoDeLaUrl }) => {
             const codigo = codigoDeLaUrl();
 
             // Sin código es la invitación general, la que se comparte en un
             // grupo: se queda con los valores de muestra del componente.
-            if (!codigo || !configurado || !supabase) return null;
+            if (!codigo || !configurado || !supabase) {
+                avisar(null);
+                return null;
+            }
 
             /*
                Los nombres de muestra se ocultan mientras se resuelve la
@@ -122,11 +142,13 @@ import BotonMusica from "./BotonMusica.astro";
                 .then(({ data, error }) => {
                     if (!error && data && data.length) {
                         pintar(data[0].nombre, data[0].pases);
+                        avisar({ codigo, ...data[0] });
                     } else {
                         // Código inexistente: se devuelven los de muestra
                         nombres.forEach((el, i) => {
                             el.textContent = respaldo[i];
                         });
+                        avisar(null);
                     }
                     nombres.forEach((el) => (el.style.visibility = ""));
                 });
@@ -138,5 +160,6 @@ import BotonMusica from "./BotonMusica.astro";
                entera de que algo falló.
             */
             nombres.forEach((el) => (el.style.visibility = ""));
+            avisar(null);
         });
 </script>

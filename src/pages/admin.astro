@@ -380,6 +380,60 @@
         font-size: 0.82rem;
         font-weight: 600;
       }
+      /* ── Lista de buenos deseos ── */
+      .lista-deseos {
+        display: grid;
+        gap: 0.85rem;
+      }
+      .deseo-fila {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 0.9rem 1rem;
+        border: 1px solid var(--borde-suave);
+        border-radius: 10px;
+        background: var(--panel-alto);
+      }
+      .deseo-cuerpo {
+        flex: 1;
+        min-width: 0;
+      }
+      .deseo-nombre {
+        color: var(--neon);
+        font-weight: 600;
+        font-size: 0.92rem;
+      }
+      .deseo-fecha {
+        color: var(--texto-tenue);
+        font-size: 0.78rem;
+        margin-left: 0.5rem;
+      }
+      .deseo-mensaje {
+        color: var(--texto);
+        font-size: 0.92rem;
+        line-height: 1.55;
+        margin-top: 0.3rem;
+        /* Los mensajes traen saltos de linea del textarea */
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      @media (max-width: 560px) {
+        .deseo-fila {
+          flex-direction: column;
+        }
+      }
+
+      /* Quien confirmo se tiene que ver de un vistazo, sin leer */
+      .pastilla.si {
+        background: var(--neon-fondo);
+        color: var(--neon);
+      }
+      .pastilla.no {
+        background: transparent;
+        border: 1px solid var(--borde);
+        color: var(--texto-tenue);
+        font-weight: 500;
+      }
       /* En escritorio los botones van en una sola línea. Antes se envolvían
          en columna y dejaban las filas larguísimas. */
       .acciones {
@@ -562,13 +616,20 @@
         </div>
 
         <nav class="lateral-menu">
-          <button class="lateral-item activo" type="button">
+          <button class="lateral-item activo" type="button" data-vista="invitados">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
               <circle cx="9" cy="7" r="4" />
               <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
             Invitados
+          </button>
+          <button class="lateral-item" type="button" data-vista="deseos">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="2.5" y="5" width="19" height="14" rx="2" />
+              <path d="M3.5 6 12 13l8.5-7" />
+            </svg>
+            Buenos deseos
           </button>
         </nav>
 
@@ -598,7 +659,7 @@
         <main class="contenido">
 
           <!-- Resumen -->
-          <div class="resumen">
+          <div id="resumen-invitados" class="resumen">
             <div class="caja-num">
               <span>Invitados</span>
               <strong id="total-invitados">0</strong>
@@ -606,6 +667,10 @@
             <div class="caja-num">
               <span>Pases</span>
               <strong id="total-pases">0</strong>
+            </div>
+            <div class="caja-num">
+              <span>Confirmaron</span>
+              <strong id="total-confirmados">0</strong>
             </div>
           </div>
 
@@ -659,7 +724,7 @@
           </section>
 
           <!-- Lista -->
-          <section class="tarjeta">
+          <section id="caja-lista" class="tarjeta">
             <div class="tarjeta-cabecera">
               <span class="tarjeta-titulo">Lista de invitados</span>
               <input id="buscador" type="search" class="campo" placeholder="Buscar…" style="max-width: 230px" />
@@ -671,6 +736,7 @@
                   <tr>
                     <th>Invitado</th>
                     <th style="width: 90px">Pases</th>
+                    <th style="width: 110px">Asistencia</th>
                     <th>Link</th>
                     <th class="col-acciones" style="text-align: right">Acciones</th>
                   </tr>
@@ -680,6 +746,25 @@
             </div>
 
             <p id="lista-vacia" class="vacio oculto">Todavía no hay invitados.</p>
+          </section>
+
+          <!-- ═══ VISTA: BUENOS DESEOS ═══ -->
+          <section id="vista-deseos" class="tarjeta oculto">
+            <div class="tarjeta-cabecera">
+              <h2>Buenos deseos</h2>
+              <span id="total-deseos" class="pastilla">0</span>
+            </div>
+            <div class="tarjeta-cuerpo">
+              <p style="color: var(--texto-tenue); margin-bottom: 1rem">
+                Los mensajes que dejan los invitados en la invitación. Se ven
+                ahí mismo apenas se envían; acá se pueden borrar si alguno no
+                corresponde.
+              </p>
+              <div id="lista-deseos" class="lista-deseos"></div>
+              <p id="deseos-vacio" class="vacio oculto">
+                Todavía no hay deseos.
+              </p>
+            </div>
           </section>
         </main>
       </div>
@@ -831,15 +916,133 @@
         aplicarPermisos();
         pantalla("pantalla-panel");
         await cargarInvitados();
+        await cargarDeseos();
+      }
+
+      // ═══ VISTAS ═══
+      /*
+         Dos vistas dentro de la misma página: invitados y deseos. Se
+         alternan escondiendo bloques en vez de navegar, así no hay que
+         volver a pedirle la sesión a Supabase en cada cambio.
+      */
+      let vistaActual = "invitados";
+
+      function cambiarVista(cual) {
+        vistaActual = cual;
+
+        document.querySelectorAll(".lateral-item").forEach((b) => {
+          b.classList.toggle("activo", b.dataset.vista === cual);
+        });
+
+        const esInvitados = cual === "invitados";
+        ver($("resumen-invitados"), esInvitados);
+        ver($("caja-admin"), esInvitados && esAdmin);
+        ver($("caja-form"), esInvitados && puedeEditar());
+        ver($("aviso-cerrado"), esInvitados && !puedeEditar());
+        ver($("caja-lista"), esInvitados);
+        ver($("vista-deseos"), !esInvitados);
+
+        // En celular la barra lateral tapa el contenido: se cierra sola
+        $("lateral").classList.remove("abierta");
+        ver($("velo"), false);
+      }
+
+      document.querySelectorAll(".lateral-item").forEach((b) => {
+        b.addEventListener("click", () => cambiarVista(b.dataset.vista));
+      });
+
+      // ═══ BUENOS DESEOS ═══
+      let deseos = [];
+
+      async function cargarDeseos() {
+        const { data, error } = await supabase
+          .from("deseos")
+          .select("id, nombre, mensaje, creado_en")
+          .order("creado_en", { ascending: false });
+
+        if (error) {
+          avisar("No se pudieron cargar los deseos");
+          return;
+        }
+        deseos = data ?? [];
+        pintarDeseos();
+      }
+
+      function pintarDeseos() {
+        const caja = $("lista-deseos");
+        caja.innerHTML = "";
+
+        $("total-deseos").textContent = String(deseos.length);
+        ver($("deseos-vacio"), deseos.length === 0);
+
+        for (const d of deseos) {
+          const fila = document.createElement("div");
+          fila.className = "deseo-fila";
+
+          const cuerpo = document.createElement("div");
+          cuerpo.className = "deseo-cuerpo";
+
+          const cabecera = document.createElement("div");
+          const nombre = document.createElement("span");
+          nombre.className = "deseo-nombre";
+          nombre.textContent = d.nombre;
+
+          const fecha = document.createElement("span");
+          fecha.className = "deseo-fecha";
+          fecha.textContent = new Date(d.creado_en).toLocaleDateString("es-BO", {
+            day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+          });
+
+          cabecera.append(nombre, fecha);
+
+          const mensaje = document.createElement("div");
+          mensaje.className = "deseo-mensaje";
+          /*
+             textContent y nunca innerHTML: esto lo escribió un invitado.
+             Armar el HTML por concatenación sería dejar que alguien meta
+             etiquetas en su "deseo".
+          */
+          mensaje.textContent = d.mensaje;
+
+          cuerpo.append(cabecera, mensaje);
+          fila.append(cuerpo);
+
+          if (esAdmin) {
+            const borrar = document.createElement("button");
+            borrar.type = "button";
+            borrar.className = "btn btn-chico btn-peligro";
+            borrar.textContent = "Borrar";
+            borrar.addEventListener("click", () => borrarDeseo(d));
+            fila.append(borrar);
+          }
+
+          caja.append(fila);
+        }
+      }
+
+      async function borrarDeseo(deseo) {
+        if (!confirm("¿Borrar el deseo de " + deseo.nombre + "?")) return;
+
+        const { error } = await supabase.from("deseos").delete().eq("id", deseo.id);
+        if (error) {
+          avisar("No se pudo borrar");
+          return;
+        }
+        deseos = deseos.filter((d) => d.id !== deseo.id);
+        pintarDeseos();
+        avisar("Deseo borrado");
       }
 
       // El admin siempre puede; los novios solo con el registro abierto
       const puedeEditar = () => esAdmin || registroAbierto;
 
+      /*
+         Los permisos se aplican repintando la vista activa. Si tocaran los
+         bloques directamente, apagar el interruptor estando en "Buenos
+         deseos" haría reaparecer el formulario de invitados por detrás.
+      */
       function aplicarPermisos() {
-        const permitido = puedeEditar();
-        ver($("caja-form"), permitido);
-        ver($("aviso-cerrado"), !permitido);
+        cambiarVista(vistaActual);
       }
 
       // ═══ INTERRUPTOR DEL ADMIN ═══
@@ -863,7 +1066,7 @@
       async function cargarInvitados() {
         const { data, error } = await supabase
           .from("invitados")
-          .select("id, codigo, nombre, pases")
+          .select("id, codigo, nombre, pases, confirmado, confirmado_en")
           .order("creado_en", { ascending: false });
 
         if (error) {
@@ -903,7 +1106,7 @@
           const { data, error } = await supabase
             .from("invitados")
             .insert({ codigo: generarCodigo(), nombre, pases })
-            .select("id, codigo, nombre, pases")
+            .select("id, codigo, nombre, pases, confirmado, confirmado_en")
             .single();
 
           if (!error) { guardado = data; break; }
@@ -1053,6 +1256,13 @@
 
         $("total-invitados").textContent = String(invitados.length);
         $("total-pases").textContent = String(invitados.reduce((s, i) => s + i.pases, 0));
+
+        // Se cuentan personas y pases: al cliente le sirven los dos numeros
+        // para calcular la comida y las sillas.
+        const confirmados = invitados.filter((i) => i.confirmado);
+        const pasesConfirmados = confirmados.reduce((s, i) => s + i.pases, 0);
+        $("total-confirmados").textContent =
+          confirmados.length + " (" + pasesConfirmados + " pases)";
         ver($("lista-vacia"), visibles.length === 0);
 
         const permitido = puedeEditar();
@@ -1072,6 +1282,22 @@
           pastilla.className = "pastilla";
           pastilla.textContent = String(inv.pases);
           tdPases.append(pastilla);
+
+          // Confirmó o no. Es lo primero que el cliente va a mirar
+          // cuando falten dos semanas para la boda.
+          const tdConfirmo = document.createElement("td");
+          tdConfirmo.dataset.rotulo = "Asistencia";
+          const marca = document.createElement("span");
+          marca.className = inv.confirmado ? "pastilla si" : "pastilla no";
+          marca.textContent = inv.confirmado ? "Confirmó" : "Sin responder";
+          if (inv.confirmado && inv.confirmado_en) {
+            marca.title =
+              "Confirmó el " +
+              new Date(inv.confirmado_en).toLocaleDateString("es-BO", {
+                day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
+              });
+          }
+          tdConfirmo.append(marca);
 
           const tdLink = document.createElement("td");
           tdLink.dataset.rotulo = "Link";
@@ -1105,7 +1331,7 @@
           }
 
           tdAcciones.append(acciones);
-          fila.append(tdNombre, tdPases, tdLink, tdAcciones);
+          fila.append(tdNombre, tdPases, tdConfirmo, tdLink, tdAcciones);
           cuerpo.append(fila);
         }
       }

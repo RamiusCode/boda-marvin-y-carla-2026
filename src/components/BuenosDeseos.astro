@@ -18,8 +18,10 @@
 //
 // ── DATOS ────────────────────────────────────────────────────
 // Toda la lectura y escritura pasa por leerDeseos() y guardarDeseo(), al
-// final del script. Hoy trabajan contra un endpoint genérico; para pasar a
-// Supabase se cambian esas dos funciones y nada más.
+// final del script. Van contra la tabla "deseos" de Supabase.
+//
+// Si la base no responde, la sección muestra los deseos de ejemplo de acá
+// abajo en vez de un hueco o un error.
 // ─────────────────────────────────────────────────────────────
 
 // ── DATOS EDITABLES ───────────────────────────────────────────
@@ -29,9 +31,6 @@ const textoBoton = "ESCRIBE UN DESEO";
 // Cuántos se ven en el carrusel. El botón "Ver todos" aparece recién
 // cuando hay más que esto.
 const VISIBLES = 10;
-
-// URL del servicio. Vacío = modo muestra, con los deseos de ejemplo.
-const ENDPOINT = "";
 
 const deseosEjemplo = [
     {
@@ -75,7 +74,6 @@ const deseosEjemplo = [
 <section
     id="buenos-deseos"
     class="relative w-full overflow-hidden py-16"
-    data-endpoint={ENDPOINT}
     data-visibles={String(VISIBLES)}
     data-ejemplos={JSON.stringify(deseosEjemplo)}
 >
@@ -838,8 +836,6 @@ const deseosEjemplo = [
             return;
         }
 
-        const endpoint = seccion.dataset.endpoint?.trim() ?? "";
-        const conectado = endpoint.length > 0;
         const VISIBLES = Number(seccion.dataset.visibles) || 10;
 
         let deseos: Deseo[] = [];
@@ -1236,7 +1232,26 @@ const deseosEjemplo = [
             bloquearFondo(true);
             pausar();
             if (error) error.hidden = true;
-            campoNombre?.focus();
+
+            /*
+               Si entró por su link personalizado, el nombre ya viene
+               puesto: no tiene que escribirlo.
+
+               Queda editable a propósito. Cuando la invitación es para dos
+               ("Juan y María") o para una familia, el deseo capaz lo
+               escribe uno solo y quiere firmar distinto.
+
+               Y solo se completa si el campo está vacío, para no pisar lo
+               que el invitado ya haya escrito si cierra y vuelve a abrir.
+            */
+            const invitado = (window as any).invitadoActual;
+            if (campoNombre && !campoNombre.value.trim() && invitado?.nombre) {
+                campoNombre.value = invitado.nombre;
+            }
+
+            // Con el nombre puesto, lo que falta es el mensaje
+            if (campoNombre?.value.trim()) campoMensaje?.focus();
+            else campoNombre?.focus();
         }
 
         function cerrarFormulario() {
@@ -1262,34 +1277,35 @@ const deseosEjemplo = [
         // Las dos únicas funciones que hay que tocar para pasar a Supabase.
         // ═══════════════════════════════════════════════════════
         async function leerDeseos(): Promise<Deseo[] | null> {
-            if (!conectado) return null;
             try {
-                const res = await fetch(endpoint, { method: "GET" });
-                if (!res.ok) throw new Error(String(res.status));
-                const datos = (await res.json()) as Deseo[];
-                return Array.isArray(datos) ? datos : null;
+                const { supabase, configurado } = await import(
+                    "../lib/supabase"
+                );
+                if (!configurado || !supabase) return null;
+
+                const { data, error } = await supabase
+                    .from("deseos")
+                    .select("nombre, mensaje")
+                    .order("creado_en", { ascending: false });
+
+                if (error || !data) return null;
+                return data as Deseo[];
             } catch {
-                // Si el servicio no responde quedan los de ejemplo: la
+                // Si la base no responde quedan los de ejemplo: la
                 // invitación nunca muestra un hueco ni un error crudo.
                 return null;
             }
         }
 
         async function guardarDeseo(deseo: Deseo): Promise<boolean> {
-            if (!conectado) return false;
             try {
-                /*
-                   text/plain y no application/json a propósito: con JSON el
-                   navegador manda un preflight OPTIONS que Apps Script no
-                   contesta, y el envío falla por CORS. Del otro lado se
-                   parsea igual con JSON.parse.
-                */
-                const res = await fetch(endpoint, {
-                    method: "POST",
-                    headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify(deseo),
-                });
-                return res.ok;
+                const { supabase, configurado } = await import(
+                    "../lib/supabase"
+                );
+                if (!configurado || !supabase) return false;
+
+                const { error } = await supabase.from("deseos").insert(deseo);
+                return !error;
             } catch {
                 return false;
             }
@@ -1316,13 +1332,6 @@ const deseosEjemplo = [
                 mostrarError("El mensaje quedó muy cortito.");
                 return;
             }
-            if (!conectado) {
-                mostrarError(
-                    "El muro todavía no está conectado. Avisale a los novios.",
-                );
-                return;
-            }
-
             if (enviar) enviar.disabled = true;
 
             const guardado = await guardarDeseo({ nombre, mensaje });
