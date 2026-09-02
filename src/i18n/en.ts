@@ -263,6 +263,13 @@ export const en: Textos = {
         errorNombre: "Please tell us your name, so we know who it's from.",
         errorMensaje: "That message is a little too short.",
         errorEnvio: "We couldn't send it. Please try again in a moment.",
+        tarjetaInicial: {
+            nombre: "Marvin & Carla",
+            mensaje:
+                "We would love to hear from you. Leave us a few words and " +
+                "they will stay here, with those of everyone celebrating " +
+                "with us.",
+        },
     },
 
     // ── Our story ────────────────────────────────────────────

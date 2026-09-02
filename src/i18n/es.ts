@@ -259,6 +259,18 @@ export const es = {
         errorNombre: "Escribinos tu nombre, así sabemos de quién es.",
         errorMensaje: "El mensaje quedó muy cortito.",
         errorEnvio: "No pudimos enviarlo. Probá de nuevo en un rato.",
+        /*
+           La tarjeta que se ve mientras nadie dejó su deseo todavía. Va
+           firmada por los novios a propósito: un mensaje inventado con
+           nombre de invitado sería hacerle creer al que llega que ya
+           escribieron otros.
+        */
+        tarjetaInicial: {
+            nombre: "Marvin & Carla",
+            mensaje:
+                "Nos encantaría leerte. Dejanos unas palabras y " +
+                "quedan acá, con las de todos los que nos acompañan.",
+        },
     },
 
     // ── Nuestra historia ─────────────────────────────────────

@@ -61,6 +61,8 @@ const VISIBLES = 10;
     data-error-nombre={t.errorNombre}
     data-error-mensaje={t.errorMensaje}
     data-error-envio={t.errorEnvio}
+    data-inicial-nombre={t.tarjetaInicial.nombre}
+    data-inicial-mensaje={t.tarjetaInicial.mensaje}
 >
     <!--
        Filete impreso. Va antes que los ramos en el markup a propósito: sin
@@ -353,6 +355,14 @@ const VISIBLES = 10;
 
        align-items: stretch iguala la altura de las tarjetas de la fila.
     */
+    /*
+       La tarjeta de bienvenida va sola en el carril. Sin esto queda pegada
+       al filo izquierdo, porque las tarjetas están hechas para ir en fila.
+    */
+    .carrusel:has(.tarjeta-inicial) {
+        justify-content: center;
+    }
+
     /* Sin esto el hidden no surte efecto: el display:flex de abajo gana */
     .carrusel[hidden],
     .pie-carrusel[hidden] {
@@ -830,6 +840,8 @@ const VISIBLES = 10;
             errorNombre: d.errorNombre ?? "Falta tu nombre.",
             errorMensaje: d.errorMensaje ?? "El mensaje quedó muy cortito.",
             errorEnvio: d.errorEnvio ?? "No pudimos enviarlo.",
+            inicialNombre: d.inicialNombre ?? "",
+            inicialMensaje: d.inicialMensaje ?? "",
         };
 
         const seccion = document.getElementById("buenos-deseos");
@@ -910,6 +922,32 @@ const VISIBLES = 10;
            que se arma con textContent y nunca con innerHTML: concatenar
            HTML sería dejar que alguien escriba etiquetas en su "deseo".
         */
+        function crearTarjetaInicial() {
+            const tarjeta = document.createElement("article");
+            tarjeta.className = "tarjeta tarjeta-inicial";
+            tarjeta.setAttribute("role", "listitem");
+
+            const medallon = document.createElement("span");
+            medallon.className = "medallon";
+            medallon.setAttribute("aria-hidden", "true");
+            medallon.appendChild(crearSobre());
+
+            const de = document.createElement("p");
+            de.className = "de font-cormorant";
+            de.textContent = dicc.de;
+
+            const nombre = document.createElement("p");
+            nombre.className = "nombre font-cormorant";
+            nombre.textContent = dicc.inicialNombre;
+
+            const mensaje = document.createElement("p");
+            mensaje.className = "mensaje font-cormorant";
+            mensaje.textContent = dicc.inicialMensaje;
+
+            tarjeta.append(medallon, de, nombre, mensaje);
+            return tarjeta;
+        }
+
         function crearTarjeta(deseo: Deseo, indice: number) {
             const tarjeta = document.createElement("article");
             tarjeta.className = "tarjeta";
@@ -1030,8 +1068,10 @@ const VISIBLES = 10;
                aparece solo.
             */
             if (deseos.length === 0) {
-                carrusel.replaceChildren();
-                carrusel.hidden = true;
+                carrusel.replaceChildren(crearTarjetaInicial());
+                carrusel.hidden = false;
+                // Sin puntitos ni "ver todos": hay una sola tarjeta y no
+                // se desplaza a ningún lado.
                 if (pieCarrusel) pieCarrusel.hidden = true;
                 return;
             }
@@ -1138,6 +1178,8 @@ const VISIBLES = 10;
 
         function arrancarAuto() {
             if (quietito) return;
+            // Con la tarjeta de bienvenida sola no hay nada que desplazar
+            if (deseos.length === 0) return;
             cancelAnimationFrame(cuadro);
             // Sin esto el primer delta sería enorme y pegaría un salto
             ultimo = 0;
