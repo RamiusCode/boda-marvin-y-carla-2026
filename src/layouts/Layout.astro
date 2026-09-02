@@ -3,8 +3,27 @@
 import "../styles/global.css";
 export interface Props {
   title: string;
+  /* Lo que WhatsApp muestra bajo el nombre. Se puede apagar pasando "". */
+  descripcion?: string;
 }
-const { title } = Astro.props;
+const { title, descripcion = "" } = Astro.props;
+
+/*
+   La tarjetita que arma WhatsApp cuando se pega el link.
+
+   La imagen tiene que ir con la dirección completa (https://…): una ruta
+   como /imagenes/… no le sirve, porque quien la busca es el servidor de
+   WhatsApp y no tiene de dónde colgarla.
+
+   El dominio lo pone Vercel solo en VERCEL_PROJECT_PRODUCTION_URL, y lo
+   actualiza si mañana se le enchufa un dominio propio. El de abajo es el
+   de respaldo, para que `npm run build` en la compu tampoco falle.
+*/
+const dominio = import.meta.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${import.meta.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "https://boda-marvin-y-carla-2026.vercel.app";
+
+const miniatura = `${dominio}/imagenes/miniatura-og.jpg`;
 ---
 
 <!doctype html>
@@ -13,9 +32,31 @@ const { title } = Astro.props;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light only" />
-    <link rel="icon" type="image/png" href="/iconos/Anillos.png" />
+    <link rel="icon" type="image/png" href="/iconos/anillo.png" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
+
+    <!--
+       Preview del enlace en WhatsApp, Facebook y Telegram.
+
+       No puede llevar el nombre del invitado: la tarjeta la arma el
+       servidor de WhatsApp, que no ejecuta JavaScript, y el nombre recién
+       lo trae Supabase cuando la persona abre la invitación. Es la misma
+       para todos los códigos, que además comparten esta misma página.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    {descripcion && <meta property="og:description" content={descripcion} />}
+    <meta property="og:image" content={miniatura} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="849" />
+    <meta property="og:url" content={dominio} />
+
+    <!-- Twitter lee las suyas; summary_large_image es la tarjeta grande -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    {descripcion && <meta name="twitter:description" content={descripcion} />}
+    <meta name="twitter:image" content={miniatura} />
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
