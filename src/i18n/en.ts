@@ -75,9 +75,9 @@ export const en: Textos = {
     // ── Bible verses ─────────────────────────────────────────
     versiculo: {
         texto:
-            "So they are no longer two, but one flesh. Therefore what God " +
-            "has joined together, let no one separate.",
-        cita: "Matthew 19:6",
+            "There is a time for everything, and a season for every " +
+            "activity under the heavens.",
+        cita: "Ecclesiastes 3:1",
     },
     versiculo2: {
         texto: "Love never fails.",

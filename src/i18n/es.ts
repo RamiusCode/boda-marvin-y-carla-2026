@@ -72,9 +72,9 @@ export const es = {
     // ── Versículos ───────────────────────────────────────────
     versiculo: {
         texto:
-            "Así que no son ya más dos, sino una sola carne; por tanto, " +
-            "lo que Dios ha unido, no lo separe el hombre.",
-        cita: "Mateo 19:6",
+            "Todo tiene su tiempo, y todo lo que se quiere " +
+            "debajo del cielo tiene su hora.",
+        cita: "Eclesiastés 3:1",
     },
     versiculo2: {
         texto: "El amor no pasará jamás.",
