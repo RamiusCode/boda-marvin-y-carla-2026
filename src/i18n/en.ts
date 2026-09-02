@@ -37,7 +37,7 @@ export const en: Textos = {
             "character, her good days and the not so good ones. He helped " +
             "her be calmer, happier, and believe that true love does exist.",
         razon2:
-            "He loved me too, and that means everything to me, human mum. " +
+            "He loved me too, and that means everything to my human mum. " +
             "With his love and patience, he made me feel part of his life, " +
             "his heart and his family.",
         hoy: "Today, my human mum and I want to tell you that we are no longer alone.",

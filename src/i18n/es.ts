@@ -34,7 +34,7 @@ export const es = {
             "sus días buenos y los no tan buenos. La ayudó a ser más tranquila, " +
             "más feliz y a creer que el amor verdadero sí existe.",
         razon2:
-            "Quererme a mí, y eso es lo más importante para mí, mamá humana. " +
+            "Quererme a mí, y eso es lo más importante para mi mamá humana. " +
             "Con su amor y paciencia, me hizo sentir parte de su vida, " +
             "de su corazón y de su familia.",
         hoy: "Hoy, mamá humana y yo queremos decirte que ya no estamos solas.",
