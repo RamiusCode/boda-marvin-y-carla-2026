@@ -20,8 +20,9 @@
 // Toda la lectura y escritura pasa por leerDeseos() y guardarDeseo(), al
 // final del script. Van contra la tabla "deseos" de Supabase.
 //
-// Si la base no responde, la sección muestra los deseos de ejemplo de acá
-// abajo en vez de un hueco o un error.
+// No hay deseos de relleno: si todavía no dejó ninguno nadie, el carril no
+// se dibuja y quedan solo el título y el botón. Si la base no contesta se
+// deja lo que ya estuviera en pantalla, sin vaciarlo.
 // ─────────────────────────────────────────────────────────────
 
 // Los textos viven en src/i18n; acá solo se elige el idioma.
@@ -41,40 +42,6 @@ const { titulo, textoBoton } = t;
 // cuando hay más que esto.
 const VISIBLES = 10;
 
-const deseosEjemplo = [
-    {
-        nombre: "Tefi y Adri",
-        mensaje:
-            "Que sean muy felices en esta nueva etapa de su vida y recuerden " +
-            "que son un equipo, las adversidades solo son un reto que lo " +
-            "pueden afrontar juntos.",
-    },
-    {
-        nombre: "Carol Valdez",
-        mensaje:
-            "1 Corintios 13:4-7. El amor es sufrido, es benigno; el amor no " +
-            "tiene envidia, no es jactancioso, no se envanece; no hace nada " +
-            "indebido, no busca lo suyo, no se irrita, no guarda rencor.",
-    },
-    {
-        nombre: "Familia Zegarra",
-        mensaje:
-            "Les deseamos una vida llena de amor, salud y paseos con Lu. " +
-            "¡Que este día sea el primero de muchos!",
-    },
-    {
-        nombre: "Los Llanos",
-        mensaje:
-            "Que nunca les falte la risa en la mesa ni las ganas de " +
-            "abrazarse. Los queremos muchísimo.",
-    },
-    {
-        nombre: "Ana y Diego",
-        mensaje:
-            "Gracias por dejarnos ser parte de este día. Que el amor que " +
-            "hoy los une los siga sorprendiendo toda la vida.",
-    },
-];
 ---
 
 <!-- ═══════════════════════════════════════════════════════════ -->
@@ -94,7 +61,6 @@ const deseosEjemplo = [
     data-error-nombre={t.errorNombre}
     data-error-mensaje={t.errorMensaje}
     data-error-envio={t.errorEnvio}
-    data-ejemplos={JSON.stringify(deseosEjemplo)}
 >
     <!--
        Filete impreso. Va antes que los ramos en el markup a propósito: sin
@@ -387,6 +353,12 @@ const deseosEjemplo = [
 
        align-items: stretch iguala la altura de las tarjetas de la fila.
     */
+    /* Sin esto el hidden no surte efecto: el display:flex de abajo gana */
+    .carrusel[hidden],
+    .pie-carrusel[hidden] {
+        display: none;
+    }
+
     .carrusel {
         display: flex;
         align-items: stretch;
@@ -892,12 +864,10 @@ const deseosEjemplo = [
 
         const VISIBLES = Number(seccion.dataset.visibles) || 10;
 
+        const pieCarrusel = seccion.querySelector<HTMLElement>(".pie-carrusel");
+
+        // Arranca vacío: lo único que se muestra es lo que hay en la base.
         let deseos: Deseo[] = [];
-        try {
-            deseos = JSON.parse(seccion.dataset.ejemplos ?? "[]");
-        } catch {
-            deseos = [];
-        }
 
         const encabezado = document.getElementById("encabezado-deseos");
         if (encabezado) animarEntrada(encabezado.children, encabezado);
@@ -1052,6 +1022,23 @@ const deseosEjemplo = [
         }
 
         function pintarCarrusel() {
+            /*
+               Sin deseos no se pinta nada: un carril vacío con sus puntitos
+               debajo se lee como que algo se rompió. Quedan el título y el
+               botón, que es lo único que hace falta para que el primer
+               invitado deje el suyo. En cuanto entra uno, el carril
+               aparece solo.
+            */
+            if (deseos.length === 0) {
+                carrusel.replaceChildren();
+                carrusel.hidden = true;
+                if (pieCarrusel) pieCarrusel.hidden = true;
+                return;
+            }
+
+            carrusel.hidden = false;
+            if (pieCarrusel) pieCarrusel.hidden = false;
+
             const visibles = deseos.slice(0, VISIBLES);
 
             /*
@@ -1541,7 +1528,8 @@ const deseosEjemplo = [
         pintarCarrusel();
 
         leerDeseos().then((datos) => {
-            if (datos && datos.length > 0) {
+            // null es que la base no contestó: ahí se deja como está.
+            if (datos) {
                 deseos = datos;
                 pintarCarrusel();
             }
