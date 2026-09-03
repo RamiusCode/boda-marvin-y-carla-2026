@@ -84,8 +84,15 @@ const { texto: versiculo, cita } = textos(idioma).versiculo;
        poco más. Como la tarjeta ya viene girada +2.2deg, acá se compensa:
        -3.8deg locales lo dejan en -1.6deg contra la pantalla.
     */
+    /*
+       Los dos van opacos: la sección se monta 14rem sobre la Fecha, y con
+       los rectángulos translúcidos el "¡Nos Casamos!" de esa hoja asomaba
+       por detrás del versículo como una marca de agua. Los colores son el
+       resultado exacto de lo que antes componían sobre el papel, así que
+       el tono de la tarjeta no cambia.
+    */
     .rect-atras {
-        background: rgba(158, 70, 42, 0.92);
+        background: #a55439;
         transform: rotate(-3.8deg);
     }
 
@@ -101,7 +108,7 @@ const { texto: versiculo, cita } = textos(idioma).versiculo;
     }
 
     .rect-frente {
-        background: rgba(198, 100, 64, 0.94);
+        background: #c46340;
         box-shadow: 0 12px 26px rgba(70, 28, 16, 0.25);
     }
 

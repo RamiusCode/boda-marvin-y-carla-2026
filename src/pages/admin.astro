@@ -745,6 +745,15 @@
                   <input id="in-pases" type="number" class="campo" min="1" max="20" value="2" required />
                 </div>
                 <div>
+                  <!--
+                     Sin required: las mesas se arman después de saber quién
+                     confirmó, así que al cargar la lista lo normal es
+                     dejarla vacía y volver más adelante a completarla.
+                  -->
+                  <label class="etiqueta" for="in-mesa">Mesa</label>
+                  <input id="in-mesa" type="number" class="campo" min="1" max="200" placeholder="Sin asignar" />
+                </div>
+                <div>
                   <label class="etiqueta" for="in-idioma">Idioma</label>
                   <select id="in-idioma" class="campo">
                     <option value="es" selected>Español</option>
@@ -786,6 +795,7 @@
                   <tr>
                     <th>Invitado</th>
                     <th style="width: 90px">Pases</th>
+                    <th style="width: 90px">Mesa</th>
                     <th style="width: 110px">Asistencia</th>
                     <th>Link</th>
                     <th class="col-acciones" style="text-align: right">Acciones</th>
@@ -833,6 +843,10 @@
             <div>
               <label class="etiqueta" for="ed-pases">Pases</label>
               <input id="ed-pases" type="number" class="campo" min="1" max="20" required />
+            </div>
+            <div>
+              <label class="etiqueta" for="ed-mesa">Mesa</label>
+              <input id="ed-mesa" type="number" class="campo" min="1" max="200" placeholder="Sin asignar" />
             </div>
             <div>
               <label class="etiqueta" for="ed-idioma">Idioma</label>
@@ -1094,9 +1108,9 @@
            si se exporta con el filtro en "Confirmaron", todas las filas
            dicen lo mismo.
         */
-        const cabecera = ["Invitado", "Pases"];
+        const cabecera = ["Invitado", "Pases", "Mesa"];
         const cuerpo = filas.map((i) =>
-          [celda(i.nombre), celda(i.pases)].join(";")
+          [celda(i.nombre), celda(i.pases), celda(i.mesa)].join(";")
         );
 
         /*
@@ -1261,11 +1275,26 @@
         avisar(valor ? "Registro abierto" : "Registro cerrado");
       });
 
+      /*
+         El campo de mesa puede quedar vacío, y vacío no es cero: quiere
+         decir "todavía sin asignar" y va como null a la base. Devuelve
+         "invalida" en vez de null cuando hay algo escrito que no sirve,
+         porque si no un "abc" se guardaría como si el campo estuviera
+         vacío y el cliente creería que borró la mesa a propósito.
+      */
+      function leerMesa(id) {
+        const crudo = $(id).value.trim();
+        if (crudo === "") return null;
+        const n = Number(crudo);
+        if (!Number.isInteger(n) || n < 1 || n > 200) return "invalida";
+        return n;
+      }
+
       // ═══ DATOS ═══
       async function cargarInvitados() {
         const { data, error } = await supabase
           .from("invitados")
-          .select("id, codigo, nombre, pases, confirmado, confirmado_en, idioma")
+          .select("id, codigo, nombre, pases, confirmado, confirmado_en, idioma, mesa")
           .order("creado_en", { ascending: false });
 
         if (error) {
@@ -1291,10 +1320,15 @@
         const nombre = $("in-nombre").value.trim();
         const pases = Number($("in-pases").value);
         const idioma = $("in-idioma").value;
+        const mesa = leerMesa("in-mesa");
 
         if (!nombre) return;
         if (!Number.isInteger(pases) || pases < 1 || pases > 20) {
           mostrarError("form-error", "Los pases deben ser un número del 1 al 20.");
+          return;
+        }
+        if (mesa === "invalida") {
+          mostrarError("form-error", "La mesa debe ser un número del 1 al 200, o quedar vacía.");
           return;
         }
 
@@ -1305,8 +1339,8 @@
         for (let intento = 0; intento < 5; intento++) {
           const { data, error } = await supabase
             .from("invitados")
-            .insert({ codigo: generarCodigo(), nombre, pases, idioma })
-            .select("id, codigo, nombre, pases, confirmado, confirmado_en, idioma")
+            .insert({ codigo: generarCodigo(), nombre, pases, idioma, mesa })
+            .select("id, codigo, nombre, pases, confirmado, confirmado_en, idioma, mesa")
             .single();
 
           if (!error) { guardado = data; break; }
@@ -1322,6 +1356,7 @@
         invitados.unshift(guardado);
         $("in-nombre").value = "";
         $("in-pases").value = "2";
+        $("in-mesa").value = "";
         $("in-idioma").value = "es";
         $("in-nombre").focus();
         pintarLista();
@@ -1354,6 +1389,8 @@
         enEdicion = inv;
         $("ed-nombre").value = inv.nombre;
         $("ed-pases").value = String(inv.pases);
+        // Sin mesa asignada el campo va vacío, no en cero
+        $("ed-mesa").value = inv.mesa == null ? "" : String(inv.mesa);
         $("ed-idioma").value = inv.idioma || "es";
         mostrarError("editar-error", "");
         ver($("modal-editar"), true);
@@ -1367,22 +1404,35 @@
         const nombre = $("ed-nombre").value.trim();
         const pases = Number($("ed-pases").value);
         const idioma = $("ed-idioma").value;
+        const mesa = leerMesa("ed-mesa");
 
         if (!nombre || !Number.isInteger(pases) || pases < 1 || pases > 20) {
           mostrarError("editar-error", "Revisa el nombre y que los pases estén entre 1 y 20.");
           return;
         }
+        if (mesa === "invalida") {
+          mostrarError("editar-error", "La mesa debe ser un número del 1 al 200, o quedar vacía.");
+          return;
+        }
 
         const { error } = await supabase
-          .from("invitados").update({ nombre, pases, idioma }).eq("id", enEdicion.id);
+          .from("invitados").update({ nombre, pases, idioma, mesa }).eq("id", enEdicion.id);
 
         if (error) {
           mostrarError("editar-error", traducirError(error));
           return;
         }
 
+        /*
+           Se copia lo guardado a la fila que ya está en memoria: la lista
+           se repinta desde ahí, sin volver a pedirle todo a la base.
+           El idioma faltaba y por eso un cambio de idioma no se veía en el
+           link de la lista hasta recargar la página.
+        */
         enEdicion.nombre = nombre;
         enEdicion.pases = pases;
+        enEdicion.idioma = idioma;
+        enEdicion.mesa = mesa;
         cerrarModales();
         pintarLista();
         avisar("Actualizado — el link sigue sirviendo");
@@ -1518,6 +1568,22 @@
           pastilla.textContent = String(inv.pases);
           tdPases.append(pastilla);
 
+          /*
+             Sin mesa se pone una raya y no una pastilla vacía: de un
+             vistazo se ve a quién falta ubicar cuando se arme el salón.
+          */
+          const tdMesa = document.createElement("td");
+          tdMesa.dataset.rotulo = "Mesa";
+          if (inv.mesa == null) {
+            tdMesa.textContent = "—";
+            tdMesa.style.color = "var(--texto-tenue)";
+          } else {
+            const chapa = document.createElement("span");
+            chapa.className = "pastilla";
+            chapa.textContent = String(inv.mesa);
+            tdMesa.append(chapa);
+          }
+
           // Confirmó o no. Es lo primero que el cliente va a mirar
           // cuando falten dos semanas para la boda.
           const tdConfirmo = document.createElement("td");
@@ -1574,7 +1640,7 @@
           }
 
           tdAcciones.append(acciones);
-          fila.append(tdNombre, tdPases, tdConfirmo, tdLink, tdAcciones);
+          fila.append(tdNombre, tdPases, tdMesa, tdConfirmo, tdLink, tdAcciones);
           cuerpo.append(fila);
         }
       }

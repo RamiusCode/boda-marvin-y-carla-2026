@@ -11,8 +11,23 @@ export interface Props {
     idioma?: Idioma;
     invitado?: string;
     pases?: number;
+    /*
+       La mesa va aparte del resto: no tiene valor de muestra. Las mesas se
+       arman cuando ya se sabe quién confirmó, mucho después de que salen
+       las invitaciones, así que lo normal es que al principio no haya
+       ninguna. Sin mesa asignada el renglón no se dibuja —un número
+       inventado en la tarjeta manda al invitado a la mesa equivocada— y en
+       la invitación general, la que se comparte en un grupo, tampoco
+       aparece nunca.
+    */
+    mesa?: number | null;
 }
-const { idioma = "es", invitado = "Adriana Candia", pases = 2 } = Astro.props;
+const {
+    idioma = "es",
+    invitado = "Adriana Candia",
+    pases = 2,
+    mesa = null,
+} = Astro.props;
 
 const t = textos(idioma).pase;
 const {
@@ -56,6 +71,23 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
                 <span class="font-verandah palabra-pases">{palabraPases}</span>
             </p>
             <p class="font-cormorant honor-pase">{honor}</p>
+
+            {/*
+               La mesa cierra la tarjeta, separada por un filete: no es del
+               mismo orden que lo de arriba. Lo de arriba es el gesto —a
+               quién se invita y con cuántos—; esto es el dato práctico que
+               el invitado va a venir a buscar el día de la fiesta.
+
+               Lo pinta el script de Invitacion.astro por la clase
+               .numero-mesa, igual que el nombre y los pases. El hidden lo
+               maneja .bloque-mesa: si el invitado no tiene mesa asignada,
+               el renglón no ocupa lugar.
+            */}
+            <p class="bloque-mesa" hidden={!mesa}>
+                <span class="font-cormorant etiqueta-mesa">{t.mesa}</span>
+                {/* El número en Adelia, por los dígitos de Verandah */}
+                <span class="font-adelia numero-mesa">{mesa}</span>
+            </p>
         </div>
 
         <h2 class="font-dancing titulo-confirmar">{tituloConfirmar}</h2>
@@ -206,6 +238,39 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
     /* Adelia es de ojo más chico que Verandah: se compensa acá */
     .numero-pases {
         font-size: 0.94em;
+    }
+
+    /*
+       El filete de arriba es lo que separa el dato del gesto. Va con el
+       margen del lado del filete y no del texto para que, cuando el
+       renglón no se dibuja, no quede aire de más al pie de la tarjeta.
+    */
+    .bloque-mesa {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: 0.4rem;
+        margin-top: 1.4rem;
+        padding-top: 1.1rem;
+        border-top: 1px solid rgba(253, 246, 238, 0.35);
+        color: #fdf6ee;
+    }
+
+    /* Explícito: el display:flex de arriba le gana al atributo */
+    .bloque-mesa[hidden] {
+        display: none;
+    }
+
+    .etiqueta-mesa {
+        font-size: clamp(1.05rem, 4.8vw, 1.25rem);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        opacity: 0.85;
+    }
+
+    .numero-mesa {
+        font-size: clamp(1.7rem, 7.6vw, 2.1rem);
+        line-height: 1.1;
     }
 
     .titulo-confirmar {

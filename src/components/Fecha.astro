@@ -172,7 +172,18 @@ const semanas = Array.from({ length: celdas.length / 7 }, (_, i) =>
 </section>
 
 <style>
+    /*
+       Contexto de apilamiento propio. Sin esto la sección queda en z-index
+       auto y el z-index:2 de .contenido compite de igual a igual con el
+       z-index:2 del Versículo en el contexto raíz: como la Fecha va después
+       en el DOM ganaba ella, y el título "¡Nos Casamos!" se dibujaba encima
+       de la tarjeta del versículo (la sección se le monta 14rem arriba).
+       Con el z-index:1 acá, todo lo de adentro queda contenido y la hoja
+       entera pasa por debajo de la tarjeta.
+    */
     #fecha-boda {
+        position: relative;
+        z-index: 1;
         --terracota: #b9563a;
         --terracota-suave: #cd7a56;
         --tinta: #7a4a34;

@@ -106,6 +106,14 @@ const t = textos(idioma);
     const palabras = document.querySelectorAll<HTMLElement>(".palabra-pases");
 
     /*
+       La mesa no se tapa como el nombre: no tiene valor de muestra que
+       ocultar. Arranca escondida y solo se muestra si el invitado tiene
+       una asignada.
+    */
+    const mesas = document.querySelectorAll<HTMLElement>(".numero-mesa");
+    const bloquesMesa = document.querySelectorAll<HTMLElement>(".bloque-mesa");
+
+    /*
        Singular y plural salen del idioma de la página, no escritos acá:
        en la invitación en inglés un invitado con un solo pase tiene que
        leer "seat", no "pase".
@@ -114,7 +122,11 @@ const t = textos(idioma);
     const palabraPase = contenido?.dataset.pase ?? "pase";
     const palabraPases = contenido?.dataset.pases ?? "pases";
 
-    function pintar(nombre: string | null, pases: number | null) {
+    function pintar(
+        nombre: string | null,
+        pases: number | null,
+        mesa: number | null,
+    ) {
         if (nombre) nombres.forEach((el) => (el.textContent = nombre));
 
         if (Number.isInteger(pases) && (pases as number) > 0) {
@@ -123,6 +135,15 @@ const t = textos(idioma);
                 el.textContent = pases === 1 ? palabraPase : palabraPases;
             });
         }
+
+        /*
+           Sin mesa asignada el renglón se queda escondido. El else no es de
+           adorno: si el cliente le saca la mesa a un invitado que ya la
+           tenía, la tarjeta tiene que volver a quedar sin el dato viejo.
+        */
+        const hayMesa = Number.isInteger(mesa) && (mesa as number) > 0;
+        if (hayMesa) mesas.forEach((el) => (el.textContent = String(mesa)));
+        bloquesMesa.forEach((el) => (el.hidden = !hayMesa));
     }
 
     /*
@@ -166,7 +187,7 @@ const t = textos(idioma);
                 .rpc("buscar_invitado", { codigo_buscado: codigo })
                 .then(({ data, error }) => {
                     if (!error && data && data.length) {
-                        pintar(data[0].nombre, data[0].pases);
+                        pintar(data[0].nombre, data[0].pases, data[0].mesa);
                         avisar({ codigo, ...data[0] });
                     } else {
                         // Código inexistente: se devuelven los de muestra

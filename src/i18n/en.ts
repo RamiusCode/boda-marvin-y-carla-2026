@@ -227,6 +227,8 @@ export const en: Textos = {
         honor: "in your honour",
         pase: "seat",
         pases: "seats",
+        // Se muestra solo si el invitado tiene mesa asignada
+        mesa: "Table",
         tituloConfirmar: "Please RSVP",
         aviso: [
             "Your presence means the world to us,",

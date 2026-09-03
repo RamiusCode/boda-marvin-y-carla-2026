@@ -224,6 +224,8 @@ export const es = {
         honor: "en tu honor",
         pase: "pase",
         pases: "pases",
+        // La mesa se muestra solo si el invitado tiene una asignada
+        mesa: "Mesa",
         tituloConfirmar: "Confirmación de Asistencia",
         aviso: [
             "Tu presencia es muy importante, no",
