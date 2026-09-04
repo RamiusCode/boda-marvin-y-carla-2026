@@ -347,12 +347,14 @@
         letter-spacing: 0.08em;
         color: var(--texto-tenue);
         font-weight: 600;
-        padding: 0.7rem 1.25rem;
+        padding: 0.7rem 0.8rem;
         border-bottom: 1px solid var(--borde-suave);
         background: var(--panel-alto);
       }
       .tabla td {
-        padding: 0.7rem 1.25rem;
+        /* Apretado a proposito: con 1.25rem por lado, siete columnas se
+           comian 300px solo en aire y la fila no entraba en pantalla */
+        padding: 0.7rem 0.8rem;
         border-bottom: 1px solid var(--borde-suave);
         vertical-align: middle;
       }
@@ -362,13 +364,24 @@
       .tabla tbody tr:hover { background: var(--panel-alto); }
 
       .celda-nombre { font-weight: 500; }
+      /*
+         Solo el codigo, no la direccion entera.
+
+         El link completo medía 250px de columna para decir siete veces lo
+         mismo: el dominio se repite en todas las filas y lo unico que
+         cambia son los cinco caracteres del final. Con la direccion entera
+         la fila no entraba y "Editar" y "Borrar" quedaban fuera de
+         pantalla.
+
+         Nadie lo tipea a mano: para eso estan los dos botones que lo
+         copian. Sirve para reconocer de que invitado es un link, y para
+         eso alcanza el codigo. El completo queda en el title, al pasar
+         el mouse por encima.
+      */
       .celda-link {
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        font-size: 0.78rem;
+        font-size: 0.82rem;
         color: var(--texto-tenue);
-        max-width: 250px;
-        overflow: hidden;
-        text-overflow: ellipsis;
         white-space: nowrap;
       }
       .pastilla {
@@ -381,39 +394,42 @@
         font-weight: 600;
       }
       /*
-         Los nombres de quienes acompañan, cada uno en su propia píldora.
-         Sueltos y separados por comas se leían como sobras de texto debajo
-         del contador; encerrado cada uno, se ve que son personas.
+         Los acompañantes van debajo del titular, en la columna del nombre.
 
-         Píldora neutra y no la verde: el verde en este panel quiere decir
-         "confirmó". Un nombre no es un estado, es un dato.
+         Antes estaban en la columna "Asisten", que mide 110px: un
+         "josema pérez gonzález lópez" no entra ahí ni ensanchándola, y
+         quedaba partido en pedazos. Esta columna es la más ancha de la
+         tabla y no tiene ancho fijo, así que el nombre entra entero.
+
+         Y es donde corresponde: son gente de esa misma invitación, no un
+         dato aparte. El sangrado y el ícono los muestran colgando del
+         titular sin necesidad de rótulo.
       */
-      .nombres-asisten {
+      .acompanantes {
         display: flex;
-        flex-wrap: wrap;
-        gap: 0.25rem;
+        flex-direction: column;
+        gap: 0.15rem;
         margin-top: 0.4rem;
+        padding-left: 0.1rem;
       }
-      .pastilla-nombre {
-        display: inline-block;
-        background: var(--panel-alto);
-        border: 1px solid var(--borde);
-        color: var(--texto);
-        border-radius: 999px;
-        padding: 0.1rem 0.55rem;
-        font-size: 0.75rem;
-        font-weight: 500;
-        /* Un nombre largo parte de palabra en vez de estirar la columna */
-        overflow-wrap: anywhere;
-      }
-      /* Barra fina bajo el contador: separa el "cuántos" del "quiénes" */
-      .rotulo-acompanan {
-        display: block;
-        font-size: 0.68rem;
-        text-transform: uppercase;
-        letter-spacing: 0.07em;
+      .acompanante {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.4rem;
+        font-size: 0.82rem;
+        font-weight: 400;
+        line-height: 1.35;
         color: var(--texto-tenue);
-        margin-top: 0.45rem;
+      }
+      /* El ícono no se achica ni se estira cuando el nombre ocupa dos
+         renglones: queda alineado con el primero */
+      .acompanante svg {
+        width: 13px;
+        height: 13px;
+        flex: none;
+        margin-top: 0.18rem;
+        color: var(--neon);
+        opacity: 0.7;
       }
 
       /* ── Barra de herramientas de la lista ── */
@@ -621,7 +637,23 @@
         .velo, #btn-menu { display: none; }
         .contenido { padding: 1.75rem 2rem 3rem; }
         .resumen { grid-template-columns: repeat(4, 1fr); }
-        .form-alta { grid-template-columns: 1fr 110px 130px auto; align-items: end; }
+        /*
+           Cinco columnas, sin hueco al final:
+           nombre · pases · mesa · idioma · boton
+
+           Eran cuatro y al sumarse el campo de mesa quedaron cinco cosas
+           en cuatro lugares, asi que el boton se caia al renglon de abajo.
+
+           El nombre va en 1fr: los otros cuatro tienen el ancho que
+           necesitan —son un numero, un numero y una lista— y todo lo que
+           sobra se lo queda el nombre, que es el unico dato largo. Asi la
+           fila llega hasta el borde y el boton queda pegado a la derecha,
+           sin espacio muerto.
+        */
+        .form-alta {
+          grid-template-columns: 1fr 90px 125px 130px auto;
+          align-items: end;
+        }
       }
     </style>
   </head>
@@ -832,10 +864,9 @@
                     <th>Invitado</th>
                     <th style="width: 90px">Pases</th>
                     <th style="width: 90px">Mesa</th>
-                    <!-- Más ancha que las demás: acá abajo caen los nombres -->
-                    <th style="width: 150px">Asisten</th>
+                    <th style="width: 110px">Asisten</th>
                     <th style="width: 110px">Asistencia</th>
-                    <th>Link</th>
+                    <th style="width: 90px">Código</th>
                     <th class="col-acciones" style="text-align: right">Acciones</th>
                   </tr>
                 </thead>
@@ -896,6 +927,24 @@
             <p style="font-size: .83rem; color: var(--texto-tenue)">
               El link no cambia: el invitado verá los datos nuevos con el mismo enlace.
             </p>
+            <!--
+               "Desmarcar" vivía en cada fila de la tabla y era una de las
+               cosas que empujaban a "Editar" y "Borrar" fuera de pantalla.
+               Acá adentro no estorba, y la acción no se pierde: si alguien
+               confirma por error, sigue habiendo forma de deshacerlo.
+
+               Solo se muestra a quien ya confirmó: no tiene sentido
+               desmarcar a alguien que nunca respondió.
+            -->
+            <button
+              type="button"
+              id="btn-desmarcar"
+              class="btn btn-linea oculto"
+              style="width: 100%"
+            >
+              Marcar como sin responder
+            </button>
+
             <p id="editar-error" class="aviso aviso-error oculto"></p>
           </div>
           <div class="modal-pie">
@@ -1213,9 +1262,15 @@
         inv.confirmado_en = null;
         inv.asisten = null;
         inv.acompanantes = null;
+        cerrarModales();
         pintarLista();
         avisar("Marcado como sin responder");
       }
+
+      // Se dispara desde el modal de editar, no desde la fila
+      $("btn-desmarcar").addEventListener("click", () => {
+        if (enEdicion) desmarcar(enEdicion);
+      });
 
       // ═══ BUENOS DESEOS ═══
       let deseos = [];
@@ -1445,6 +1500,7 @@
         // Sin mesa asignada el campo va vacío, no en cero
         $("ed-mesa").value = inv.mesa == null ? "" : String(inv.mesa);
         $("ed-idioma").value = inv.idioma || "es";
+        ver($("btn-desmarcar"), Boolean(inv.confirmado));
         mostrarError("editar-error", "");
         ver($("modal-editar"), true);
         $("ed-nombre").focus();
@@ -1625,7 +1681,48 @@
           const tdNombre = document.createElement("td");
           tdNombre.dataset.rotulo = "Invitado";
           tdNombre.className = "celda-nombre";
-          tdNombre.textContent = inv.nombre;
+
+          const titular = document.createElement("div");
+          titular.textContent = inv.nombre;
+          tdNombre.append(titular);
+
+          /*
+             Debajo del titular, quienes lo acompañan. Solo tiene sentido
+             mostrarlos si confirmó: antes de eso lo que haya guardado es
+             de una respuesta vieja que ya no vale.
+          */
+          const acompanan =
+            inv.confirmado && Array.isArray(inv.acompanantes)
+              ? inv.acompanantes.filter(Boolean)
+              : [];
+
+          if (acompanan.length) {
+            const lista = document.createElement("div");
+            lista.className = "acompanantes";
+
+            for (const quien of acompanan) {
+              const fila = document.createElement("div");
+              fila.className = "acompanante";
+              // El monigote se arma acá y no se copia de un <template>
+              // porque cloneNode de un SVG en una tabla trae menos lío
+              // que mantener un nodo suelto en el HTML.
+              fila.insertAdjacentHTML(
+                "afterbegin",
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+                  'stroke-width="2" stroke-linecap="round" ' +
+                  'stroke-linejoin="round" aria-hidden="true">' +
+                  '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>' +
+                  '<circle cx="12" cy="7" r="4"/></svg>'
+              );
+              const texto = document.createElement("span");
+              // textContent y no innerHTML: el nombre lo escribió un
+              // invitado desde su celular, no es HTML de confianza.
+              texto.textContent = quien;
+              fila.append(texto);
+              lista.append(fila);
+            }
+            tdNombre.append(lista);
+          }
 
           const tdPases = document.createElement("td");
           tdPases.dataset.rotulo = "Pases";
@@ -1672,26 +1769,6 @@
             par.className = vienen < inv.pases ? "pastilla no" : "pastilla si";
             par.textContent = vienen + " / " + inv.pases;
             tdAsisten.append(par);
-
-            const acomp = Array.isArray(inv.acompanantes)
-              ? inv.acompanantes.filter(Boolean)
-              : [];
-            if (acomp.length) {
-              const rotulo = document.createElement("span");
-              rotulo.className = "rotulo-acompanan";
-              rotulo.textContent = acomp.length === 1 ? "Acompaña" : "Acompañan";
-              tdAsisten.append(rotulo);
-
-              const lista = document.createElement("div");
-              lista.className = "nombres-asisten";
-              for (const nombre of acomp) {
-                const chapa = document.createElement("span");
-                chapa.className = "pastilla-nombre";
-                chapa.textContent = nombre;
-                lista.append(chapa);
-              }
-              tdAsisten.append(lista);
-            }
           }
 
           // Confirmó o no. Es lo primero que el cliente va a mirar
@@ -1711,9 +1788,11 @@
           tdConfirmo.append(marca);
 
           const tdLink = document.createElement("td");
-          tdLink.dataset.rotulo = "Link";
+          tdLink.dataset.rotulo = "Código";
           tdLink.className = "celda-link";
-          tdLink.textContent = link;
+          tdLink.textContent = inv.codigo;
+          // El link entero, al pasar el mouse por encima
+          tdLink.title = link;
 
           const tdAcciones = document.createElement("td");
           tdAcciones.className = "col-acciones";
@@ -1733,14 +1812,6 @@
             boton("Copiar mensaje", "btn-neon", () => copiar(mensajeInvitacion(inv))),
             boton("Solo link", "btn-linea", () => copiar(link, "Link copiado"))
           );
-
-          // Solo aparece si ya confirmo: no tiene sentido desmarcar a
-          // alguien que nunca respondio.
-          if (permitido && inv.confirmado) {
-            acciones.append(
-              boton("Desmarcar", "btn-linea", () => desmarcar(inv))
-            );
-          }
 
           if (permitido) {
             acciones.append(
