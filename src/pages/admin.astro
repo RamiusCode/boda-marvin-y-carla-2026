@@ -380,6 +380,42 @@
         font-size: 0.82rem;
         font-weight: 600;
       }
+      /*
+         Los nombres de quienes acompañan, cada uno en su propia píldora.
+         Sueltos y separados por comas se leían como sobras de texto debajo
+         del contador; encerrado cada uno, se ve que son personas.
+
+         Píldora neutra y no la verde: el verde en este panel quiere decir
+         "confirmó". Un nombre no es un estado, es un dato.
+      */
+      .nombres-asisten {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        margin-top: 0.4rem;
+      }
+      .pastilla-nombre {
+        display: inline-block;
+        background: var(--panel-alto);
+        border: 1px solid var(--borde);
+        color: var(--texto);
+        border-radius: 999px;
+        padding: 0.1rem 0.55rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        /* Un nombre largo parte de palabra en vez de estirar la columna */
+        overflow-wrap: anywhere;
+      }
+      /* Barra fina bajo el contador: separa el "cuántos" del "quiénes" */
+      .rotulo-acompanan {
+        display: block;
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--texto-tenue);
+        margin-top: 0.45rem;
+      }
+
       /* ── Barra de herramientas de la lista ── */
       .herramientas-lista {
         display: flex;
@@ -796,7 +832,8 @@
                     <th>Invitado</th>
                     <th style="width: 90px">Pases</th>
                     <th style="width: 90px">Mesa</th>
-                    <th style="width: 110px">Asisten</th>
+                    <!-- Más ancha que las demás: acá abajo caen los nombres -->
+                    <th style="width: 150px">Asisten</th>
                     <th style="width: 110px">Asistencia</th>
                     <th>Link</th>
                     <th class="col-acciones" style="text-align: right">Acciones</th>
@@ -1640,11 +1677,20 @@
               ? inv.acompanantes.filter(Boolean)
               : [];
             if (acomp.length) {
-              const conQuien = document.createElement("div");
-              conQuien.style.cssText =
-                "font-size:.78rem;color:var(--texto-tenue);margin-top:.25rem";
-              conQuien.textContent = acomp.join(", ");
-              tdAsisten.append(conQuien);
+              const rotulo = document.createElement("span");
+              rotulo.className = "rotulo-acompanan";
+              rotulo.textContent = acomp.length === 1 ? "Acompaña" : "Acompañan";
+              tdAsisten.append(rotulo);
+
+              const lista = document.createElement("div");
+              lista.className = "nombres-asisten";
+              for (const nombre of acomp) {
+                const chapa = document.createElement("span");
+                chapa.className = "pastilla-nombre";
+                chapa.textContent = nombre;
+                lista.append(chapa);
+              }
+              tdAsisten.append(lista);
             }
           }
 
