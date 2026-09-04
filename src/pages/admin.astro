@@ -74,6 +74,22 @@
       }
       .campo::placeholder { color: #56637a; }
 
+      /* Se ve que no se toca: apagado y sin cursor de escritura */
+      .campo-bloqueado {
+        opacity: 0.55;
+        cursor: not-allowed;
+        border-style: dashed;
+      }
+      .campo-bloqueado:focus {
+        border-color: var(--borde);
+        box-shadow: none;
+      }
+      .nota-campo {
+        font-size: 0.72rem;
+        color: var(--texto-tenue);
+        margin-top: 0.3rem;
+      }
+
       .etiqueta {
         display: block;
         font-size: 0.78rem;
@@ -911,7 +927,19 @@
             </div>
             <div>
               <label class="etiqueta" for="ed-pases">Pases</label>
+              <!--
+                 Se bloquea o no según el invitado, en abrirEditar: se
+                 puede cambiar mientras no haya respondido, y queda fijo
+                 en cuanto confirma.
+
+                 Readonly y no disabled: el codigo lee este valor para
+                 guardarlo, y readonly ademas deja seleccionar y copiar el
+                 numero.
+              -->
               <input id="ed-pases" type="number" class="campo" min="1" max="20" required />
+              <p id="nota-pases" class="nota-campo oculto">
+                Ya confirmó: los pases no se cambian
+              </p>
             </div>
             <div>
               <label class="etiqueta" for="ed-mesa">Mesa</label>
@@ -1507,6 +1535,23 @@
         enEdicion = inv;
         $("ed-nombre").value = inv.nombre;
         $("ed-pases").value = String(inv.pases);
+
+        /*
+           Los pases se pueden cambiar mientras el invitado no haya
+           respondido. En cuanto confirma quedan fijos, y no es un capricho:
+           su respuesta se guardó contra ese número. Bajarlos por debajo de
+           lo que confirmó dejaba la fila diciendo "3 / 2", que es
+           imposible, y encima contaba 3 en el total con el que se reserva.
+
+           Si de verdad hay que cambiarlos, primero se lo marca como sin
+           responder desde el botón de abajo y ahí el campo se libera.
+        */
+        const trabado = Boolean(inv.confirmado);
+        const campoPases = $("ed-pases");
+        campoPases.readOnly = trabado;
+        campoPases.tabIndex = trabado ? -1 : 0;
+        campoPases.classList.toggle("campo-bloqueado", trabado);
+        ver($("nota-pases"), trabado);
         // Sin mesa asignada el campo va vacío, no en cero
         $("ed-mesa").value = inv.mesa == null ? "" : String(inv.mesa);
         $("ed-idioma").value = inv.idioma || "es";

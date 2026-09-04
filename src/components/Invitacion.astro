@@ -257,6 +257,88 @@ const t = textos(idioma);
         pantalla.hidden = false;
     }
 
+    /*
+       ═══════════════════════════════════════════════════════════
+       LA MESA, AL DÍA SIN RECARGAR
+       ═══════════════════════════════════════════════════════════
+       Si el cliente corrige la mesa de alguien, esa persona ve el número
+       nuevo sin tener que volver a abrir su link.
+
+       No se usa el tiempo real de Supabase, y no es por comodidad: la
+       política de lectura de "invitados" es solo para usuarios logueados
+       —por eso existe buscar_invitado, que es una función con permisos
+       propios— y el invitado navega como anónimo. El tiempo real respeta
+       esas políticas, así que no le llegaría nada. Habilitarle la tabla a
+       los anónimos para lograrlo dejaría que cualquiera se descargue la
+       lista entera de invitados, códigos y mesas.
+
+       Entonces se vuelve a preguntar por la misma puerta que ya se usa.
+       Cuándo:
+
+       · Al volver a la pestaña o a la ventana. Es el momento que importa:
+         el invitado abre la invitación para mirar algo y ahí ve lo último.
+       · Y cada tanto mientras está a la vista, para el caso de que la
+         tenga abierta cuando el cambio ocurre.
+
+       Con la pestaña escondida no se pregunta nada: no hay nadie mirando
+       y sería gastar batería y datos del invitado.
+    */
+    function seguirMirando(codigo: string, supabase: any, invitado: any) {
+        const ESPERA = 45000;
+        let reloj = 0;
+
+        async function revisar() {
+            try {
+                const { data, error } = await supabase.rpc("buscar_invitado", {
+                    codigo_buscado: codigo,
+                });
+
+                // Falló la consulta: se deja lo que ya está y se reintenta
+                if (error) return;
+
+                /*
+                   Contestó y no hay nadie: al invitado lo dieron de baja
+                   mientras tenía la invitación abierta. Se le avisa, igual
+                   que si hubiera entrado recién con un link vencido.
+                */
+                if (!data || !data.length) {
+                    window.clearInterval(reloj);
+                    mostrarNoEncontrada();
+                    return;
+                }
+
+                const fila = data[0];
+                pintar(fila.nombre, fila.pases, fila.mesa);
+                /*
+                   Se actualiza el mismo objeto en vez de reemplazarlo: el
+                   Pase se quedó con esta referencia para armar el modal, y
+                   cambiándola por otra seguiría leyendo la vieja.
+                */
+                Object.assign(invitado, fila);
+            } catch {
+                // Sin señal. Se vuelve a intentar en la próxima vuelta.
+            }
+        }
+
+        function arrancar() {
+            window.clearInterval(reloj);
+            if (document.hidden) return;
+            reloj = window.setInterval(revisar, ESPERA);
+        }
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                window.clearInterval(reloj);
+                return;
+            }
+            revisar();
+            arrancar();
+        });
+
+        window.addEventListener("focus", revisar);
+        arrancar();
+    }
+
     function avisar(datos: unknown) {
         (window as any).invitadoActual = datos;
         window.dispatchEvent(
@@ -289,7 +371,9 @@ const t = textos(idioma);
                 .then(({ data, error }) => {
                     if (!error && data && data.length) {
                         pintar(data[0].nombre, data[0].pases, data[0].mesa);
-                        avisar({ codigo, ...data[0] });
+                        const invitado = { codigo, ...data[0] };
+                        avisar(invitado);
+                        seguirMirando(codigo, supabase, invitado);
                     } else if (!error) {
                         /*
                            La consulta anduvo y no encontró a nadie: ese
