@@ -228,6 +228,7 @@ export const en: Textos = {
         pase: "seat",
         pases: "seats",
         // Se muestra solo si el invitado tiene mesa asignada
+        mesaAviso: "A table reserved with much love",
         mesa: "Table",
         tituloConfirmar: "Please RSVP",
         aviso: [

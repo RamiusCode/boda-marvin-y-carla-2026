@@ -84,6 +84,8 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
                el renglón no ocupa lugar.
             */}
             <div class="bloque-mesa" hidden={!mesa}>
+                <p class="font-cormorant aviso-mesa">{t.mesaAviso}</p>
+
                 {/*
                    El dibujo de la mesa se pinta con máscara y no como <img>:
                    el PNG es trazo negro sobre transparente, y así sale en
@@ -96,8 +98,11 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
 
                 <p class="chapa-mesa">
                     <span class="font-cormorant etiqueta-mesa">{t.mesa}</span>
-                    {/* El número en Adelia, por los dígitos de Verandah */}
-                    <span class="font-adelia numero-mesa">{mesa}</span>
+                    {/*
+                       Misma fuente que la palabra y en negrita: resalta por
+                       el peso, no por el tamaño ni por cambiar de tipografía.
+                    */}
+                    <span class="font-cormorant numero-mesa">{mesa}</span>
                 </p>
             </div>
         </div>
@@ -272,6 +277,17 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
         display: none;
     }
 
+    /*
+       Chico y apagado a propósito: es el que presenta al bloque, no el que
+       hay que leer. El que importa es el número de abajo.
+    */
+    .aviso-mesa {
+        font-size: clamp(1.15rem, 5.3vw, 1.4rem);
+        line-height: 1.3;
+        margin-bottom: 0.75rem;
+        color: #f6e2d3;
+    }
+
     .icono-mesa {
         width: 2.6rem;
         height: 2.6rem;
@@ -290,22 +306,31 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
         display: inline-flex;
         align-items: baseline;
         gap: 0.5rem;
-        padding: 0.45rem 1.2rem;
-        border: 1px solid rgba(253, 246, 238, 0.5);
+        padding: 0.55rem 1.4rem;
+        border: 1px solid rgba(253, 246, 238, 0.7);
         border-radius: 8px;
-        background: rgba(253, 246, 238, 0.1);
+        background: rgba(253, 246, 238, 0.16);
     }
 
     .etiqueta-mesa {
-        font-size: clamp(1rem, 4.5vw, 1.15rem);
+        font-size: clamp(1.15rem, 5.3vw, 1.4rem);
         letter-spacing: 0.14em;
         text-transform: uppercase;
         opacity: 0.9;
     }
 
+    /*
+       El mismo cuerpo que la palabra: lo que lo destaca es la negrita.
+       Las lining-nums son necesarias, no de adorno: Cormorant trae cifras
+       de estilo antiguo, y con esas el 1 queda enano y el 2 se descuelga
+       por debajo de la línea al lado de las versalitas de MESA.
+    */
     .numero-mesa {
-        font-size: clamp(1.7rem, 7.6vw, 2.1rem);
+        font-size: clamp(1.15rem, 5.3vw, 1.4rem);
+        font-weight: 700;
+        letter-spacing: 0.04em;
         line-height: 1.1;
+        font-variant-numeric: lining-nums;
     }
 
     .titulo-confirmar {

@@ -224,7 +224,10 @@ export const es = {
         honor: "en tu honor",
         pase: "pase",
         pases: "pases",
-        // La mesa se muestra solo si el invitado tiene una asignada
+        // La mesa se muestra solo si el invitado tiene una asignada.
+        // El aviso va arriba del dibujo y dice de qué se trata: sin eso,
+        // un "MESA 12" suelto no explica que es el lugar asignado.
+        mesaAviso: "Mesa reservada con mucho cariño",
         mesa: "Mesa",
         tituloConfirmar: "Confirmación de Asistencia",
         aviso: [
