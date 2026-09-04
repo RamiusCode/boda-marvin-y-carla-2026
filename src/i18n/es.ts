@@ -215,6 +215,18 @@ export const es = {
         ],
         rotuloQr: "TRANSFERENCIA QR",
         altQr: "Código QR para transferencia",
+
+        /*
+           La caja de PayPal solo se dibuja en la versión en inglés, pero
+           las claves van también acá para que los dos diccionarios tengan
+           la misma forma: si a uno le falta una, TypeScript deja de avisar
+           cuando se escribe mal el nombre de un texto.
+        */
+        rotuloPaypal: "PAGO POR PAYPAL",
+        altPaypal: "Logo de PayPal",
+        etiquetaCuentaPaypal: "Nombre de la cuenta PayPal:",
+        botonPaypal: "Enviar tu regalo",
+        graciasPaypal: "¡GRACIAS POR TU GENEROSIDAD!",
         altFoto: "Lu, la perrita de los novios, en un yate al atardecer",
     },
 

@@ -209,15 +209,30 @@ export const en: Textos = {
     // ── Gift suggestion ──────────────────────────────────────
     regalo: {
         titulo: "Gift Suggestion",
+        // Redacción del cliente, tal cual la pasó. Los cortes de renglón
+        // son los de su maqueta: cada línea del arreglo es una línea en
+        // pantalla, así que acá se decide dónde parte el texto.
         texto: [
-            "Your presence is the greatest gift we could",
-            "ask for on this unique day. We already have",
-            "our little house, our Ferrari and the yacht —",
-            "we just have to pay for them! As a gift",
-            "suggestion, we leave you this QR code.",
+            "Your presence is the greatest gift",
+            "we could ask for.",
+            "We already have our dream home complete,",
+            "our Ferrari and the yacht,",
+            "we just need to pay for them!",
+            "If you would like to give us a gift,",
+            "you can do so through PayPal.",
         ],
         rotuloQr: "QR TRANSFER",
         altQr: "QR code for bank transfer",
+
+        // ── PayPal, solo en inglés ──
+        // El QR es de un banco boliviano: a quien paga desde afuera no le
+        // sirve. La versión en inglés la ve gente del exterior, así que en
+        // esa caja va PayPal en lugar del código.
+        rotuloPaypal: "PAYMENT VIA PAYPAL",
+        altPaypal: "PayPal logo",
+        etiquetaCuentaPaypal: "PayPal Account Name:",
+        botonPaypal: "Send your gift",
+        graciasPaypal: "THANK YOU FOR YOUR GENEROSITY!",
         altFoto: "Lu, the couple's little dog, on a yacht at sunset",
     },
 

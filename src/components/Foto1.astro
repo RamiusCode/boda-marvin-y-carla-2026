@@ -4,8 +4,8 @@
 // paspartú marfil con su filete terracota adentro. La imagen ya trae el
 // color de la paleta, así que no lleva velo ni adornos encima.
 //
-// La ventana no fija proporción: toma la de la imagen (foto3.jpeg es
-// 1086x1448). Así entera y sin recortar, y cambiar la imagen no obliga a
+// La ventana no fija proporción: toma la de la imagen que le toque al
+// idioma. Así entera y sin recortar, y cambiar la imagen no obliga a
 // tocar el CSS. Al entrar arranca ampliada y vuelve a su tamaño: el zoom
 // queda contenido por el overflow de la ventana.
 
@@ -17,7 +17,21 @@ export interface Props {
 }
 const { idioma = "es" } = Astro.props;
 
-const foto = "/imagenes/foto3.jpeg";
+/*
+   La imagen cambia con el idioma porque el texto viene impreso adentro del
+   archivo, no puesto con CSS: no alcanza con traducir nada, hay que servir
+   otra foto.
+
+   Las medidas van junto a cada una y no fijas abajo: las dos no miden lo
+   mismo, y con las de la otra el navegador reserva un hueco de la
+   proporción equivocada y la página pega un salto al terminar de cargar.
+*/
+const fotos = {
+    es: { src: "/imagenes/foto3.jpeg", ancho: 1086, alto: 1448 },
+    en: { src: "/imagenes/foto3-ingles.png", ancho: 418, alto: 550 },
+};
+const foto = fotos[idioma] ?? fotos.es;
+
 // La imagen trae texto adentro, así que el alt lo repite para quien no la ve
 const alt = textos(idioma).foto.alt;
 // Sin epígrafe: la imagen ya dice todo.
@@ -54,10 +68,10 @@ const frase = "";
                 <div class="ventana">
                     <img
                         id="foto-enmarcada-img"
-                        src={foto}
+                        src={foto.src}
                         alt={alt}
-                        width="1086"
-                        height="1448"
+                        width={foto.ancho}
+                        height={foto.alto}
                         class="foto"
                     />
                 </div>

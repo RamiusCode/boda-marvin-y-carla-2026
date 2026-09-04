@@ -13,6 +13,15 @@ const { idioma = "es" } = Astro.props;
 const t = textos(idioma).regalo;
 const { titulo, texto, rotuloQr, altQr, altFoto } = t;
 
+/*
+   En inglés la caja no lleva el QR sino PayPal.
+
+   No es una preferencia de diseño: el QR es de un banco boliviano y a
+   quien paga desde el exterior no le sirve. La versión en inglés la lee
+   justamente esa gente.
+*/
+const esIngles = idioma === "en";
+
 // ── DATOS EDITABLES ───────────────────────────────────────────
 // El número de cuenta y el titular no se traducen.
 // Imagen del QR: dejala en public/imagenes/. Si se deja vacío, la caja
@@ -21,6 +30,24 @@ const qr = "/imagenes/qr.png";
 const banco = "Banco Sol";
 const cuenta = "Cuenta N° 3441510-000-001";
 const titular = "Carla Andrea Salinas Zegarra";
+
+// ── PAYPAL · solo la versión en inglés ────────────────────────
+/*
+   Va vacío por decisión del cliente: pidió que la caja muestre solo el
+   nombre de la cuenta, sin link ni botón.
+
+   Queda anotado porque tiene una consecuencia: PayPal no deja buscar
+   gente por nombre y apellido, así que con "Marvin Llanos" el invitado
+   no tiene por dónde mandar el dinero. La caja informa a quién iría el
+   regalo, no habilita a hacerlo.
+
+   Si más adelante cambia de idea, alcanza con pegar el link acá y el
+   botón aparece solo; el resto ya está hecho:
+   const paypal = "https://paypal.me/MarvinLlanos";
+*/
+const paypal = "";
+const paypalNombre = "Marvin Llanos";
+const paypalLogo = "/imagenes/paypal.png";
 
 // El archivo está guardado con el nombre trastocado ("perrtio", no
 // "perrito"): se referencia tal cual para no romper el enlace.
@@ -90,28 +117,77 @@ const foto = "/imagenes/perrtio3.png";
             class="foto-regalo"
         />
 
-        <!-- Caja del QR -->
+        <!--
+           La misma caja para los dos idiomas: mismo marco, mismos filetes,
+           misma tipografía. Lo único que cambia es qué medio de pago va
+           adentro, que es lo que de verdad se diferencia.
+        -->
         <div class="caja-qr">
-            <p class="font-cormorant rotulo-qr">{rotuloQr}</p>
-            <span class="linea-qr" aria-hidden="true"></span>
-
             {
-                qr ? (
-                    <img
-                        src={qr}
-                        alt={altQr}
-                        class="imagen-qr"
-                    />
+                esIngles ? (
+                    <>
+                        <p class="font-cormorant rotulo-qr">{t.rotuloPaypal}</p>
+                        <span class="linea-qr" aria-hidden="true" />
+
+                        <img
+                            src={paypalLogo}
+                            alt={t.altPaypal}
+                            width="593"
+                            height="585"
+                            class="logo-paypal"
+                        />
+
+                        <span
+                            class="linea-qr linea-cuenta"
+                            aria-hidden="true"
+                        />
+
+                        <p class="font-cormorant banco-regalo">
+                            {t.etiquetaCuentaPaypal}
+                        </p>
+                        <p class="font-cormorant titular-regalo nombre-paypal">
+                            {paypalNombre}
+                        </p>
+
+                        {/* Sin link no se dibuja el botón: ver el comentario
+                            de arriba, en los datos editables. */}
+                        {paypal && (
+                            <a
+                                href={paypal}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="font-cormorant boton-paypal"
+                            >
+                                {t.botonPaypal}
+                            </a>
+                        )}
+
+                        <p class="font-cormorant gracias-paypal">
+                            {t.graciasPaypal}
+                        </p>
+                    </>
                 ) : (
-                    <span class="hueco-qr" aria-hidden="true" />
+                    <>
+                        <p class="font-cormorant rotulo-qr">{rotuloQr}</p>
+                        <span class="linea-qr" aria-hidden="true" />
+
+                        {qr ? (
+                            <img src={qr} alt={altQr} class="imagen-qr" />
+                        ) : (
+                            <span class="hueco-qr" aria-hidden="true" />
+                        )}
+
+                        <span
+                            class="linea-qr linea-cuenta"
+                            aria-hidden="true"
+                        />
+
+                        <p class="font-cormorant banco-regalo">{banco}</p>
+                        <p class="font-cormorant cuenta-regalo">{cuenta}</p>
+                        <p class="font-cormorant titular-regalo">{titular}</p>
+                    </>
                 )
             }
-
-            <span class="linea-qr linea-cuenta" aria-hidden="true"></span>
-
-            <p class="font-cormorant banco-regalo">{banco}</p>
-            <p class="font-cormorant cuenta-regalo">{cuenta}</p>
-            <p class="font-cormorant titular-regalo">{titular}</p>
         </div>
 
     </div>
@@ -247,6 +323,59 @@ const foto = "/imagenes/perrtio3.png";
         font-weight: 600;
         line-height: 1.4;
         margin-top: 0.25rem;
+    }
+
+    /* ═══ PAYPAL · solo la versión en inglés ═══ */
+
+    /*
+       Más chico que el QR: un QR hay que poder escanearlo desde otro
+       celular y por eso ocupa el 72% de la caja. El logo solo dice de qué
+       medio de pago se trata, así que a ese tamaño gritaría.
+    */
+    .logo-paypal {
+        display: block;
+        width: 40%;
+        max-width: 110px;
+        height: auto;
+        margin: 0 auto;
+    }
+
+    /* El nombre es lo que el invitado compara contra lo que le muestra
+       PayPal antes de pagar: va más grande que la etiqueta de arriba */
+    .nombre-paypal {
+        font-size: clamp(1.2rem, 5.4vw, 1.4rem);
+    }
+
+    /*
+       El botón lleva al link de PayPal. Macizo y no en línea: es la única
+       acción de toda la sección, y el invitado la busca con el pulgar.
+    */
+    .boton-paypal {
+        display: inline-block;
+        margin-top: 1.1rem;
+        padding: 0.7rem 1.8rem;
+        border-radius: 10px;
+        background: #b45733;
+        color: #fdf1e6;
+        font-size: clamp(1.02rem, 4.6vw, 1.18rem);
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        box-shadow: 0 6px 16px rgba(90, 40, 22, 0.22);
+        transition: transform 0.3s ease;
+    }
+
+    .boton-paypal:hover {
+        transform: scale(1.04);
+    }
+
+    /* El agradecimiento cierra la caja: chico y en versalitas, es un gesto
+       y no un dato que haya que leer */
+    .gracias-paypal {
+        color: #a4482a;
+        font-size: clamp(0.82rem, 3.7vw, 0.92rem);
+        letter-spacing: 0.08em;
+        line-height: 1.4;
+        margin-top: 1rem;
     }
 
     /* Marca el lugar del QR mientras no esté cargada la imagen */
