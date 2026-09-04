@@ -42,7 +42,6 @@ const {
     modalCancelar,
     modalAceptar,
     cuantosAsisten,
-    acompananteOpcional,
     modificarRespuesta,
 } = t;
 
@@ -252,9 +251,6 @@ const vistaPrevia = import.meta.env.DEV;
                 >
                 </p>
                 <div id="campos-acompanantes" class="campos-acompanantes"></div>
-                <p class="font-cormorant modal-pase-nota">
-                    {acompananteOpcional}
-                </p>
             </div>
         </div>
 
@@ -910,6 +906,22 @@ const vistaPrevia = import.meta.env.DEV;
             });
         }
 
+        /*
+           Sin todos los nombres no se puede confirmar.
+
+           Se apaga el botón en vez de dejar apretar y avisar después: el
+           invitado ve al toque que falta algo, sin toparse con un cartel
+           de error cuando creía haber terminado.
+        */
+        function revisarBoton() {
+            if (!btnSi) return;
+            const campos = camposAcomp
+                ? Array.from(camposAcomp.querySelectorAll("input"))
+                : [];
+            const faltan = campos.some((c) => !c.value.trim());
+            btnSi.disabled = faltan;
+        }
+
         function pintarCampos() {
             if (!bloqueAcomp || !tituloAcomp || !camposAcomp || !elegidos)
                 return;
@@ -918,7 +930,17 @@ const vistaPrevia = import.meta.env.DEV;
             // los que lo acompañan, uno menos que el total
             const cuantos = elegidos - 1;
             bloqueAcomp.hidden = cuantos < 1;
-            if (cuantos < 1) return;
+
+            /*
+               Al bajar a 1 se vacían los campos además de esconderlos. Si
+               solo se escondieran, seguirían existiendo vacíos y el botón
+               quedaría trabado por unos nombres que ya nadie ve.
+            */
+            if (cuantos < 1) {
+                camposAcomp.textContent = "";
+                revisarBoton();
+                return;
+            }
 
             const datos = bloqueAsistentes?.dataset ?? {};
             tituloAcomp.textContent =
@@ -934,9 +956,13 @@ const vistaPrevia = import.meta.env.DEV;
                 campo.maxLength = 80;
                 campo.placeholder = datos.placeholder ?? "";
                 campo.value = nombresEscritos[i] ?? "";
-                campo.addEventListener("input", leerNombres);
+                campo.addEventListener("input", () => {
+                    leerNombres();
+                    revisarBoton();
+                });
                 camposAcomp.append(campo);
             }
+            revisarBoton();
         }
 
         /*
@@ -953,6 +979,9 @@ const vistaPrevia = import.meta.env.DEV;
             if (pases < 2) {
                 bloqueAsistentes.hidden = true;
                 elegidos = pases;
+                // Sin campos que llenar, el botón tiene que quedar libre
+                if (camposAcomp) camposAcomp.textContent = "";
+                revisarBoton();
                 return;
             }
 
