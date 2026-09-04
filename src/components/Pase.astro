@@ -484,14 +484,32 @@ const vistaPrevia = import.meta.env.DEV;
     }
 
     /* ═══ MODAL DE CONFIRMACIÓN ═══ */
+    /*
+       El modal se desplaza cuando no entra.
+
+       Con una invitación de 10 pases son diez opciones y nueve campos de
+       nombre: la caja pasa el alto de la pantalla y los botones quedan
+       abajo, fuera de la vista.
+
+       El overflow-y es la mitad del arreglo. La otra mitad es no usar
+       align-items: center acá: un hijo más alto que un contenedor flex
+       centrado se desborda para los dos lados, y lo que sobresale por
+       arriba no se puede alcanzar ni con scroll. El centrado se hace con
+       el margin: auto de la caja, que cuando no hay lugar de sobra se
+       comporta como si estuviera pegada arriba, sin recortar nada.
+
+       El overscroll-behavior evita que, al llegar al final de la lista,
+       el gesto siga de largo y empiece a mover la invitación de atrás.
+    */
     .modal-pase {
         position: fixed;
         inset: 0;
         z-index: 9998;
         display: flex;
-        align-items: center;
         justify-content: center;
         padding: 1.2rem;
+        overflow-y: auto;
+        overscroll-behavior: contain;
     }
 
     /* Explícito: si no, el display:flex de arriba le gana al atributo */
@@ -499,8 +517,14 @@ const vistaPrevia = import.meta.env.DEV;
         display: none;
     }
 
+    /*
+       Fijo y no absoluto: absoluto se mide contra el contenedor, que ahora
+       se desplaza, así que al bajar la lista el velo se terminaba y la
+       invitación aparecía sin tapar detrás de la caja. Fijo cubre siempre
+       la pantalla, esté donde esté el scroll.
+    */
     .modal-pase-velo {
-        position: absolute;
+        position: fixed;
         inset: 0;
         background: rgba(74, 30, 16, 0.62);
         backdrop-filter: blur(3px);
@@ -508,6 +532,8 @@ const vistaPrevia = import.meta.env.DEV;
 
     .modal-pase-caja {
         position: relative;
+        /* Centra cuando sobra lugar; cuando no, no recorta nada */
+        margin: auto;
         width: 100%;
         max-width: 21rem;
         padding: 2rem 1.6rem 1.7rem;
