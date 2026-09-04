@@ -459,6 +459,21 @@
         display: flex;
         gap: 0.35rem;
       }
+      /* Subir y Descargar viajan pegados, nunca uno sin el otro */
+      .grupo-excel {
+        display: flex;
+        gap: 0.4rem;
+        margin-left: auto;
+      }
+      /*
+         El buscador cede el ancho antes que los botones: puede achicarse
+         hasta 120px, y así los dos de Excel entran en el mismo renglón en
+         vez de empujarse al de abajo.
+      */
+      .herramientas-lista .campo {
+        min-width: 120px;
+        flex: 1 1 120px;
+      }
       /* El filtro activo se marca en neon, como el item del menu */
       .filtros .activo {
         border-color: var(--neon);
@@ -469,8 +484,19 @@
         .herramientas-lista {
           width: 100%;
         }
-        .herramientas-lista .campo,
-        #btn-exportar {
+        .herramientas-lista .campo {
+          flex: 1;
+        }
+        /*
+           En celular el grupo ocupa el ancho entero y los dos botones se
+           reparten la mitad cada uno. El margin-left: auto que los
+           empujaba a la derecha no tiene sentido acá.
+        */
+        .grupo-excel {
+          width: 100%;
+          margin-left: 0;
+        }
+        .grupo-excel .btn {
           flex: 1;
         }
       }
@@ -903,12 +929,20 @@
                   accept=".xlsx,.xls,.csv"
                   class="oculto"
                 />
-                <button id="btn-importar" type="button" class="btn btn-chico btn-linea">
-                  Subir Excel
-                </button>
-                <button id="btn-exportar" type="button" class="btn btn-chico btn-neon">
-                  Descargar Excel
-                </button>
+                <!--
+                   Los dos juntos en un grupo: son la misma idea, uno
+                   entra y el otro sale. Sin envolverlos, al no entrar en
+                   el ancho la barra los separaba y "Descargar" caía solo
+                   al renglón de abajo, lejos de su par.
+                -->
+                <div class="grupo-excel">
+                  <button id="btn-importar" type="button" class="btn btn-chico btn-linea">
+                    Subir Excel
+                  </button>
+                  <button id="btn-exportar" type="button" class="btn btn-chico btn-neon">
+                    Descargar Excel
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1430,9 +1464,19 @@
           }
         }
 
+        /*
+           Si no reconoció nada, igual se abre la pantalla con la primera
+           fila como encabezados y los desplegables vacíos, para que el
+           cliente elija a mano cuál columna es cuál.
+
+           Antes acá salía un cartel y no se podía seguir. Mi detección
+           puede fallar con un archivo que no previne, y en ese caso tiene
+           que haber una salida, no un callejón sin sentido para alguien
+           que no sabe por qué su archivo "no sirve".
+        */
         if (!mapa) {
-          avisar("No encontré los encabezados (Nombre, Pases…)");
-          return;
+          iCabecera = 0;
+          mapa = { nombre: -1, pases: -1, mesa: -1, idioma: -1 };
         }
 
         importable = {
@@ -1445,10 +1489,36 @@
         ver($("modal-importar"), true);
       }
 
+      /*
+         Cuántas letras hay que cambiar para pasar de una palabra a la
+         otra. Es lo que permite reconocer "nombes" como "nombres": las
+         listas del cliente vienen tipeadas a mano y un encabezado con una
+         letra de menos no debería frenar la importación entera.
+      */
+      function distancia(a, b) {
+        if (a === b) return 0;
+        if (Math.abs(a.length - b.length) > 2) return 99;
+        let fila = Array.from({ length: b.length + 1 }, (_, i) => i);
+        for (let i = 1; i <= a.length; i++) {
+          const previa = fila;
+          fila = [i];
+          for (let j = 1; j <= b.length; j++) {
+            fila[j] = Math.min(
+              previa[j] + 1,
+              fila[j - 1] + 1,
+              previa[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+            );
+          }
+        }
+        return fila[b.length];
+      }
+
       function ubicarColumnas(fila) {
         const encontrado = { nombre: -1, pases: -1, mesa: -1, idioma: -1 };
         if (!Array.isArray(fila)) return encontrado;
 
+        // Primero los que coinciden exacto: si "mesa" está escrito bien,
+        // no se lo puede robar un parecido de otra columna.
         fila.forEach((celda, i) => {
           const texto = normalizar(celda);
           if (!texto) return;
@@ -1457,16 +1527,45 @@
             if (ALIAS[campo].includes(texto)) encontrado[campo] = i;
           }
         });
+
+        /*
+           Y recién después los parecidos, para los que quedaron sin
+           encontrar. El margen va con el largo de la palabra: en una de
+           tres letras, dos cambios ya son otra palabra.
+        */
+        const usadas = new Set(Object.values(encontrado).filter((v) => v >= 0));
+        fila.forEach((celda, i) => {
+          if (usadas.has(i)) return;
+          const texto = normalizar(celda);
+          if (!texto || texto.length < 4) return;
+
+          for (const campo of Object.keys(ALIAS)) {
+            if (encontrado[campo] >= 0) continue;
+            const cerca = ALIAS[campo].some(
+              (alias) => distancia(texto, alias) <= (texto.length <= 5 ? 1 : 2)
+            );
+            if (cerca) {
+              encontrado[campo] = i;
+              usadas.add(i);
+              return;
+            }
+          }
+        });
+
         return encontrado;
       }
 
       // ═══ Vista previa ═══
       function pintarImportacion() {
         const { cabecera, mapa } = importable;
-        const listas = leerFilasImportadas();
+        const faltaNombre = mapa.nombre < 0;
+        const listas = faltaNombre
+          ? { buenas: [], malas: [] }
+          : leerFilasImportadas();
 
-        $("importar-resumen").textContent =
-          "Encontré " + listas.buenas.length + " invitados en el archivo.";
+        $("importar-resumen").textContent = faltaNombre
+          ? "No reconocí la columna de nombres. Elegila abajo."
+          : "Encontré " + listas.buenas.length + " invitados en el archivo.";
 
         // Un desplegable por campo, para corregir si adivinó mal
         const cont = $("importar-mapeo");
