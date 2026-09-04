@@ -1077,9 +1077,34 @@ const VISIBLES = 10;
             }
 
             carrusel.hidden = false;
-            if (pieCarrusel) pieCarrusel.hidden = false;
 
             const visibles = deseos.slice(0, VISIBLES);
+
+            /*
+               Con un solo deseo no se duplica ni se desplaza.
+
+               El desplazamiento sin fin se logra pintando la tanda dos
+               veces, y con un único deseo esas dos copias eran el mismo
+               mensaje repetido, moviéndose de un lado a otro sin motivo:
+               parecía que había dos personas que escribieron lo mismo.
+
+               Se pinta una sola tarjeta y se corta acá. El CSS ya la
+               centra cuando es hija única, y sin puntitos ni "ver todos",
+               que no tienen a dónde llevar. El cancelAnimationFrame es
+               para el caso de que el carril ya viniera andando —alguien
+               borra su deseo y quedaba uno— y haya que frenarlo.
+            */
+            if (visibles.length === 1) {
+                cancelAnimationFrame(cuadro);
+                carrusel.replaceChildren(crearTarjeta(visibles[0], 0));
+                Array.from(carrusel.children).forEach(ajustarVerMas);
+                carrusel.scrollLeft = 0;
+                if (pieCarrusel) pieCarrusel.hidden = true;
+                acomodarBoton();
+                return;
+            }
+
+            if (pieCarrusel) pieCarrusel.hidden = false;
 
             /*
                La tanda se pinta dos veces seguidas. Es lo que permite que
