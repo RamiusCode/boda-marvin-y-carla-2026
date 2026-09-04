@@ -796,6 +796,7 @@
                     <th>Invitado</th>
                     <th style="width: 90px">Pases</th>
                     <th style="width: 90px">Mesa</th>
+                    <th style="width: 110px">Asisten</th>
                     <th style="width: 110px">Asistencia</th>
                     <th>Link</th>
                     <th class="col-acciones" style="text-align: right">Acciones</th>
@@ -1108,9 +1109,15 @@
            si se exporta con el filtro en "Confirmaron", todas las filas
            dicen lo mismo.
         */
-        const cabecera = ["Invitado", "Pases", "Mesa"];
+        const cabecera = ["Invitado", "Pases", "Asisten", "Acompanantes", "Mesa"];
         const cuerpo = filas.map((i) =>
-          [celda(i.nombre), celda(i.pases), celda(i.mesa)].join(";")
+          [
+            celda(i.nombre),
+            celda(i.pases),
+            celda(i.confirmado ? (i.asisten ?? i.pases) : ""),
+            celda(Array.isArray(i.acompanantes) ? i.acompanantes.filter(Boolean).join(", ") : ""),
+            celda(i.mesa),
+          ].join(";")
         );
 
         /*
@@ -1151,7 +1158,14 @@
 
         const { error } = await supabase
           .from("invitados")
-          .update({ confirmado: false, confirmado_en: null })
+          // Se borra tambien lo que habia respondido: dejarlo seria guardar
+          // "no respondio" y "vienen 2" al mismo tiempo.
+          .update({
+            confirmado: false,
+            confirmado_en: null,
+            asisten: null,
+            acompanantes: null,
+          })
           .eq("id", inv.id);
 
         if (error) {
@@ -1160,6 +1174,8 @@
         }
         inv.confirmado = false;
         inv.confirmado_en = null;
+        inv.asisten = null;
+        inv.acompanantes = null;
         pintarLista();
         avisar("Marcado como sin responder");
       }
@@ -1294,7 +1310,7 @@
       async function cargarInvitados() {
         const { data, error } = await supabase
           .from("invitados")
-          .select("id, codigo, nombre, pases, confirmado, confirmado_en, idioma, mesa")
+          .select("id, codigo, nombre, pases, confirmado, confirmado_en, idioma, mesa, asisten, acompanantes")
           .order("creado_en", { ascending: false });
 
         if (error) {
@@ -1340,7 +1356,7 @@
           const { data, error } = await supabase
             .from("invitados")
             .insert({ codigo: generarCodigo(), nombre, pases, idioma, mesa })
-            .select("id, codigo, nombre, pases, confirmado, confirmado_en, idioma, mesa")
+            .select("id, codigo, nombre, pases, confirmado, confirmado_en, idioma, mesa, asisten, acompanantes")
             .single();
 
           if (!error) { guardado = data; break; }
@@ -1540,12 +1556,25 @@
         $("total-invitados").textContent = String(invitados.length);
         $("total-pases").textContent = String(invitados.reduce((s, i) => s + i.pases, 0));
 
-        // Se cuentan personas y pases: al cliente le sirven los dos numeros
-        // para calcular la comida y las sillas.
+        /*
+           Se cuentan personas y asistentes: al cliente le sirven los dos
+           numeros para calcular la comida y las sillas.
+
+           Suma 'asisten' y no 'pases'. Son cosas distintas: 'pases' es
+           cuantos lugares se ofrecieron, 'asisten' cuantos dijeron que
+           vienen. Sumar pases inflaba el total con los lugares que la
+           gente devolvio al venir sola, y sobre ese numero se reserva.
+
+           El fallback a 'pases' cubre a quien confirmo antes de que
+           existiera la pregunta y no tiene el dato cargado.
+        */
         const confirmados = invitados.filter((i) => i.confirmado);
-        const pasesConfirmados = confirmados.reduce((s, i) => s + i.pases, 0);
+        const totalAsisten = confirmados.reduce(
+          (s, i) => s + (i.asisten ?? i.pases),
+          0
+        );
         $("total-confirmados").textContent =
-          confirmados.length + " (" + pasesConfirmados + " pases)";
+          confirmados.length + " (" + totalAsisten + " asisten)";
         ver($("lista-vacia"), visibles.length === 0);
 
         const permitido = puedeEditar();
@@ -1582,6 +1611,41 @@
             chapa.className = "pastilla";
             chapa.textContent = String(inv.mesa);
             tdMesa.append(chapa);
+          }
+
+          /*
+             Cuantos vienen de los que se ofrecieron, en "1 / 2". El par
+             importa mas que el numero suelto: un "1" no dice nada, un
+             "1 / 2" grita que quedo un lugar libre.
+
+             Los nombres de los acompanantes van debajo, en chico: sirven
+             para las tarjetas de mesa y son opcionales, asi que muchos van
+             a estar vacios.
+          */
+          const tdAsisten = document.createElement("td");
+          tdAsisten.dataset.rotulo = "Asisten";
+          if (!inv.confirmado) {
+            tdAsisten.textContent = "—";
+            tdAsisten.style.color = "var(--texto-tenue)";
+          } else {
+            const vienen = inv.asisten ?? inv.pases;
+            const par = document.createElement("span");
+            // Se destaca solo cuando no vienen todos: es el caso que
+            // obliga al cliente a rehacer una cuenta.
+            par.className = vienen < inv.pases ? "pastilla no" : "pastilla si";
+            par.textContent = vienen + " / " + inv.pases;
+            tdAsisten.append(par);
+
+            const acomp = Array.isArray(inv.acompanantes)
+              ? inv.acompanantes.filter(Boolean)
+              : [];
+            if (acomp.length) {
+              const conQuien = document.createElement("div");
+              conQuien.style.cssText =
+                "font-size:.78rem;color:var(--texto-tenue);margin-top:.25rem";
+              conQuien.textContent = acomp.join(", ");
+              tdAsisten.append(conQuien);
+            }
           }
 
           // Confirmó o no. Es lo primero que el cliente va a mirar
@@ -1640,7 +1704,7 @@
           }
 
           tdAcciones.append(acciones);
-          fila.append(tdNombre, tdPases, tdMesa, tdConfirmo, tdLink, tdAcciones);
+          fila.append(tdNombre, tdPases, tdMesa, tdAsisten, tdConfirmo, tdLink, tdAcciones);
           cuerpo.append(fila);
         }
       }

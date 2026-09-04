@@ -242,6 +242,18 @@ export const es = {
         modalTexto: "Vas a confirmar como",
         modalCancelar: "Cancelar",
         modalAceptar: "Sí, confirmo",
+
+        // ── Cuántos vienen, y con quién ──
+        // Solo se le pregunta a quien tiene 2 pases o más; con uno solo
+        // no hay nada que elegir y el modal queda como estaba.
+        cuantosAsisten: "¿Cuántos asistirán?",
+        // Singular y plural: con 2 pases se pide un nombre, no una lista
+        tituloAcompanante: "Nombre de tu acompañante",
+        tituloAcompanantes: "Nombres de quienes te acompañan",
+        placeholderAcompanante: "Nombre y apellido",
+        acompananteOpcional: "Podés dejarlo en blanco",
+        // El enlace que reabre el modal para quien ya respondió
+        modificarRespuesta: "Modificar mi respuesta",
         mensajeWhatsapp:
             "Confirmo la asistencia a la boda de Marvin y Carla. " +
             "Nos vemos el sábado 9 de enero. ¡Será un placer acompañarlos!",

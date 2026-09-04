@@ -243,6 +243,14 @@ export const en: Textos = {
         modalTexto: "You are confirming as",
         modalCancelar: "Cancel",
         modalAceptar: "Yes, I'll be there",
+
+        // ── Cuántos vienen, y con quién ──
+        cuantosAsisten: "How many will attend?",
+        tituloAcompanante: "Your guest's name",
+        tituloAcompanantes: "Names of those joining you",
+        placeholderAcompanante: "First and last name",
+        acompananteOpcional: "You can leave this blank",
+        modificarRespuesta: "Change my answer",
         mensajeWhatsapp:
             "I'm confirming my attendance to Marvin and Carla's wedding. " +
             "See you on Saturday, January 9th. It will be a pleasure to " +

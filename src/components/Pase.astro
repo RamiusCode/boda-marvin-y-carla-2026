@@ -41,6 +41,9 @@ const {
     modalTexto,
     modalCancelar,
     modalAceptar,
+    cuantosAsisten,
+    acompananteOpcional,
+    modificarRespuesta,
 } = t;
 
 // WhatsApp de los novios (código de país + número, sin + ni espacios).
@@ -48,6 +51,20 @@ const whatsapp = "59163001482";
 const enlace = `https://wa.me/${whatsapp}?text=${encodeURIComponent(t.mensajeWhatsapp)}`;
 
 const palabraPases = pases === 1 ? t.pase : t.pases;
+
+/*
+   Vista previa del modal en localhost.
+
+   La bandera se resuelve acá, en el servidor, y viaja al navegador como un
+   atributo del HTML. No se pregunta import.meta.env.DEV dentro del <script>
+   porque ahí queda sin reemplazar y depende de que Vite haya inyectado el
+   objeto de entorno en el navegador: si no lo hizo, la condición da falso y
+   la vista previa no aparece.
+
+   Al buildear esto es false, el atributo no se escribe y el botón vuelve a
+   ser el de WhatsApp, que es lo que corresponde en la invitación general.
+*/
+const vistaPrevia = import.meta.env.DEV;
 ---
 
 <section
@@ -56,6 +73,7 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
     data-confirmando={t.confirmando}
     data-aceptar={modalAceptar}
     data-error={t.errorConfirmar}
+    data-vista-previa={vistaPrevia ? "1" : undefined}
 >
     <div id="bloque-pase" class="relative flex flex-col items-center text-center">
         <!-- Tarjeta terracota con los pases -->
@@ -136,6 +154,20 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
             <span id="texto-confirmado">{yaConfirmado}</span>
         </p>
 
+        <!--
+           Quien ya respondió puede corregirse: confirmó por dos y a la
+           semana el acompañante no puede ir. Sin esta puerta de vuelta, el
+           dato queda viejo y se reserva de más.
+        -->
+        <button
+            id="btn-modificar"
+            type="button"
+            class="font-cormorant enlace-modificar"
+            hidden
+        >
+            {modificarRespuesta}
+        </button>
+
         <a
             id="btn-whatsapp"
             href={enlace}
@@ -185,6 +217,46 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
             <span class="numero-pases">{pases}</span>
             <span class="palabra-pases">{palabraPases}</span>
         </p>
+
+        <!--
+           La pregunta por la cantidad. Queda escondida y vacía hasta que se
+           sabe cuántos pases tiene el invitado: ese dato llega de la base
+           después de que carga la página, así que las pastillas no se
+           pueden escribir acá. A quien tiene un solo pase no se le muestra
+           nunca —no hay nada que elegir— y el modal le queda igual que antes.
+
+           Los textos viajan en data- porque este HTML lo lee un script que
+           no puede importar el diccionario de idiomas.
+        -->
+        <div
+            id="bloque-asistentes"
+            class="bloque-asistentes"
+            hidden
+            data-titulo-uno={t.tituloAcompanante}
+            data-titulo-varios={t.tituloAcompanantes}
+            data-placeholder={t.placeholderAcompanante}
+        >
+            <p class="font-cormorant modal-pase-pregunta">{cuantosAsisten}</p>
+            <div
+                id="pastillas-asistentes"
+                class="pastillas-asistentes"
+                role="radiogroup"
+                aria-label={cuantosAsisten}
+            >
+            </div>
+
+            <div id="bloque-acompanantes" hidden>
+                <p
+                    id="titulo-acompanantes"
+                    class="font-cormorant modal-pase-pregunta"
+                >
+                </p>
+                <div id="campos-acompanantes" class="campos-acompanantes"></div>
+                <p class="font-cormorant modal-pase-nota">
+                    {acompananteOpcional}
+                </p>
+            </div>
+        </div>
 
         <div class="modal-pase-botones">
             <button
@@ -472,6 +544,191 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
         margin-top: 0.1rem;
     }
 
+    /* ═══ CUÁNTOS VIENEN ═══ */
+    .bloque-asistentes {
+        margin-top: 1.3rem;
+        padding-top: 1.1rem;
+        border-top: 1px solid rgba(180, 87, 51, 0.25);
+    }
+
+    .bloque-asistentes[hidden],
+    #bloque-acompanantes[hidden] {
+        display: none;
+    }
+
+    .modal-pase-pregunta {
+        color: #7a3418;
+        font-size: clamp(1rem, 4.5vw, 1.1rem);
+        font-weight: 600;
+        margin-bottom: 0.6rem;
+    }
+
+    /*
+       Las pastillas van en wrap y no en una fila fija: una familia de seis
+       no entra en el ancho del modal en un celular chico.
+    */
+    .pastillas-asistentes {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    /*
+       Fondo macizo y sombra, no un contorno sobre el papel: así se lee como
+       algo que sobresale y se puede tocar. Con fondo transparente parecía
+       una etiqueta impresa y nadie la apretaba.
+
+       El alto pasa el mínimo cómodo de área táctil: es el control que más
+       se toca del modal y se usa con el pulgar.
+    */
+    /*
+       OJO con el :global de acá abajo, no es capricho.
+
+       Astro scopea el CSS agregando [data-astro-cid-…] a cada selector, y
+       ese atributo lo pone al renderizar. Estos botones y los campos de
+       nombre se crean con createElement en el navegador, así que nunca lo
+       reciben: sin :global las reglas no les aplican nunca y quedan como
+       números pelados sobre el papel.
+
+       Van colgados de .pastillas-asistentes y .campos-acompanantes, que sí
+       están en la plantilla y sí llevan el atributo. Así el :global queda
+       encerrado adentro de este componente y no se escapa al resto.
+    */
+    .pastillas-asistentes :global(.opcion-asistentes) {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        min-height: 2.9rem;
+        padding: 0.5rem 0.95rem;
+        border: 1px solid #c2764f;
+        border-radius: 999px;
+        background: #fffaf4;
+        color: #a05a3c;
+        font-family: inherit;
+        font-size: clamp(1.05rem, 4.8vw, 1.2rem);
+        font-weight: 600;
+        font-variant-numeric: lining-nums;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(90, 40, 22, 0.14);
+        transition:
+            background 0.15s,
+            color 0.15s,
+            border-color 0.15s,
+            transform 0.15s;
+    }
+
+    .pastillas-asistentes :global(.opcion-asistentes:hover) {
+        background: #fdf1e6;
+        transform: translateY(-1px);
+    }
+
+    /* Se hunde al tocarla: el gesto confirma que respondió */
+    .pastillas-asistentes :global(.opcion-asistentes:active) {
+        transform: translateY(1px);
+        box-shadow: 0 1px 3px rgba(90, 40, 22, 0.18);
+    }
+
+    /* El circulito, igual que un radio de formulario */
+    .pastillas-asistentes :global(.marca-radio) {
+        position: relative;
+        width: 1.05rem;
+        height: 1.05rem;
+        flex: none;
+        border: 2px solid #c2764f;
+        border-radius: 50%;
+        background: #fff;
+    }
+
+    .pastillas-asistentes :global(.marca-radio)::after {
+        content: "";
+        position: absolute;
+        inset: 2.5px;
+        border-radius: 50%;
+        background: transparent;
+    }
+
+    /*
+       La elegida se rellena en macizo. El color por sí solo no alcanza para
+       quien no lo distingue, así que además se le llena el circulito: la
+       forma cambia, no solo el tono.
+    */
+    .pastillas-asistentes :global(.opcion-asistentes[aria-checked="true"]) {
+        background: #b45733;
+        border-color: #8d3f22;
+        color: #fdf1e6;
+    }
+
+    .pastillas-asistentes :global(.opcion-asistentes[aria-checked="true"] .marca-radio) {
+        border-color: #fdf1e6;
+        background: transparent;
+    }
+
+    .pastillas-asistentes :global(.opcion-asistentes[aria-checked="true"] .marca-radio)::after {
+        background: #fdf1e6;
+    }
+
+    .campos-acompanantes {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .campos-acompanantes :global(.campo-acompanante) {
+        width: 100%;
+        padding: 0.6rem 0.85rem;
+        border: 1px solid #c2764f;
+        border-radius: 10px;
+        background: #fffaf4;
+        color: #7a3418;
+        font-family: inherit;
+        font-size: clamp(0.95rem, 4.3vw, 1.05rem);
+        outline: none;
+        transition:
+            border-color 0.15s,
+            box-shadow 0.15s;
+    }
+
+    .campos-acompanantes :global(.campo-acompanante:focus) {
+        border-color: #b45733;
+        box-shadow: 0 0 0 3px rgba(180, 87, 51, 0.15);
+    }
+
+    .campos-acompanantes :global(.campo-acompanante)::placeholder {
+        color: #c19a80;
+    }
+
+    /* El aviso de que se puede dejar vacío: chico, es una aclaración */
+    .modal-pase-nota {
+        color: #a05a3c;
+        font-size: clamp(0.85rem, 3.9vw, 0.95rem);
+        margin-top: 0.5rem;
+        opacity: 0.9;
+    }
+
+    /*
+       "Modificar mi respuesta" es un botón pero se ve como enlace: la
+       acción principal de esta pantalla ya fue hecha, esto es la salida de
+       emergencia y no tiene que competir con nada.
+    */
+    .enlace-modificar {
+        display: inline-block;
+        margin-top: 0.8rem;
+        padding: 0.3rem 0.5rem;
+        border: none;
+        background: none;
+        color: #a4482a;
+        font-family: inherit;
+        font-size: clamp(0.95rem, 4.3vw, 1.05rem);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        cursor: pointer;
+    }
+
+    .enlace-modificar[hidden] {
+        display: none;
+    }
+
     .modal-pase-botones {
         display: flex;
         gap: 0.7rem;
@@ -524,10 +781,16 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
         const textoOriginal = btnConfirmar.textContent ?? "";
         const textoGracias = textoConfirmado?.textContent ?? "";
 
+        const btnModificar = document.getElementById(
+            "btn-modificar",
+        ) as HTMLButtonElement | null;
+
         function mostrar(cual: "boton" | "confirmado" | "whatsapp") {
             btnConfirmar!.hidden = cual !== "boton";
             yaConfirmado!.hidden = cual !== "confirmado";
             btnWhatsapp!.hidden = cual !== "whatsapp";
+            // La puerta de vuelta solo tiene sentido si ya respondió
+            if (btnModificar) btnModificar.hidden = cual !== "confirmado";
         }
 
         /*
@@ -535,12 +798,35 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
            avisa con este evento. La bandera cubre el caso de que ese script
            haya terminado antes que este y el evento ya haya pasado.
         */
+        // De acá saca el modal cuántos pases mostrar
+        let datosModal: any = null;
+
         function acomodar(invitado: any) {
             if (!invitado || !invitado.codigo) {
+                /*
+                   En localhost se muestra igual el botón, con una invitación
+                   de muestra de 3 pases, para poder abrir el modal y mirar
+                   el diseño sin cargar un invitado ni armar un link.
+
+                   Confirmar no hace nada: el que guarda es el handler de
+                   abajo y arranca con un "si no hay código, no toca la base".
+                   La bandera la pone el servidor en data-vista-previa: al
+                   buildear no se escribe, así que esto se saca solo y en lo
+                   que se sube vuelve a aparecer el botón de WhatsApp, que es
+                   lo que corresponde en la invitación general.
+                */
+                const previa =
+                    document.getElementById("pase")?.dataset.vistaPrevia;
+                if (previa === "1") {
+                    datosModal = { pases: 3, asisten: null, acompanantes: [] };
+                    mostrar("boton");
+                    return;
+                }
                 // Invitación general: no hay a quién marcar en la lista
                 mostrar("whatsapp");
                 return;
             }
+            datosModal = invitado;
             mostrar(invitado.confirmado ? "confirmado" : "boton");
         }
 
@@ -572,8 +858,133 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
             "btn-confirmar-si",
         ) as HTMLButtonElement | null;
 
+        // ═══ CUÁNTOS VIENEN, Y CON QUIÉN ═══
+        const bloqueAsistentes = document.getElementById("bloque-asistentes");
+        const pastillas = document.getElementById("pastillas-asistentes");
+        const bloqueAcomp = document.getElementById("bloque-acompanantes");
+        const tituloAcomp = document.getElementById("titulo-acompanantes");
+        const camposAcomp = document.getElementById("campos-acompanantes");
+
+        // Cuántos dijo que vienen. Arranca en null: hasta que no se arma el
+        // modal no se sabe ni cuántos pases tiene.
+        let elegidos: number | null = null;
+
+        /*
+           Los nombres se guardan acá y no solo en los inputs: si el invitado
+           escribe dos nombres, baja a 1 y vuelve a 2, los campos se rehacen
+           y lo tipeado se perdería. Con este respaldo vuelve como estaba.
+        */
+        let nombresEscritos: string[] = [];
+
+        function leerNombres() {
+            if (!camposAcomp) return;
+            const campos = camposAcomp.querySelectorAll("input");
+            campos.forEach((campo, i) => {
+                nombresEscritos[i] = campo.value;
+            });
+        }
+
+        function pintarCampos() {
+            if (!bloqueAcomp || !tituloAcomp || !camposAcomp || !elegidos)
+                return;
+
+            // El invitado principal ya está por nombre: los campos son para
+            // los que lo acompañan, uno menos que el total
+            const cuantos = elegidos - 1;
+            bloqueAcomp.hidden = cuantos < 1;
+            if (cuantos < 1) return;
+
+            const datos = bloqueAsistentes?.dataset ?? {};
+            tituloAcomp.textContent =
+                cuantos === 1
+                    ? (datos.tituloUno ?? "")
+                    : (datos.tituloVarios ?? "");
+
+            camposAcomp.textContent = "";
+            for (let i = 0; i < cuantos; i++) {
+                const campo = document.createElement("input");
+                campo.type = "text";
+                campo.className = "campo-acompanante";
+                campo.maxLength = 80;
+                campo.placeholder = datos.placeholder ?? "";
+                campo.value = nombresEscritos[i] ?? "";
+                campo.addEventListener("input", leerNombres);
+                camposAcomp.append(campo);
+            }
+        }
+
+        /*
+           Las pastillas se arman en caliente porque dependen de cuántos
+           pases tiene el invitado, y ese dato llega de la base después de
+           que carga la página.
+        */
+        function armarAsistentes(invitado: any) {
+            if (!bloqueAsistentes || !pastillas) return;
+
+            const pases = Number(invitado?.pases) || 1;
+
+            // Con un solo pase no hay nada que preguntar
+            if (pases < 2) {
+                bloqueAsistentes.hidden = true;
+                elegidos = pases;
+                return;
+            }
+
+            // Si ya había respondido, se vuelve a abrir con su respuesta
+            // puesta: está corrigiendo, no empezando de cero
+            elegidos = Math.min(Number(invitado?.asisten) || pases, pases);
+            nombresEscritos = Array.isArray(invitado?.acompanantes)
+                ? [...invitado.acompanantes]
+                : [];
+
+            pastillas.textContent = "";
+            for (let n = 1; n <= pases; n++) {
+                const boton = document.createElement("button");
+                boton.type = "button";
+                boton.className = "opcion-asistentes";
+
+                /*
+                   El circulito de radio va adentro del botón. Es lo que
+                   avisa que hay que elegir: un número suelto en un recuadro
+                   se lee como una etiqueta y la gente no lo toca.
+                */
+                const marca = document.createElement("span");
+                marca.className = "marca-radio";
+                marca.setAttribute("aria-hidden", "true");
+
+                const cifra = document.createElement("span");
+                cifra.className = "numero-opcion";
+                cifra.textContent = String(n);
+
+                boton.append(marca, cifra);
+
+                /*
+                   role/aria-checked y no una clase: para un lector de
+                   pantalla esto es un grupo de opciones excluyentes, igual
+                   que un radio de toda la vida.
+                */
+                boton.setAttribute("role", "radio");
+                boton.setAttribute("aria-checked", String(n === elegidos));
+                boton.addEventListener("click", () => {
+                    leerNombres();
+                    elegidos = n;
+                    pastillas
+                        .querySelectorAll("button")
+                        .forEach((b, i) =>
+                            b.setAttribute("aria-checked", String(i + 1 === n)),
+                        );
+                    pintarCampos();
+                });
+                pastillas.append(boton);
+            }
+
+            bloqueAsistentes.hidden = false;
+            pintarCampos();
+        }
+
         function abrirModal() {
             if (!modal) return;
+            armarAsistentes(datosModal);
             modal.hidden = false;
             document.body.style.overflow = "hidden";
             btnSi?.focus();
@@ -596,6 +1007,9 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
         // El boton grande ya no confirma: abre el modal
         btnConfirmar.addEventListener("click", abrirModal);
 
+        // Y el mismo modal sirve para corregir lo ya respondido
+        btnModificar?.addEventListener("click", abrirModal);
+
         btnSi?.addEventListener("click", async () => {
             const invitado = (window as any).invitadoActual;
             if (!invitado?.codigo) return;
@@ -609,13 +1023,36 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
                 );
                 if (!configurado || !supabase) throw new Error("sin config");
 
+                /*
+                   Se manda lo que quedó tipeado en ese momento, no lo que
+                   se guardó en el último evento de input: alguien puede
+                   tocar "Sí, confirmo" con el teclado todavía abierto.
+                */
+                leerNombres();
+                const cuantos = elegidos ?? (Number(invitado.pases) || 1);
+
                 const { data, error } = await supabase.rpc(
                     "confirmar_asistencia",
-                    { codigo_buscado: invitado.codigo },
+                    {
+                        codigo_buscado: invitado.codigo,
+                        asisten_nuevo: cuantos,
+                        acompanantes_nuevos: nombresEscritos
+                            .slice(0, Math.max(cuantos - 1, 0))
+                            .map((n) => (n ?? "").trim())
+                            .filter(Boolean),
+                    },
                 );
                 if (error || !data || !data.length) throw error;
 
+                /*
+                   Se copia lo que devolvió la base y no lo que se mandó: es
+                   ella la que recorta y limpia, así que si al invitado le
+                   quedó otra cosa guardada, el modal se reabre con lo que
+                   está realmente anotado.
+                */
                 invitado.confirmado = true;
+                invitado.asisten = data[0].asisten;
+                invitado.acompanantes = data[0].acompanantes ?? [];
                 cerrarModal();
                 mostrar("confirmado");
             } catch {
