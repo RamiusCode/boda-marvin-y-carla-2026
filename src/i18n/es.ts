@@ -13,6 +13,18 @@ export const es = {
         para: "Para:",
     },
 
+    // ── Link que ya no vale ──────────────────────────────────
+    // Se muestra cuando el link trae un código que no está en la
+    // lista: normalmente porque al invitado lo borraron del panel.
+    noEncontrada: {
+        titulo: "Invitación no disponible",
+        texto: [
+            "Este enlace ya no está activo.",
+            "Si creés que es un error, escribinos y",
+            "te enviamos uno nuevo.",
+        ],
+    },
+
     // ── Carta de Lili ────────────────────────────────────────
     dedicatoria: {
         altRetrato: "Lili, la perrita de los novios, rodeada de flores",

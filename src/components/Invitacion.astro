@@ -40,6 +40,29 @@ const { idioma = "es" } = Astro.props;
 const t = textos(idioma);
 ---
 
+<!--
+   ═══════════════════════════════════════════════════════════
+   LINK QUE YA NO VALE
+   ═══════════════════════════════════════════════════════════
+   Tapa todo cuando el código del link no está en la lista, casi
+   siempre porque al invitado lo borraron del panel. Sin esto se veía
+   la invitación con los datos de muestra, o sea el nombre de otra
+   persona en el sobre.
+
+   El z-index va por encima de la portada (8500) y del botón de música
+   (9000): si asomara cualquiera de los dos, el invitado seguiría
+   creyendo que su invitación existe.
+-->
+<div id="invitacion-no-encontrada" hidden>
+    <div class="nd-caja">
+        <span class="nd-sello" aria-hidden="true">&#9829;</span>
+        <h1 class="font-great-vibes nd-titulo">{t.noEncontrada.titulo}</h1>
+        <p class="font-cormorant nd-texto">
+            {t.noEncontrada.texto.map((l) => <span class="block">{l}</span>)}
+        </p>
+    </div>
+</div>
+
 <!-- PORTADA (cubre todo hasta que se toca el botón de ingreso) -->
 <Portada idioma={idioma} />
 
@@ -82,6 +105,53 @@ const t = textos(idioma);
 
 <!-- Control de música flotante -->
 <BotonMusica />
+
+<style>
+    #invitacion-no-encontrada {
+        position: fixed;
+        inset: 0;
+        z-index: 9700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        background: #c8603c;
+    }
+
+    /* Explícito: el display:flex de arriba le gana al atributo */
+    #invitacion-no-encontrada[hidden] {
+        display: none;
+    }
+
+    .nd-caja {
+        width: 100%;
+        max-width: 22rem;
+        text-align: center;
+    }
+
+    .nd-sello {
+        display: block;
+        color: #f6d9c6;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        opacity: 0.8;
+    }
+
+    .nd-titulo {
+        color: #fdf6ee;
+        font-size: clamp(2.2rem, 11vw, 2.9rem);
+        line-height: 1.15;
+        font-weight: 400;
+        text-shadow: 0 4px 12px rgba(88, 30, 14, 0.35);
+    }
+
+    .nd-texto {
+        color: #f9e6d8;
+        font-size: clamp(1.05rem, 4.8vw, 1.2rem);
+        line-height: 1.6;
+        margin-top: 1.1rem;
+    }
+</style>
 
 <script>
     /*
@@ -156,6 +226,37 @@ const t = textos(idioma);
        es para las secciones cuyo script corra después de este y no lleguen
        a escuchar el evento.
     */
+    /*
+       Tapa la invitación entera. Se apaga la portada y el contenido en vez
+       de solo poner la pantalla encima: la portada le bloquea el scroll al
+       body y arranca la música al tocar el sello, y ninguna de las dos
+       cosas tiene sentido en un link que ya no vale.
+    */
+    function mostrarNoEncontrada() {
+        const pantalla = document.getElementById("invitacion-no-encontrada");
+        if (!pantalla) return;
+
+        document.body.classList.remove("portada-activa");
+        document.body.style.overflow = "hidden";
+
+        /*
+           display en vez del atributo hidden: la portada lleva la clase
+           "flex" de Tailwind, y ese display le gana a [hidden]. Puesto en
+           el style del elemento gana siempre, tenga las clases que tenga.
+        */
+        [
+            "portada-section",
+            "capa-blanca",
+            "contenido-principal",
+            "boton-musica",
+        ].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = "none";
+        });
+
+        pantalla.hidden = false;
+    }
+
     function avisar(datos: unknown) {
         (window as any).invitadoActual = datos;
         window.dispatchEvent(
@@ -189,8 +290,28 @@ const t = textos(idioma);
                     if (!error && data && data.length) {
                         pintar(data[0].nombre, data[0].pases, data[0].mesa);
                         avisar({ codigo, ...data[0] });
+                    } else if (!error) {
+                        /*
+                           La consulta anduvo y no encontró a nadie: ese
+                           código no está en la lista, casi siempre porque
+                           al invitado lo borraron del panel.
+
+                           Antes acá se devolvían los datos de muestra y se
+                           seguía mostrando la invitación, así que alguien a
+                           quien ya habían dado de baja veía su sobre con el
+                           nombre de otra persona.
+                        */
+                        mostrarNoEncontrada();
+                        return;
                     } else {
-                        // Código inexistente: se devuelven los de muestra
+                        /*
+                           La consulta falló. Es distinto de "no existe": la
+                           base puede estar dormida o el invitado sin señal.
+                           Se muestra la invitación con los datos de muestra
+                           igual que siempre, porque decirle "tu invitación
+                           no vale" a alguien que sí está en la lista sería
+                           mucho peor que no saber su nombre un rato.
+                        */
                         nombres.forEach((el, i) => {
                             el.textContent = respaldo[i];
                         });

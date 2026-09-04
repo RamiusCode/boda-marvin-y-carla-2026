@@ -16,6 +16,16 @@ export const en: Textos = {
         para: "For:",
     },
 
+    // ── Link que ya no vale ──────────────────────────────────
+    noEncontrada: {
+        titulo: "Invitation unavailable",
+        texto: [
+            "This link is no longer active.",
+            "If you think this is a mistake, let us",
+            "know and we will send you a new one.",
+        ],
+    },
+
     // ── Lili's letter ────────────────────────────────────────
     dedicatoria: {
         altRetrato: "Lili, the couple’s little dog, surrounded by flowers",
