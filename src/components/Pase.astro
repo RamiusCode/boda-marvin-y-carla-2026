@@ -83,11 +83,23 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
                maneja .bloque-mesa: si el invitado no tiene mesa asignada,
                el renglón no ocupa lugar.
             */}
-            <p class="bloque-mesa" hidden={!mesa}>
-                <span class="font-cormorant etiqueta-mesa">{t.mesa}</span>
-                {/* El número en Adelia, por los dígitos de Verandah */}
-                <span class="font-adelia numero-mesa">{mesa}</span>
-            </p>
+            <div class="bloque-mesa" hidden={!mesa}>
+                {/*
+                   El dibujo de la mesa se pinta con máscara y no como <img>:
+                   el PNG es trazo negro sobre transparente, y así sale en
+                   crema sobre el terracota en vez de una mancha oscura.
+                */}
+                <span
+                    class="icono icono-crema icono-mesa"
+                    style="--ic:url('/imagenes/mesa.png')"
+                    aria-hidden="true"></span>
+
+                <p class="chapa-mesa">
+                    <span class="font-cormorant etiqueta-mesa">{t.mesa}</span>
+                    {/* El número en Adelia, por los dígitos de Verandah */}
+                    <span class="font-adelia numero-mesa">{mesa}</span>
+                </p>
+            </div>
         </div>
 
         <h2 class="font-dancing titulo-confirmar">{tituloConfirmar}</h2>
@@ -247,11 +259,10 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
     */
     .bloque-mesa {
         display: flex;
-        align-items: baseline;
-        justify-content: center;
-        gap: 0.4rem;
+        flex-direction: column;
+        align-items: center;
         margin-top: 1.4rem;
-        padding-top: 1.1rem;
+        padding-top: 1.2rem;
         border-top: 1px solid rgba(253, 246, 238, 0.35);
         color: #fdf6ee;
     }
@@ -261,11 +272,35 @@ const palabraPases = pases === 1 ? t.pase : t.pases;
         display: none;
     }
 
+    .icono-mesa {
+        width: 2.6rem;
+        height: 2.6rem;
+        margin-bottom: 0.7rem;
+        /* El trazo del dibujo es fino: apagarlo un poco lo deja de
+           acompañante y no compitiendo con el número */
+        opacity: 0.9;
+    }
+
+    /*
+       El recuadro: filete crema y un velo apenas más claro que el fondo de
+       la tarjeta. Va inline-flex para que se ajuste al texto —encuadrar un
+       "MESA 2" en una caja del ancho de la tarjeta lo dejaría flotando.
+    */
+    .chapa-mesa {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        padding: 0.45rem 1.2rem;
+        border: 1px solid rgba(253, 246, 238, 0.5);
+        border-radius: 8px;
+        background: rgba(253, 246, 238, 0.1);
+    }
+
     .etiqueta-mesa {
-        font-size: clamp(1.05rem, 4.8vw, 1.25rem);
-        letter-spacing: 0.04em;
+        font-size: clamp(1rem, 4.5vw, 1.15rem);
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-        opacity: 0.85;
+        opacity: 0.9;
     }
 
     .numero-mesa {

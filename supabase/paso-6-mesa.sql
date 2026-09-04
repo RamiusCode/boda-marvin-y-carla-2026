@@ -105,7 +105,23 @@ grant execute on function public.confirmar_asistencia(text) to anon, authenticat
 
 
 -- ───────────────────────────────────────────────────────────
--- 4. VERIFICACIÓN
+-- 4. AVISARLE A LA API QUE CAMBIÓ LA TABLA
+--
+--    Supabase guarda en memoria la forma de cada tabla. Hasta
+--    que se entera del cambio, al guardar desde el panel
+--    contesta:
+--
+--      Could not find the 'mesa' column of 'invitados'
+--      in the schema cache
+--
+--    Suele refrescarse solo en unos segundos; esto lo fuerza
+--    para no tener que esperar ni recargar nada.
+-- ───────────────────────────────────────────────────────────
+notify pgrst, 'reload schema';
+
+
+-- ───────────────────────────────────────────────────────────
+-- 5. VERIFICACIÓN
 --    Debe devolver los invitados que haya, todos con la mesa
 --    vacía hasta que se cargue desde el panel.
 -- ───────────────────────────────────────────────────────────
