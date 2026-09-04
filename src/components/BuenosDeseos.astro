@@ -1617,7 +1617,74 @@ const VISIBLES = 10;
             if (datos) {
                 deseos = datos;
                 pintarCarrusel();
+                escucharBorrados();
             }
         });
+
+        /*
+           ═══════════════════════════════════════════════════════
+           BORRADOS EN VIVO
+           ═══════════════════════════════════════════════════════
+           Cuando el cliente saca un deseo desde el panel, desaparece del
+           muro sin que el invitado recargue nada. Antes seguía a la vista
+           hasta que volviera a entrar, que en una fiesta puede no pasar
+           nunca.
+
+           El aviso trae la fila vieja completa gracias al "replica
+           identity full" que dejó el paso 4: sin eso, Supabase avisaría
+           que se borró algo pero no cuál, y no habría forma de saber qué
+           tarjeta sacar.
+
+           Se busca por código y no por id porque la consulta del muro no
+           trae el id, y hay un solo deseo por invitado: la función que
+           los guarda reemplaza el anterior en vez de sumar otro.
+
+           Se engancha recién después de la primera lectura: si llegara un
+           borrado antes, no habría contra qué compararlo.
+        */
+        function escucharBorrados() {
+            import("../lib/supabase")
+                .then(({ supabase, configurado }) => {
+                    if (!configurado || !supabase) return;
+
+                    supabase
+                        .channel("muro-deseos")
+                        .on(
+                            "postgres_changes",
+                            {
+                                event: "DELETE",
+                                schema: "public",
+                                table: "deseos",
+                            },
+                            (aviso: any) => {
+                                const codigo = aviso?.old?.codigo;
+                                if (!codigo) return;
+
+                                const antes = deseos.length;
+                                deseos = deseos.filter(
+                                    (d: any) => d.codigo !== codigo,
+                                );
+
+                                /*
+                                   Solo se repinta si de verdad se sacó
+                                   algo. Repintar reinicia el carrusel al
+                                   principio, así que no vale la pena
+                                   hacerlo por un borrado que este muro no
+                                   tenía —el de un invitado cuyo deseo
+                                   nunca llegó a cargarse acá.
+                                */
+                                if (deseos.length !== antes) pintarCarrusel();
+                            },
+                        )
+                        .subscribe();
+                })
+                .catch(() => {
+                    /*
+                       Sin tiempo real el muro sigue andando igual: muestra
+                       lo que había al abrir. Es una mejora, no algo de lo
+                       que dependa que la invitación funcione.
+                    */
+                });
+        }
     });
 </script>
