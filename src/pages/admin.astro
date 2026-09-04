@@ -591,6 +591,31 @@
         font-weight: 600;
       }
       .modal-cuerpo { padding: 1.25rem; display: grid; gap: 0.85rem; }
+      /* ── Importar desde Excel ── */
+      .mapeo-columnas {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.7rem;
+      }
+      .mapeo-columnas label {
+        display: block;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--texto-tenue);
+        margin-bottom: 0.3rem;
+      }
+      /* La previa se desplaza sola si el archivo trae muchas filas */
+      .vista-previa {
+        max-height: 15rem;
+        overflow: auto;
+        border: 1px solid var(--borde-suave);
+        border-radius: var(--radio);
+      }
+      .tabla-previa th,
+      .tabla-previa td { padding: 0.45rem 0.7rem; font-size: 0.85rem; }
+      .tabla-previa thead th { position: sticky; top: 0; }
+
       .modal-pie {
         padding: 1rem 1.25rem;
         border-top: 1px solid var(--borde-suave);
@@ -867,6 +892,20 @@
                   <button type="button" class="btn btn-chico btn-linea" data-filtro="no">Sin responder</button>
                 </div>
                 <input id="buscador" type="search" class="campo" placeholder="Buscar…" style="max-width: 200px" />
+                <!--
+                   El input va escondido: el de archivos que trae el
+                   navegador no se puede maquillar, y así el botón queda
+                   igual que los otros.
+                -->
+                <input
+                  id="archivo-excel"
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  class="oculto"
+                />
+                <button id="btn-importar" type="button" class="btn btn-chico btn-linea">
+                  Subir Excel
+                </button>
                 <button id="btn-exportar" type="button" class="btn btn-chico btn-neon">
                   Descargar Excel
                 </button>
@@ -984,6 +1023,46 @@
     </div>
 
     <!-- ═══ MODAL BORRAR ═══ -->
+    <!-- ═══ IMPORTAR DESDE EXCEL ═══
+         Esta pantalla es el seguro. El sistema adivina qué columna es
+         cuál, y casi siempre acierta, pero si se equivoca crearía 50
+         invitados con la mesa y los pases cambiados, y eso se deshace de
+         a uno. Acá se ve antes de tocar la base, y se corrige. -->
+    <div id="modal-importar" class="modal-fondo oculto">
+      <div class="modal" style="max-width: 44rem">
+        <div class="modal-cabecera">Importar invitados</div>
+        <div class="modal-cuerpo">
+          <p id="importar-resumen"></p>
+
+          <!-- Los desplegables se llenan con las columnas del archivo -->
+          <div id="importar-mapeo" class="mapeo-columnas"></div>
+
+          <div class="vista-previa">
+            <table class="tabla tabla-previa">
+              <thead>
+                <tr>
+                  <th>Invitado</th>
+                  <th style="width: 80px">Pases</th>
+                  <th style="width: 80px">Mesa</th>
+                  <th style="width: 90px">Idioma</th>
+                </tr>
+              </thead>
+              <tbody id="importar-filas"></tbody>
+            </table>
+          </div>
+
+          <p id="importar-descartadas" class="aviso aviso-error oculto"></p>
+          <p id="importar-error" class="aviso aviso-error oculto"></p>
+        </div>
+        <div class="modal-pie">
+          <button type="button" class="btn btn-linea" data-cerrar-modal>Cancelar</button>
+          <button type="button" id="btn-confirmar-importar" class="btn btn-neon">
+            Importar
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div id="modal-borrar" class="modal-fondo oculto">
       <div class="modal">
         <div class="modal-cabecera">Borrar invitado</div>
@@ -1260,6 +1339,318 @@
 
       $("btn-exportar").addEventListener("click", descargarLista);
 
+      // ═══════════════════════════════════════════════════════
+      // IMPORTAR DESDE EXCEL
+      // ═══════════════════════════════════════════════════════
+      /*
+         El cliente aprieta un botón, elige su archivo y ve lo que se va a
+         crear. No tiene que acomodar nada antes: las columnas se ubican
+         por el nombre del encabezado, en el orden que estén.
+      */
+
+      // Lo que puede haber escrito en cada encabezado. Se compara sin
+      // acentos, sin mayúsculas y sin espacios de sobra.
+      const ALIAS = {
+        nombre: ["nombre", "nombres", "invitado", "invitados", "familia",
+                 "apellido", "apellidos", "nombre y apellido"],
+        pases: ["pases", "pase", "cupos", "cupo", "cantidad", "personas",
+                "acompanantes", "tickets", "boletos"],
+        mesa: ["mesa", "mesas", "nro mesa", "n mesa", "numero de mesa",
+               "num mesa"],
+        idioma: ["idioma", "lengua", "language", "lang"],
+      };
+
+      // "Nº Mesa " y "nro mesa" tienen que dar lo mismo
+      const normalizar = (t) =>
+        String(t ?? "")
+          .normalize("NFD")
+          .replace(/[̀-ͯ]/g, "")
+          .replace(/[^a-z0-9 ]/gi, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
+
+      // Lo que quedó leído del archivo, esperando confirmación
+      let importable = null;
+
+      $("btn-importar").addEventListener("click", () => {
+        // Se limpia para que elegir el mismo archivo dos veces vuelva a
+        // disparar el change
+        $("archivo-excel").value = "";
+        $("archivo-excel").click();
+      });
+
+      $("archivo-excel").addEventListener("change", async (e) => {
+        const archivo = e.target.files?.[0];
+        if (!archivo) return;
+
+        try {
+          /*
+             La librería se carga recién acá y no con la página: son
+             cientos de kilobytes que solo hacen falta el día que se
+             importa una lista, no cada vez que se abre el panel.
+          */
+          const XLSX = await import("xlsx");
+          const buffer = await archivo.arrayBuffer();
+          const libro = XLSX.read(buffer, { type: "array" });
+          const hoja = libro.Sheets[libro.SheetNames[0]];
+
+          // Como matriz y no como objetos: hace falta ver los encabezados
+          // crudos para poder reconocerlos.
+          const filas = XLSX.utils.sheet_to_json(hoja, {
+            header: 1,
+            blankrows: false,
+            defval: "",
+          });
+
+          prepararImportacion(filas);
+        } catch (err) {
+          avisar("No se pudo leer el archivo");
+        }
+      });
+
+      /*
+         Busca la fila de encabezados y ubica cada columna.
+
+         No se asume que sea la primera: es muy común que arriba haya un
+         título o una fila vacía. Se toma la primera fila donde se
+         reconozcan al menos dos de las columnas conocidas.
+      */
+      function prepararImportacion(filas) {
+        let iCabecera = -1;
+        let mapa = null;
+
+        for (let i = 0; i < Math.min(filas.length, 15); i++) {
+          const posible = ubicarColumnas(filas[i]);
+          const cuantas = Object.values(posible).filter((v) => v >= 0).length;
+          if (posible.nombre >= 0 && cuantas >= 2) {
+            iCabecera = i;
+            mapa = posible;
+            break;
+          }
+        }
+
+        if (!mapa) {
+          avisar("No encontré los encabezados (Nombre, Pases…)");
+          return;
+        }
+
+        importable = {
+          cabecera: filas[iCabecera],
+          cuerpo: filas.slice(iCabecera + 1),
+          mapa,
+        };
+
+        pintarImportacion();
+        ver($("modal-importar"), true);
+      }
+
+      function ubicarColumnas(fila) {
+        const encontrado = { nombre: -1, pases: -1, mesa: -1, idioma: -1 };
+        if (!Array.isArray(fila)) return encontrado;
+
+        fila.forEach((celda, i) => {
+          const texto = normalizar(celda);
+          if (!texto) return;
+          for (const campo of Object.keys(ALIAS)) {
+            if (encontrado[campo] >= 0) continue;
+            if (ALIAS[campo].includes(texto)) encontrado[campo] = i;
+          }
+        });
+        return encontrado;
+      }
+
+      // ═══ Vista previa ═══
+      function pintarImportacion() {
+        const { cabecera, mapa } = importable;
+        const listas = leerFilasImportadas();
+
+        $("importar-resumen").textContent =
+          "Encontré " + listas.buenas.length + " invitados en el archivo.";
+
+        // Un desplegable por campo, para corregir si adivinó mal
+        const cont = $("importar-mapeo");
+        cont.textContent = "";
+        const rotulos = {
+          nombre: "Nombre", pases: "Pases", mesa: "Mesa", idioma: "Idioma",
+        };
+        for (const campo of Object.keys(rotulos)) {
+          const caja = document.createElement("div");
+          const etiqueta = document.createElement("label");
+          etiqueta.textContent = rotulos[campo];
+          const select = document.createElement("select");
+          select.className = "campo";
+
+          const vacia = document.createElement("option");
+          vacia.value = "-1";
+          vacia.textContent = campo === "nombre" ? "— elegir —" : "— sin usar —";
+          select.append(vacia);
+
+          cabecera.forEach((celda, i) => {
+            const op = document.createElement("option");
+            op.value = String(i);
+            // Si la columna no tiene título se la nombra por su lugar
+            op.textContent = String(celda ?? "").trim() || "Columna " + (i + 1);
+            select.append(op);
+          });
+
+          select.value = String(mapa[campo]);
+          select.addEventListener("change", () => {
+            mapa[campo] = Number(select.value);
+            pintarImportacion();
+          });
+
+          caja.append(etiqueta, select);
+          cont.append(caja);
+        }
+
+        // Las primeras filas, ya interpretadas
+        const cuerpo = $("importar-filas");
+        cuerpo.textContent = "";
+        for (const inv of listas.buenas.slice(0, 30)) {
+          const tr = document.createElement("tr");
+          for (const valor of [
+            inv.nombre,
+            inv.pases,
+            inv.mesa ?? "—",
+            inv.idioma,
+          ]) {
+            const td = document.createElement("td");
+            td.textContent = String(valor);
+            tr.append(td);
+          }
+          cuerpo.append(tr);
+        }
+
+        /*
+           Las filas con problemas no frenan la importación: se cargan las
+           buenas y se avisa cuáles quedaron afuera. Con cincuenta filas,
+           rechazar todo el archivo por un dato mal escrito obliga a
+           empezar de nuevo sin saber dónde estaba el error.
+        */
+        const aviso = $("importar-descartadas");
+        if (listas.malas.length) {
+          aviso.textContent =
+            "Quedan afuera " + listas.malas.length + " fila(s): " +
+            listas.malas.slice(0, 5).join(" · ") +
+            (listas.malas.length > 5 ? " …" : "");
+          ver(aviso, true);
+        } else {
+          ver(aviso, false);
+        }
+
+        $("btn-confirmar-importar").disabled = listas.buenas.length === 0;
+      }
+
+      /*
+         Traduce las filas crudas a invitados, separando las que sirven de
+         las que no. Se llama en cada repintado para que corregir un
+         desplegable actualice la previa al instante.
+      */
+      function leerFilasImportadas() {
+        const { cuerpo, mapa } = importable;
+        const buenas = [];
+        const malas = [];
+
+        cuerpo.forEach((fila, i) => {
+          const linea = i + 1;
+          const celda = (col) =>
+            col >= 0 ? String(fila?.[col] ?? "").trim() : "";
+
+          const nombre = celda(mapa.nombre);
+          // Fila vacía: se saltea sin avisar, no es un error del cliente
+          if (!nombre && !celda(mapa.pases) && !celda(mapa.mesa)) return;
+
+          if (!nombre) {
+            malas.push("fila " + linea + ": sin nombre");
+            return;
+          }
+
+          // Sin columna de pases, o vacía, se asume 1
+          const textoPases = celda(mapa.pases);
+          const pases = textoPases === "" ? 1 : Number(textoPases);
+          if (!Number.isInteger(pases) || pases < 1 || pases > 20) {
+            malas.push("fila " + linea + ": pases “" + textoPases + "”");
+            return;
+          }
+
+          // La mesa es opcional: vacía queda sin asignar
+          const textoMesa = celda(mapa.mesa);
+          let mesa = null;
+          if (textoMesa !== "") {
+            const n = Number(textoMesa);
+            if (!Number.isInteger(n) || n < 1 || n > 200) {
+              malas.push("fila " + linea + ": mesa “" + textoMesa + "”");
+              return;
+            }
+            mesa = n;
+          }
+
+          // Cualquier cosa que empiece con "en" o "in" es inglés
+          const textoIdioma = normalizar(celda(mapa.idioma));
+          const idioma = /^(en|in)/.test(textoIdioma) ? "en" : "es";
+
+          buenas.push({ nombre: nombre.slice(0, 80), pases, mesa, idioma });
+        });
+
+        return { buenas, malas };
+      }
+
+      // ═══ Guardar ═══
+      $("btn-confirmar-importar").addEventListener("click", async () => {
+        if (!importable) return;
+        const { buenas } = leerFilasImportadas();
+        if (!buenas.length) return;
+
+        const boton = $("btn-confirmar-importar");
+        boton.disabled = true;
+        mostrarError("importar-error", "");
+
+        let cargados = 0;
+        const fallados = [];
+
+        /*
+           De a uno y no todos juntos: el código es aleatorio y puede
+           chocar con uno existente. Fila por fila se reintenta solo la
+           que chocó, en vez de perder las cincuenta.
+        */
+        for (const inv of buenas) {
+          let guardado = null;
+
+          for (let intento = 0; intento < 5; intento++) {
+            const { data, error } = await supabase
+              .from("invitados")
+              .insert({ codigo: generarCodigo(), ...inv })
+              .select("id, codigo, nombre, pases, confirmado, confirmado_en, idioma, mesa, asisten, acompanantes")
+              .single();
+
+            if (!error) { guardado = data; break; }
+            if (error.code !== "23505") {   // 23505 = código repetido
+              fallados.push(inv.nombre);
+              break;
+            }
+          }
+
+          if (guardado) {
+            invitados.unshift(guardado);
+            cargados++;
+            boton.textContent = "Importando… " + cargados + "/" + buenas.length;
+          }
+        }
+
+        boton.textContent = "Importar";
+        boton.disabled = false;
+        importable = null;
+        cerrarModales();
+        pintarLista();
+
+        avisar(
+          fallados.length
+            ? cargados + " cargados · " + fallados.length + " con error"
+            : cargados + " invitados cargados"
+        );
+      });
+
       // ═══ CORREGIR UNA CONFIRMACIÓN ═══
       /*
          El modal de la invitación evita el toque sin querer, pero los
@@ -1525,10 +1916,14 @@
       function cerrarModales() {
         ver($("modal-editar"), false);
         ver($("modal-borrar"), false);
+        ver($("modal-importar"), false);
         mostrarError("editar-error", "");
         mostrarError("borrar-error", "");
+        mostrarError("importar-error", "");
         enEdicion = null;
         enBorrado = null;
+        // Se suelta lo leído del archivo: si vuelve a abrir, empieza de cero
+        importable = null;
       }
 
       function abrirEditar(inv) {
